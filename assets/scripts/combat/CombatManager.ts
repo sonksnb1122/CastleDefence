@@ -42,6 +42,14 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     private sortTimer = 0;
     private gameOver = false;
     private rm = ResourceMgr.inst;
+    /**
+     * Demo battle (main menu background): no buffs, no rewards, no sound,
+     * the wall cannot be damaged and the fight never ends.
+     */
+    demo = false;
+
+    /** Research + hero buff; always 0 in demo mode so the menu never reads player data. */
+    private buff(key: string, towerId?: string): number { return this.demo ? 0 : this.rm.buff(key, towerId); }
 
     constructor(private enemyLayer: Node, private fxLayer: Node, private textLayer: Node, private events: CombatEvents) {
         const wall = ConfigMgr.tower.battlefield.wall;
@@ -61,17 +69,21 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         this.active = true;
     }
 
+    /** Demo mode: spawn one enemy right away (the menu background keeps calling this). */
+    spawnDemo(enemyId: string, hpMul: number, speedMul: number) {
+        this.spawn({ time: 0, enemyId, hpMul, damageMul: 1, speedMul, goldMul: 1, scale: 1, boss: false, defAdd: 0 });
+    }
+
     private spawn(entry: SpawnEntry) {
         const def = ConfigMgr.enemyDef(entry.enemyId);
         const bf = ConfigMgr.tower.battlefield;
-        const rm = this.rm;
         const growth = ConfigMgr.waves.defenseGrowth;
         const defMax = (growth && growth.max) || 80;
         // Consistent rounding: HP / damage / gold are rounded to integers, speed keeps decimals.
         const stats = {
-            hp: Math.max(1, Math.round(def.hp * entry.hpMul * (1 - Math.min(90, rm.buff('enemyHpReduce')) / 100))),
-            damage: Math.max(0, Math.round(def.damage * entry.damageMul * (1 - Math.min(90, rm.buff('enemyDamageReduce')) / 100))),
-            moveSpeed: Math.max(0, def.moveSpeed * entry.speedMul * (1 - Math.min(90, rm.buff('enemyMoveSpeedReduce')) / 100)),
+            hp: Math.max(1, Math.round(def.hp * entry.hpMul * (1 - Math.min(90, this.buff('enemyHpReduce')) / 100))),
+            damage: Math.max(0, Math.round(def.damage * entry.damageMul * (1 - Math.min(90, this.buff('enemyDamageReduce')) / 100))),
+            moveSpeed: Math.max(0, def.moveSpeed * entry.speedMul * (1 - Math.min(90, this.buff('enemyMoveSpeedReduce')) / 100)),
             goldReward: Math.round(def.goldReward * entry.goldMul),
             scale: entry.scale,
             boss: entry.boss,
@@ -119,7 +131,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             for (let i = 0; i < sorted.length; i++) sorted[i].node.setSiblingIndex(i);
         }
 
-        if (this.active && !this.gameOver && this.queue.length === 0 && !this.enemies.some(e => e.alive)) {
+        if (this.active && !this.demo && !this.gameOver && this.queue.length === 0 && !this.enemies.some(e => e.alive)) {
             this.active = false;
             for (const p of this.projectiles) p.node.destroy();
             this.projectiles.length = 0;
@@ -167,10 +179,10 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
     spawnProjectile(tower: TowerUnit, shot: ShotInfo, target: Enemy, fromX: number, fromY: number, angleDeg: number) {
         const cfg = tower.lv.sprite.projectile;
-        const speed = cfg.speed * (1 + this.rm.buff('projectileSpeed', shot.towerId) / 100);
+        const speed = cfg.speed * (1 + this.buff('projectileSpeed', shot.towerId) / 100);
         (shot as any).impact = tower.lv.sprite.impact;
         this.projectiles.push(new Projectile(this.fxLayer, shot, cfg, target, fromX, fromY, angleDeg, speed, tower.scale));
-        G.main.playSfx('shoot');
+        if (!this.demo) G.main.playSfx('shoot');
     }
 
     // ------------------------------------------------------------------ damage pipeline
@@ -185,7 +197,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     computeDamage(shot: ShotInfo, e: Enemy, baseMul = 1, flatBonus = 0): DamageResult {
         const rm = this.rm;
         if (Math.random() * 100 < e.abilityValue('dodge')) return { amount: 0, crit: false, dodged: true };
-        const base = shot.damage * baseMul * (1 + rm.buff('damage', shot.towerId) / 100);
+        const base = shot.damage * baseMul * (1 + this.buff('damage', shot.towerId) / 100);
         let normal = -Infinity;
         for (const type of shot.damageTypes) {
             let d = base * this.defenseMultiplier(e, type);
@@ -195,8 +207,8 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         }
         if (shot.isAoe) normal *= 1 - e.abilityValue('aoeReduction') / 100;
         normal += flatBonus;
-        const critRate = Math.max(0, Math.min(100, shot.critRate + rm.buff('critRate', shot.towerId)));
-        const critDamage = shot.critDamage + rm.buff('critDamage', shot.towerId);
+        const critRate = Math.max(0, Math.min(100, shot.critRate + this.buff('critRate', shot.towerId)));
+        const critDamage = shot.critDamage + this.buff('critDamage', shot.towerId);
         const crit = Math.random() * 100 < critRate;
         const final = crit ? normal * critDamage / 100 : normal;
         return { amount: Math.max(1, Math.floor(final)), crit, dodged: false };
@@ -205,7 +217,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     /** 1 - EffectiveDefense / 100, where EffectiveDefense = def * 2 - reductions (not clamped). */
     defenseMultiplier(e: Enemy, type: DamageType): number {
         const def = type === 'physic' ? e.physicDef : e.magicDef;
-        const reduction = this.rm.buff(type === 'physic' ? 'enemyPhysicDefReduce' : 'enemyMagicDefReduce') + e.defReduction(type);
+        const reduction = this.buff(type === 'physic' ? 'enemyPhysicDefReduce' : 'enemyMagicDefReduce') + e.defReduction(type);
         const effective = def * 2 - reduction;
         return 1 - effective / 100;
     }
@@ -223,17 +235,18 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     private onEnemyKilled(e: Enemy) {
         if (e.rewarded) return;
         e.rewarded = true;
-        const gold = this.rm.killGold(e.goldReward);
+        const gold = this.demo ? e.goldReward : this.rm.killGold(e.goldReward);
+        this.float('+' + gold, e.x + 8, e.y - 6, '#f2c14e', 15, true, 'gold');
+        if (this.demo) return;
         this.goldFromKills += gold;
         this.rm.add({ gold });
-        this.float('+' + gold, e.x + 8, e.y - 6, '#f2c14e', 15, true, 'gold');
         G.main.playSfx('coin');
     }
 
     /** Damage over time from Bleed / Burn. Goes through defense but never crits. */
     applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string) {
         if (!e.alive) return;
-        const buff = this.rm.buff(statusType === 'bleed' ? 'bleedDamage' : 'burnDamage');
+        const buff = this.buff(statusType === 'bleed' ? 'bleedDamage' : 'burnDamage');
         const amount = Math.max(1, Math.floor(rawDamage * (1 + buff / 100) * this.defenseMultiplier(e, type)));
         const died = e.takeDamage(amount);
         this.float(String(amount), e.x + 10, e.y + e.radius + 8, statusType === 'bleed' ? '#ff7a7a' : '#ffa64d', 12);
@@ -254,7 +267,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         }
         this.impactFx(shot, x, y);
         const tower = this.towerByUid(shot.towerUid);
-        const chance = (ef: any) => ef.chance * (1 + this.rm.buff('effectChance', shot.towerId) / 100);
+        const chance = (ef: any) => ef.chance * (1 + this.buff('effectChance', shot.towerId) / 100);
         const ready = (ef: any) => !tower || !(tower.effectCooldowns[ef.id] > 0);
         const used = (ef: any) => { if (tower && ef.cooldown > 0) tower.effectCooldowns[ef.id] = ef.cooldown; };
         const statusCount: { [id: string]: number } = {};
@@ -301,7 +314,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
                 this.applyDamage(next, this.computeDamage(shot, next, ef.value / 100));
             }
         }
-        G.main.playSfx(shot.isAoe ? 'explode' : 'hit');
+        if (!this.demo) G.main.playSfx(shot.isAoe ? 'explode' : 'hit');
     }
 
     private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number) {
@@ -309,8 +322,8 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (!def) return;
         const rm = this.rm;
         let durationMul = 1, valueMul = 1;
-        if (def.type === 'slow') { durationMul += rm.buff('slowDuration') / 100; valueMul += rm.buff('slowEffect') / 100; }
-        if (def.type === 'stun') durationMul += rm.buff('stunDuration') / 100;
+        if (def.type === 'slow') { durationMul += this.buff('slowDuration') / 100; valueMul += this.buff('slowEffect') / 100; }
+        if (def.type === 'stun') durationMul += this.buff('stunDuration') / 100;
         if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) this.float('RESIST', e.x, e.y + e.radius + 26, '#aaaaaa', 11);
     }
 
@@ -322,6 +335,11 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     // ------------------------------------------------------------------ wall
     /** Called once per enemy when it touches the wall. */
     onEnemyReachedWall(e: Enemy) {
+        if (this.demo) {
+            // Immortal wall: only the hit number is shown.
+            this.float('-' + Math.floor(e.wallDamage()), this.wallRightX - 20, e.y + 20, '#ff6b6b', 18, true);
+            return;
+        }
         const type: DamageType = e.def.damageType === 'magic' ? 'magic' : 'physic';
         const amount = Math.max(0, Math.floor(e.wallDamage() * (1 - this.rm.wallDef(type) / 100)));
         const destroyed = this.rm.damageWall(amount);

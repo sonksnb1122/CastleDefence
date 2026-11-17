@@ -162,15 +162,17 @@ export class InCastleScreen {
                 panel(n, 0, 0, size - 8, size - 8, def.color || '#888888');
                 text(n, def.name, 16, 0, 6, { bold: true, color: '#1b1626', width: size - 16, align: 'center' });
             }
-            const tag = panel(n, 0, -size / 2 + 2, 54, 20, '#1b1626', null, 200);
-            tag.setScale(1 / this.zoom, 1 / this.zoom, 1); // labels keep their on-screen size
-            text(tag, 'Lv ' + b.level, 13, 0, 0, { bold: true, color: COLORS.accent });
             if (b.uid === this.selectedUid) {
                 const sg = mk('Sel', n).addComponent(Graphics);
                 sg.lineWidth = 4 / this.zoom;
                 sg.strokeColor = hex('#ffffff');
                 sg.rect(-size / 2 - 3, -size / 2 - 3, size + 6, size + 6);
                 sg.stroke();
+                // Level label: only while the building is selected, just below the white border.
+                const tag = mk('LevelTag', n, 0, -size / 2 - 3 - 21 / this.zoom);
+                tag.setScale(1 / this.zoom, 1 / this.zoom, 1); // keeps its on-screen size
+                if (!sliced(tag, ConfigMgr.uiFrame('levelTag'), 0, 0, 128, 30)) panel(tag, 0, 0, 60, 22, '#1b1626', null, 210);
+                text(tag, 'Lv ' + b.level, 16, 0, 1, { bold: true, color: '#fff6dc' });
             }
         }
         if (this.selectedUid && !this.rm.building(this.selectedUid)) this.selectedUid = 0;

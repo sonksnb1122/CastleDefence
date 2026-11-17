@@ -11,12 +11,18 @@ export class TopBar {
     private labels: { [k: string]: Label } = {};
     private waveLabel: Label = null as any;
     private stateLabel: Label = null as any;
+    /** "Towers x/y"; only created on the battlefield. */
+    private towerLabel: Label | null = null;
     private unsubscribe: () => void;
 
-    constructor(parent: Node) {
+    /**
+     * `demoValue`: main menu background bar. Only the three resources are shown,
+     * all with this fixed amount, and the player's data is never read.
+     */
+    constructor(parent: Node, private showTowers = false, private demoValue: number | null = null) {
         this.node = mk('TopBar', parent);
         this.layout();
-        this.unsubscribe = ResourceMgr.inst.onChange(() => this.refresh());
+        this.unsubscribe = demoValue === null ? ResourceMgr.inst.onChange(() => this.refresh()) : () => { /* nothing to unsubscribe */ };
     }
 
     /** (Re)build the bar for the current screen size. Called again whenever the window is resized. */
@@ -51,15 +57,22 @@ export class TopBar {
             }
             x += spacing;
         }
+        if (this.demoValue !== null) {
+            for (const k in this.labels) this.labels[k].string = String(this.demoValue);
+            return;
+        }
+        this.towerLabel = this.showTowers ? text(this.node, '', 16, W / 2 - 360, 0, { ax: 0, bold: true, color: '#cfe3ff' }) : null;
         this.waveLabel = text(this.node, '', 17, W / 2 - 220, 0, { ax: 0, bold: true });
         this.stateLabel = text(this.node, '', 15, W / 2 - 16, 0, { ax: 1 });
         this.refresh();
     }
 
     refresh() {
+        if (this.demoValue !== null) return;
         const rm = ResourceMgr.inst;
         for (const k in this.labels) this.labels[k].string = String(Math.floor(rm.get(k)));
         this.waveLabel.string = 'Wave ' + rm.data.currentWave;
+        if (this.towerLabel) this.towerLabel.string = `Towers ${rm.data.towers.length}/${rm.towerLimit}`;
         this.stateLabel.string = rm.isPreparation ? 'Preparation' : 'COMBAT';
         this.stateLabel.color = hex(rm.isPreparation ? COLORS.good : COLORS.bad);
     }

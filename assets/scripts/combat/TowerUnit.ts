@@ -50,7 +50,8 @@ export class TowerUnit {
     readonly scale: number;
     private body: Node;
 
-    constructor(parent: Node, public save: TowerSave) {
+    /** `demo`: main menu background tower, ignores research / hero buffs. */
+    constructor(parent: Node, public save: TowerSave, private demo = false) {
         this.def = ConfigMgr.towerDef(save.id);
         this.node = mk('Tower_' + save.id, parent, save.x, save.y);
         this.rangeNode = mk('Range', this.node);
@@ -103,8 +104,8 @@ export class TowerUnit {
 
     /** Stats with research and hero buffs applied. */
     stats(): TowerStats {
-        const rm = ResourceMgr.inst;
         const id = this.save.id;
+        const rm = { buff: (k: string, t?: string) => (this.demo ? 0 : ResourceMgr.inst.buff(k, t)) };
         const attackSpeed = this.lv.attackSpeed * (1 + rm.buff('attackSpeed', id) / 100);
         const explosionBuff = this.def.explosionBuffable ? rm.buff('explosionRange', id) : 0;
         return {

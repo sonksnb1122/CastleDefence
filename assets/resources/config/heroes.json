@@ -280,6 +280,18 @@
         "bottom": 20
       },
       "scale": 2
+    },
+    "levelTag": {
+      "path": "sprites/ui/level_tag",
+      "width": 96,
+      "height": 22,
+      "insets": {
+        "left": 32,
+        "right": 32,
+        "top": 0,
+        "bottom": 0
+      },
+      "scale": 1.36
     }
   }
 }

@@ -26,7 +26,6 @@ export class PauseOverlay implements IOverlay {
         items.forEach((it, i) => {
             const b = menuButton(m.box, it[0], 0, 132 - i * 58, 260, 46, it[1], it[2], 19);
             b.setEnabled(it[3]);
-            if (it[0] === 'Resume') uiIcon(b.node, 'play', 32, -82, 0);   // play picture on the Resume button
         });
         if (!canSave) text(m.box, 'Saving is disabled during combat', 12, 0, -206, { color: COLORS.textDim });
     }
