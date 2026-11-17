@@ -4,6 +4,8 @@
 You grow a small castle between battles, then defend its wall against waves of monsters.
 Each wave is harder than the one before.
 
+Video demo: https://drive.google.com/drive/folders/15IWJf0NY1LbKzWitaf19cV2dwojPjyHZ?usp=drive_link
+
 ### Core loop
 1. **Inside the castle (economy).** Build and upgrade buildings on a large scrolling map.
    - **Base:** the heart of the castle. It makes gold and limits how many buildings and towers you can have.
