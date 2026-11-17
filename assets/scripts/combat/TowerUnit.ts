@@ -1,9 +1,9 @@
-import { Node, Sprite, SpriteFrame, UITransform, Graphics, Label } from 'cc';
+import { Node, Sprite, SpriteFrame, UITransform, Graphics } from 'cc';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { ShotInfo, TowerSave } from '../core/GameTypes';
 import { ResourceMgr } from '../core/ResourceMgr';
-import { hex, mk, panel, sprite, text } from '../ui/UIKit';
+import { hex, mk, sprite, text } from '../ui/UIKit';
 import { Enemy } from './Enemy';
 import { SpriteAnim } from './SpriteAnim';
 
@@ -40,7 +40,6 @@ export class TowerUnit {
     private anim: SpriteAnim;
     private idleFrames: SpriteFrame[] = [];
     private attackFrames: SpriteFrame[] = [];
-    private levelLabel: Label;
     private rangeNode: Node;
     private firing = false;
     private spawned = false;
@@ -65,8 +64,6 @@ export class TowerUnit {
         this.weaponSprite = sprite(this.body, null, 8, 8);
         this.weaponNode = this.weaponSprite.node;
         this.anim = new SpriteAnim(this.weaponSprite);
-        const tag = panel(this.node, 0, -10, 40, 16, '#1b1626', null, 190);   // dark tag: readable on any ground
-        this.levelLabel = text(tag, '', 12, 0, 0, { bold: true, color: '#f2c14e' });
         this.refresh();
     }
 
@@ -97,7 +94,6 @@ export class TowerUnit {
         this.firing = false;
         this.spawned = false;
         this.anim.play(this.idleFrames, w.idleFrameTime, true);
-        this.levelLabel.string = 'Lv ' + this.save.level;
         this.rangeNode.setPosition(0, sp.weaponY * this.scale, 0);
         if (this.rangeNode.active) this.showRange(true);
     }

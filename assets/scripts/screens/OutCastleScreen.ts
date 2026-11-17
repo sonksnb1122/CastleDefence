@@ -7,7 +7,7 @@ import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
 import { TopBar, arcMenu } from '../ui/TopBar';
-import { Bar, COLORS, UIButton, button, confirm, costRow, hex, iconButton, message, mk, panel, setVisible, sprite, text, toLocal, toast } from '../ui/UIKit';
+import { Bar, COLORS, UIButton, button, confirm, costRow, hex, iconButton, message, mk, panel, setVisible, sliced, sprite, text, toLocal, toast } from '../ui/UIKit';
 import { BattlefieldGround } from './BattlefieldGround';
 import { InfoLine, infoWindow } from './Overlays';
 
@@ -143,6 +143,10 @@ export class OutCastleScreen implements CombatEvents {
             { label: 'Info', onClick: () => this.towerInfoWindow(unit) },
             { label: 'Destroy', color: COLORS.buttonDanger, onClick: () => this.destroyTower(uid), enabled: prep },
         ];
+        // Level label (like the buildings in the castle) on the menu layer, so other towers never cover it.
+        const tag = mk('LevelTag', this.menuLayer, unit.save.x, unit.save.y - 21);
+        if (!sliced(tag, ConfigMgr.uiFrame('levelTag'), 0, 0, 128, 30)) panel(tag, 0, 0, 60, 22, '#1b1626', null, 210);
+        text(tag, 'Lv ' + unit.save.level, 16, 0, 1, { bold: true, color: '#fff6dc' });
         const below = unit.save.y > 170;
         arcMenu(this.menuLayer, unit.save.x, below ? unit.save.y + 6 : unit.cy + 30, items, below, 86);
     }
