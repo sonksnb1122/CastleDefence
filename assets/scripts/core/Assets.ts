@@ -97,6 +97,28 @@ export class Assets {
         return out;
     }
 
+    private static slicedCache = new Map<string, SpriteFrame>();
+
+    /**
+     * Whole texture as one 9-slice frame: the four borders keep their size, the
+     * middle stretches. Returns null if the texture is missing.
+     */
+    static slicedFrame(path: string, width: number, height: number, insets: { left: number; right: number; top: number; bottom: number }): SpriteFrame | null {
+        const cached = Assets.slicedCache.get(path);
+        if (cached) return cached;
+        const tex = Assets.textures.get(path);
+        if (!tex) return null;
+        const sf = new SpriteFrame();
+        sf.reset({
+            texture: tex, rect: new Rect(0, 0, width, height), originalSize: new Size(width, height), offset: new Vec2(0, 0),
+            borderLeft: insets.left, borderRight: insets.right, borderTop: insets.top, borderBottom: insets.bottom,
+        } as any);
+        sf.insetLeft = insets.left; sf.insetRight = insets.right; sf.insetTop = insets.top; sf.insetBottom = insets.bottom;
+        sf.packable = false;
+        Assets.slicedCache.set(path, sf);
+        return sf;
+    }
+
     /** Slice a sheet into cellW x cellH frames, row by row. Returns [] if the texture is missing. */
     static frames(path: string, cellW: number, cellH: number): SpriteFrame[] {
         const key = `${path}|${cellW}x${cellH}`;

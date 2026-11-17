@@ -226,7 +226,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const gold = this.rm.killGold(e.goldReward);
         this.goldFromKills += gold;
         this.rm.add({ gold });
-        this.float('+' + gold + 'g', e.x, e.y - 6, '#f2c14e', 15, true);
+        this.float('+' + gold, e.x + 8, e.y - 6, '#f2c14e', 15, true, 'gold');
         G.main.playSfx('coin');
     }
 
@@ -336,9 +336,9 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     }
 
     // ------------------------------------------------------------------ visual feedback
-    float(str: string, x: number, y: number, color: string, size: number, important = false) {
+    float(str: string, x: number, y: number, color: string, size: number, important = false, icon?: string) {
         if (!important && this.floats.length >= MAX_FLOAT_TEXTS) return; // keep big fights readable
-        this.floats.push(new FloatText(this.textLayer, str, x, y, color, size));
+        this.floats.push(new FloatText(this.textLayer, str, x, y, color, size, 0.8, icon));
     }
 
     private impactFx(shot: ShotInfo, x: number, y: number) {

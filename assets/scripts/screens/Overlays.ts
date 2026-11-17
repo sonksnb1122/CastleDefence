@@ -2,7 +2,8 @@ import { Node } from 'cc';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
-import { Bar, COLORS, ScrollList, UIButton, button, confirm, message, mk, modal, panel, text, toast } from '../ui/UIKit';
+import { Cost } from '../core/GameTypes';
+import { Bar, COLORS, ScrollList, UIButton, button, confirm, costRow, fancyModal, menuButton, message, mk, modal, panel, text, toast, uiIcon } from '../ui/UIKit';
 
 /** Overlays are small windows drawn above the current screen. They pause the game while open. */
 export interface IOverlay { root: Node; destroy(): void; }
@@ -11,7 +12,7 @@ export interface IOverlay { root: Node; destroy(): void; }
 export class PauseOverlay implements IOverlay {
     root: Node;
     constructor(parent: Node) {
-        const m = modal(parent, 'Paused', 340, 430);
+        const m = fancyModal(parent, 'Paused', 360, 470);
         this.root = m.root;
         const canSave = ResourceMgr.inst.isPreparation;
         const items: Array<[string, () => void, string, boolean]> = [
@@ -23,10 +24,11 @@ export class PauseOverlay implements IOverlay {
             ['Quit Game', () => confirm(this.root, 'Quit Game', 'Quit the game?', () => G.main.quitGame()), COLORS.buttonDanger, true],
         ];
         items.forEach((it, i) => {
-            const b = button(m.box, it[0], 0, 140 - i * 58, 250, 46, it[1], it[2], 19);
+            const b = menuButton(m.box, it[0], 0, 132 - i * 58, 260, 46, it[1], it[2], 19);
             b.setEnabled(it[3]);
+            if (it[0] === 'Resume') uiIcon(b.node, 'play', 32, -82, 0);   // play picture on the Resume button
         });
-        if (!canSave) text(m.box, 'Saving is disabled during combat', 12, 0, -196, { color: COLORS.textDim });
+        if (!canSave) text(m.box, 'Saving is disabled during combat', 12, 0, -206, { color: COLORS.textDim });
     }
     destroy() { this.root.destroy(); }
 }
@@ -42,13 +44,13 @@ export class SettingsOverlay implements IOverlay {
             const bar = new Bar(m.box, 40, y, 150, 14, COLORS.accent);
             const value = text(m.box, '', 16, 175, y, { ax: 0 });
             const refresh = () => { bar.set(get()); value.string = Math.round(get() * 100) + '%'; };
-            button(m.box, '-', -70, y, 36, 34, () => { set(Math.max(0, Math.round((get() - 0.1) * 10) / 10)); refresh(); }, COLORS.button, 22);
-            button(m.box, '+', 150, y, 36, 34, () => { set(Math.min(1, Math.round((get() + 0.1) * 10) / 10)); refresh(); }, COLORS.button, 22);
+            menuButton(m.box, '-', -70, y, 36, 34, () => { set(Math.max(0, Math.round((get() - 0.1) * 10) / 10)); refresh(); }, COLORS.button, 22);
+            menuButton(m.box, '+', 150, y, 36, 34, () => { set(Math.min(1, Math.round((get() + 0.1) * 10) / 10)); refresh(); }, COLORS.button, 22);
             refresh();
         };
         row('Music', 60, () => G.main.musicVolume, v => G.main.setVolumes(v, G.main.sfxVolume));
         row('Sound FX', 0, () => G.main.sfxVolume, v => { G.main.setVolumes(G.main.musicVolume, v); G.main.playSfx('click'); });
-        button(m.box, 'Close', 0, -105, 160, 44, () => G.main.closeOverlay());
+        menuButton(m.box, 'Close', 0, -105, 160, 44, () => G.main.closeOverlay());
     }
     destroy() { this.root.destroy(); }
 }
@@ -62,7 +64,7 @@ export class SaveLoadOverlay implements IOverlay {
         const m = modal(parent, mode === 'load' ? 'Load Game' : 'Save Game', 560, 420);
         this.root = m.root;
         this.box = m.box;
-        button(m.box, 'Back', 0, -170, 160, 44, () => G.main.closeOverlay());
+        menuButton(m.box, 'Back', 0, -170, 160, 44, () => G.main.closeOverlay());
         this.rebuild();
     }
 
@@ -80,13 +82,13 @@ export class SaveLoadOverlay implements IOverlay {
             text(this.rows, name, 18, -240, y + 10, { ax: 0, bold: true });
             text(this.rows, desc, 14, -240, y - 13, { ax: 0, color: COLORS.textDim });
             if (this.mode === 'load') {
-                const b = button(this.rows, 'Load', 150, y, 80, 38, () => this.load(slot), COLORS.buttonOk, 16);
+                const b = menuButton(this.rows, 'Load', 150, y, 80, 38, () => this.load(slot), COLORS.buttonOk, 16);
                 b.setEnabled(info.exists && info.valid);
             } else {
-                button(this.rows, info.exists ? 'Overwrite' : 'Save', 140, y, 100, 38, () => this.save(slot, info.exists), COLORS.buttonOk, 16);
+                menuButton(this.rows, info.exists ? 'Overwrite' : 'Save', 140, y, 100, 38, () => this.save(slot, info.exists), COLORS.buttonOk, 16);
             }
             if (slot > 0 && info.exists) {
-                button(this.rows, 'X', 225, y, 38, 38, () => confirm(this.root, 'Delete Save', `Delete ${name}?`, () => { G.main.deleteSlot(slot); this.rebuild(); }), COLORS.buttonDanger, 16);
+                menuButton(this.rows, 'X', 225, y, 38, 38, () => confirm(this.root, 'Delete Save', `Delete ${name}?`, () => { G.main.deleteSlot(slot); this.rebuild(); }), COLORS.buttonDanger, 16);
             }
         }
     }
@@ -127,7 +129,7 @@ export class ResearchOverlay implements IOverlay {
             text(list.content, t.name, 17, -W / 2 + 50, y + 13, { ax: 0, bold: true });
             text(list.content, t.description, 13, -W / 2 + 50, y - 11, { ax: 0, color: COLORS.textDim });
             const level = text(list.content, '', 15, 40, y + 13, { ax: 0, color: COLORS.accent });
-            const cost = text(list.content, '', 13, 40, y - 11, { ax: 0 });
+            const cost = mk('Cost', list.content, 40, y - 11);
             const btn = button(list.content, 'Research', W / 2 - 110, y, 110, 38, () => this.research(t.id), COLORS.buttonOk, 15);
             this.rows.push({ id: t.id, level, cost, btn });
         });
@@ -145,9 +147,10 @@ export class ResearchOverlay implements IOverlay {
             const t = ConfigMgr.techDef(r.id);
             const lv = rm.techLevel(r.id);
             r.level.string = `Lv ${lv}/${t.maxLevel}   (+${t.valuePerLevel * lv}${ConfigMgr.buffInfo(t.buffKey).unit})`;
-            if (lv >= t.maxLevel) { r.cost.string = 'Max level'; r.btn.setEnabled(false); continue; }
+            r.cost.destroyAllChildren();
+            if (lv >= t.maxLevel) { text(r.cost, 'Max level', 13, 0, 0, { ax: 0 }); r.btn.setEnabled(false); continue; }
             const cost = rm.techCost(r.id);
-            r.cost.string = ResourceMgr.costText(cost);
+            costRow(r.cost, cost, 0, 0, { size: 18, fontSize: 13 });
             r.btn.setEnabled(lv < cap && rm.canAfford(cost) && rm.isPreparation);
         }
     }
@@ -160,18 +163,43 @@ export class ResearchOverlay implements IOverlay {
     destroy() { this.unsubscribe(); this.root.destroy(); }
 }
 
-/** Generic helper: info window listing text lines. Long lists become scrollable. */
-export function infoWindow(parent: Node, title: string, lines: string[]) {
+/** A line of an info window: plain text, or a label followed by a cost / amount with resource icons. */
+export type InfoLine = string | { label: string; cost: Cost };
+
+/** Generic helper: info window listing lines. Long lists become scrollable. */
+export function infoWindow(parent: Node, title: string, lines: InfoLine[]) {
     const W = 500, LINE = 22;
     // Estimate wrapped height (about 52 characters fit on one line).
+    const rowsOf = (l: InfoLine) => (typeof l === 'string' ? Math.max(1, Math.ceil(l.length / 52)) : 1);
     let rows = 0;
-    for (const l of lines) rows += Math.max(1, Math.ceil(l.length / 52));
+    for (const l of lines) rows += rowsOf(l);
     const maxH = G.main.H - 60;
     const wanted = 130 + rows * LINE;
-    if (wanted <= maxH) { message(parent, title, lines.join('\n'), undefined, W, wanted); return; }
-    const m = modal(parent, title, W, maxH);
-    const list = new ScrollList(m.box, 0, 8, W - 30, maxH - 130);
-    text(list.content, lines.join('\n'), 17, -(W - 60) / 2, -8, { width: W - 60, ax: 0, ay: 1, align: 'left' });
-    list.setContentHeight(rows * LINE + 20);
-    button(m.box, 'Close', 0, -maxH / 2 + 36, 150, 42, () => m.close());
+    const scroll = wanted > maxH;
+    const H = scroll ? maxH : wanted;
+    const m = modal(parent, title, W, H);
+    let host: Node = m.box, left = -W / 2 + 25, y = H / 2 - 56;
+    if (scroll) {
+        const list = new ScrollList(m.box, 0, 8, W - 30, maxH - 130);
+        list.setContentHeight(rows * LINE + 20);
+        host = list.content; left = -(W - 60) / 2; y = -8;
+    }
+    // Consecutive text lines share one wrapped label; cost lines are drawn with icons.
+    let pending: string[] = [];
+    const flush = () => {
+        if (pending.length === 0) return;
+        let n = 0;
+        for (const p of pending) n += rowsOf(p);
+        text(host, pending.join('\n'), 17, left, y, { width: W - 60, ax: 0, ay: 1, align: 'left' });
+        y -= n * LINE;
+        pending = [];
+    };
+    for (const l of lines) {
+        if (typeof l === 'string') { pending.push(l); continue; }
+        flush();
+        costRow(host, l.cost, left, y - LINE / 2, { label: l.label, size: 20, fontSize: 17 });
+        y -= LINE;
+    }
+    flush();
+    button(m.box, 'Close', 0, -H / 2 + 36, 150, 42, () => m.close());
 }

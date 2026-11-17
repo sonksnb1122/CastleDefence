@@ -7,8 +7,8 @@ import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
 import { TopBar, arcMenu } from '../ui/TopBar';
-import { Bar, COLORS, UIButton, button, confirm, hex, message, mk, panel, setVisible, sprite, text, toLocal, toast } from '../ui/UIKit';
-import { infoWindow } from './Overlays';
+import { Bar, COLORS, UIButton, button, confirm, costRow, hex, iconButton, message, mk, panel, setVisible, sprite, text, toLocal, toast } from '../ui/UIKit';
+import { InfoLine, infoWindow } from './Overlays';
 
 /**
  * Outside the castle: the defense construction area, the wall and the field
@@ -93,9 +93,12 @@ export class OutCastleScreen implements CombatEvents {
         this.enterBtn = button(this.root, '< Enter Castle', W / 2 - 86, H / 2 - 66, 156, 40, () => G.main.goto('inCastle'), COLORS.buttonOk, 17);
         this.startBtn = button(this.root, 'Start Wave', W / 2 - 96, -H / 2 + 30, 176, 44, () => this.startWave(), COLORS.buttonDanger, 18);
         this.waveInfo = text(this.root, '', 14, W / 2 - 10, -H / 2 + 66, { ax: 1, color: '#1b1626', bold: true });
-        button(this.root, 'Menu', -W / 2 + 56, -H / 2 + 30, 96, 40, () => G.main.openOverlay('pause'), COLORS.buttonAlt, 17);
-        this.speedBtn = button(this.root, 'x1', -W / 2 + 140, -H / 2 + 30, 56, 40, () => this.cycleSpeed(), COLORS.button, 17);
-        this.towerInfo = text(this.root, '', 14, -W / 2 + 180, -H / 2 + 66, { ax: 0, color: '#1b1626', bold: true });
+        // Pause button (picture); falls back to the text button when the art is missing.
+        if (!iconButton(this.root, 'pause', -W / 2 + 34, -H / 2 + 34, 52, () => G.main.openOverlay('pause'))) {
+            button(this.root, 'Menu', -W / 2 + 56, -H / 2 + 30, 96, 40, () => G.main.openOverlay('pause'), COLORS.buttonAlt, 17);
+        }
+        this.speedBtn = button(this.root, 'x1', -W / 2 + 102, -H / 2 + 30, 56, 40, () => this.cycleSpeed(), COLORS.button, 17);
+        this.towerInfo = text(this.root, '', 14, -W / 2 + 150, -H / 2 + 66, { ax: 0, color: '#1b1626', bold: true });
         this.cancelBtn = button(this.root, 'Cancel placement', 0, -H / 2 + 30, 200, 40, () => this.stopPlacing(), COLORS.buttonDanger, 16);
         this.cancelBtn.setVisible(false);
 
@@ -105,8 +108,10 @@ export class OutCastleScreen implements CombatEvents {
         towers.forEach((t, i) => {
             const x = (i - (towers.length - 1) / 2) * 172;
             const btn = button(this.buildBar, '', x, 0, 164, 44, () => this.startPlacing(t.id, 0), COLORS.button, 13);
-            btn.setText(`${t.name}\n${ResourceMgr.costText(t.buildCost)}`);
-            btn.label.lineHeight = 16;
+            // Tower name on top, build cost with resource icons below.
+            btn.setText(t.name);
+            btn.label.node.setPosition(0, 10, 0);
+            costRow(btn.node, t.buildCost, 0, -9, { align: 'center', size: 16, fontSize: 12, bold: true });
             this.buildBtns.push({ id: t.id, btn });
         });
 
@@ -233,30 +238,30 @@ export class OutCastleScreen implements CombatEvents {
         const cost = this.rm.towerUpgradeCost(t);
         if (!cost) { toast(this.root, 'Already at max level'); return; }
         const next = ConfigMgr.towerLevel(t.id, t.level + 1);
-        const body = `Upgrade to level ${t.level + 1}?\nDamage ${next.damage}, ${next.attackSpeed}/s, range ${next.attackRange}\n\nCost: ${ResourceMgr.costText(cost)}`;
+        const body = `Upgrade to level ${t.level + 1}?\nDamage ${next.damage}, ${next.attackSpeed}/s, range ${next.attackRange}`;
         confirm(this.root, `Upgrade ${def.name}`, body, () => {
             const err = this.rm.upgradeTower(uid);
             toast(this.root, err || `${def.name} upgraded`, !err);
             if (!err) this.rebuildTowers();
-        });
+        }, 'Confirm', 'Cancel', { label: 'Cost:', cost });
     }
 
     private destroyTower(uid: number) {
         const t = this.rm.tower(uid);
         if (!t) return;
         const def = ConfigMgr.towerDef(t.id);
-        confirm(this.root, `Destroy ${def.name}`, `Destroy this tower?\n\nRefund: ${ResourceMgr.costText(this.rm.refund(def.buildCost))}\n(upgrade costs are not refunded)`, () => {
+        confirm(this.root, `Destroy ${def.name}`, 'Destroy this tower?\n(upgrade costs are not refunded)', () => {
             const err = this.rm.destroyTower(uid);
             if (err) toast(this.root, err);
             else this.rebuildTowers();
-        }, 'Destroy');
+        }, 'Destroy', 'Cancel', { label: 'Refund:', cost: this.rm.refund(def.buildCost) });
     }
 
     private towerInfoWindow(unit: TowerUnit) {
         const s = unit.stats();
         const def = unit.def;
         const r1 = (v: number) => Math.round(v * 100) / 100;
-        const lines = [
+        const lines: InfoLine[] = [
             def.description, '',
             `Level: ${unit.save.level} / ${def.levels.length}`,
             `Damage type: ${def.damageTypes.join(' + ')}`,
@@ -270,7 +275,7 @@ export class OutCastleScreen implements CombatEvents {
         const effects = (unit.lv.effects || []).map((e: any) => `${ConfigMgr.towerEffectDef(e.id).name} ${e.enabled ? '(on)' : '(off)'}`);
         if (effects.length) lines.push('Effects: ' + effects.join(', '));
         const cost = this.rm.towerUpgradeCost(unit.save);
-        lines.push(cost ? `Upgrade cost: ${ResourceMgr.costText(cost)}` : 'Max level reached');
+        lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');
         infoWindow(this.root, def.name, lines);
     }
 
@@ -377,10 +382,10 @@ export class OutCastleScreen implements CombatEvents {
 
     private repairWall() {
         const cost = this.rm.wallRepairCost();
-        confirm(this.root, 'Repair Wall', `Restore the wall to full HP?\n\nCost: ${ResourceMgr.costText(cost)}`, () => {
+        confirm(this.root, 'Repair Wall', 'Restore the wall to full HP?', () => {
             const err = this.rm.repairWall();
             toast(this.root, err || 'Wall repaired', !err);
-        });
+        }, 'Confirm', 'Cancel', { label: 'Cost:', cost });
     }
 
     private cycleSpeed() {
@@ -413,12 +418,10 @@ export class OutCastleScreen implements CombatEvents {
         G.main.autoSave();
         G.main.playSfx('win');
         this.showMenu();
-        const lines = [`Gold from kills: ${goldFromKills}`, '', 'Production:'];
-        const keys = Object.keys(gained);
-        if (keys.length === 0) lines.push('  (nothing)');
-        for (const k of keys) lines.push(`  +${gained[k]} ${k}`);
+        const lines: InfoLine[] = [{ label: 'Gold from kills:', cost: { gold: goldFromKills } }, ''];
+        lines.push(Object.keys(gained).length > 0 ? { label: 'Production:', cost: gained } : 'Production: nothing');
         lines.push('', 'Progress saved automatically.');
-        message(this.root, `Wave ${wave} cleared!`, lines.join('\n'), undefined, 420, 300);
+        infoWindow(this.root, `Wave ${wave} cleared!`, lines);
     }
 
     onGameOver(wave: number) {

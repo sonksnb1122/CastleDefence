@@ -1,7 +1,9 @@
 import { Node, Label, EventTouch } from 'cc';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
-import { COLORS, UIButton, button, hex, mk, panel, text } from './UIKit';
+import { COLORS, UIButton, button, hex, mk, panel, resIcon, sliced, sprite, text } from './UIKit';
+import { Assets } from '../core/Assets';
+import { ConfigMgr } from '../core/ConfigMgr';
 
 /** Resource bar shown at the top of the castle and battlefield screens. */
 export class TopBar {
@@ -27,13 +29,26 @@ export class TopBar {
         const bg = panel(this.node, 0, 0, W + 16, 40, COLORS.panel);
         bg.on(Node.EventType.TOUCH_START, (e: EventTouch) => { e.propagationStopped = true; }, bg); // the bar blocks taps on the map below
         bg.on(Node.EventType.TOUCH_END, (e: EventTouch) => { e.propagationStopped = true; }, bg);
+        // Ornate frame: thin line on top, decorated edge hanging a little below the bar.
+        const fr = ConfigMgr.topBarStyle();
+        if (fr && sliced(this.node, fr, 0, -6, W + 16, 52)) {
+            const c = fr.center;
+            const frames = c ? Assets.frames(c.path, c.width, c.height) : [];
+            const k = fr.scale || 1;
+            if (frames.length > 0) sprite(this.node, frames[0], c.width * k, c.height * k, 0, -32, 0.5, 0);
+        }
         const items: Array<[string, string, string]> = [['food', 'Food', '#9be37a'], ['material', 'Material', '#c3cbd6'], ['gold', 'Gold', '#f2c14e']];
         // Resources share the left part, wave + state sit on the right edge.
         const spacing = Math.max(120, Math.min(190, (W - 330) / 3));
         let x = -W / 2 + 16;
         for (const [key, name, color] of items) {
-            text(this.node, name, 15, x, 0, { ax: 0, color: COLORS.textDim });
-            this.labels[key] = text(this.node, '0', 18, x + name.length * 9 + 10, 0, { ax: 0, color, bold: true });
+            // Resource icon; the name is only written when the icon art is missing.
+            if (resIcon(this.node, key, 28, x + 14, 0)) {
+                this.labels[key] = text(this.node, '0', 18, x + 34, 0, { ax: 0, color, bold: true });
+            } else {
+                text(this.node, name, 15, x, 0, { ax: 0, color: COLORS.textDim });
+                this.labels[key] = text(this.node, '0', 18, x + name.length * 9 + 10, 0, { ax: 0, color, bold: true });
+            }
             x += spacing;
         }
         this.waveLabel = text(this.node, '', 17, W / 2 - 220, 0, { ax: 0, bold: true });

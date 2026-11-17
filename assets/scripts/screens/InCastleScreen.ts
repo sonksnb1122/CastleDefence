@@ -6,8 +6,8 @@ import { BuildingSave } from '../core/GameTypes';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
 import { TopBar, arcMenu } from '../ui/TopBar';
-import { COLORS, UIButton, button, confirm, hex, mk, modal, panel, sprite, text, toLocal, toast } from '../ui/UIKit';
-import { infoWindow } from './Overlays';
+import { COLORS, UIButton, button, confirm, costRow, hex, iconButton, mk, modal, panel, sprite, text, toLocal, toast } from '../ui/UIKit';
+import { InfoLine, infoWindow } from './Overlays';
 
 /**
  * Inside the castle: a large scrolling map with the Base fixed in the middle.
@@ -95,8 +95,11 @@ export class InCastleScreen {
         // ---- HUD (fixed on screen)
         this.topBar = new TopBar(this.root);
         button(this.root, 'Go Outside >', W / 2 - 86, H / 2 - 66, 156, 40, () => G.main.goto('outCastle'), COLORS.buttonOk, 17);
-        button(this.root, 'Menu', -W / 2 + 56, -H / 2 + 30, 96, 40, () => G.main.openOverlay('pause'), COLORS.buttonAlt, 17);
-        button(this.root, 'Base', -W / 2 + 150, -H / 2 + 30, 76, 40, () => this.centerOnBase(), COLORS.button, 16);
+        // Pause button (picture); falls back to the text button when the art is missing.
+        if (!iconButton(this.root, 'pause', -W / 2 + 34, -H / 2 + 34, 52, () => G.main.openOverlay('pause'))) {
+            button(this.root, 'Menu', -W / 2 + 56, -H / 2 + 30, 96, 40, () => G.main.openOverlay('pause'), COLORS.buttonAlt, 17);
+        }
+        button(this.root, 'Base', -W / 2 + 112, -H / 2 + 30, 76, 40, () => this.centerOnBase(), COLORS.button, 16);
         this.buildBtn = button(this.root, 'Build', 0, -H / 2 + 30, 140, 40, () => this.openBuildMenu(), COLORS.button, 18);
         this.cancelBtn = button(this.root, 'Cancel placement', 0, -H / 2 + 30, 200, 40, () => this.stopPlacing(), COLORS.buttonDanger, 16);
         this.cancelBtn.setVisible(false);
@@ -256,19 +259,19 @@ export class InCastleScreen {
             case 'upgrade': {
                 const cost = this.rm.buildingUpgradeCost(b);
                 if (!cost) { toast(this.root, 'Already at max level'); return; }
-                confirm(this.root, `Upgrade ${def.name}`, `Upgrade to level ${b.level + 1}?\n\nCost: ${ResourceMgr.costText(cost)}`, () => {
+                confirm(this.root, `Upgrade ${def.name}`, `Upgrade to level ${b.level + 1}?`, () => {
                     const err = this.rm.upgradeBuilding(uid);
                     toast(this.root, err || `${def.name} upgraded`, !err);
-                });
+                }, 'Confirm', 'Cancel', { label: 'Cost:', cost });
                 break;
             }
             case 'move': this.startPlacing(b.id, b.uid); break;
             case 'destroy': {
                 const refund = this.rm.refund(def.levels[0].cost);
-                confirm(this.root, `Destroy ${def.name}`, `Destroy this building?\n\nRefund: ${ResourceMgr.costText(refund)}\n(upgrade costs are not refunded)`, () => {
+                confirm(this.root, `Destroy ${def.name}`, 'Destroy this building?\n(upgrade costs are not refunded)', () => {
                     const err = this.rm.destroyBuilding(uid);
                     if (err) toast(this.root, err);
-                }, 'Destroy');
+                }, 'Destroy', 'Cancel', { label: 'Refund:', cost: refund });
                 break;
             }
             case 'info': this.showInfo(b); break;
@@ -280,13 +283,13 @@ export class InCastleScreen {
     private showInfo(b: BuildingSave) {
         const def = ConfigMgr.buildingDef(b.id);
         const lv = ConfigMgr.buildingLevel(b.id, b.level);
-        const lines: string[] = [def.description, '', `Level: ${b.level} / ${def.levels.length}`];
+        const lines: InfoLine[] = [def.description, '', `Level: ${b.level} / ${def.levels.length}`];
         const prod = this.rm.production(b);
-        for (const r in prod) lines.push(`Produces ${prod[r]} ${r} after each wave (base ${lv.production[r]})`);
+        if (Object.keys(prod).length > 0) lines.push({ label: 'Produces after each wave:', cost: prod });
         if (lv.towerLimit) lines.push(`Defense tower limit: ${lv.towerLimit}`);
         if (lv.maxTechLevel) lines.push(`Max technology level: ${lv.maxTechLevel}`);
         const cost = this.rm.buildingUpgradeCost(b);
-        lines.push(cost ? `Upgrade cost: ${ResourceMgr.costText(cost)}` : 'Max level reached');
+        lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');
         if (b.id === 'base') {
             lines.push('', 'Hero buffs:');
             const buffs = this.rm.activeBuffLines(true);
@@ -311,7 +314,7 @@ export class InCastleScreen {
             if (frames.length > 0) sprite(m.box, frames[0], 52, 52, -205, y);
             else panel(m.box, -205, y, 44, 44, def.color || '#888888');
             text(m.box, `${def.name}  (${count}/${max})`, 17, -170, y + 12, { ax: 0, bold: true });
-            text(m.box, ResourceMgr.costText(cost), 13, -170, y - 12, { ax: 0, color: COLORS.textDim });
+            costRow(m.box, cost, -170, y - 12, { size: 18, fontSize: 13 });
             const btn = button(m.box, 'Build', 180, y, 90, 38, () => { m.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); }, COLORS.buttonOk, 16);
             btn.setEnabled(count < max && this.rm.canAfford(cost));
         });

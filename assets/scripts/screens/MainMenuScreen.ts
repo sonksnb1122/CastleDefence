@@ -1,7 +1,7 @@
 import { Node, Graphics } from 'cc';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
-import { COLORS, button, hex, mk, text } from '../ui/UIKit';
+import { COLORS, hex, menuButton, mk, text } from '../ui/UIKit';
 
 /** Title screen: New Game, Load Game, Setting, Quit Game. */
 export class MainMenuScreen {
@@ -33,7 +33,7 @@ export class MainMenuScreen {
             ['Setting', () => G.main.openOverlay('settings'), COLORS.button],
             ['Quit Game', () => G.main.quitGame(), COLORS.buttonDanger],
         ];
-        items.forEach((it, i) => button(this.root, it[0], 0, 60 - i * 62, 260, 50, it[1], it[2], 22));
+        items.forEach((it, i) => menuButton(this.root, it[0], 0, 60 - i * 62, 270, 50, it[1], it[2], 22));
 
         if (ConfigMgr.warnings.length > 0) {
             text(this.root, ConfigMgr.warnings.slice(0, 4).join('\n'), 12, -W / 2 + 10, -H / 2 + 10, { ax: 0, ay: 0, color: '#ffb36b' });

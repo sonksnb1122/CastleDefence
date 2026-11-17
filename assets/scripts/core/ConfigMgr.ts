@@ -88,7 +88,56 @@ export class ConfigMgr {
         const wall = ConfigMgr.tower.battlefield.wall.sprite;
         if (wall && wall.path) out.push(wall.path);
         for (const p of ConfigMgr.groundTexturePaths()) out.push(p);
+        const ui = ConfigMgr.heroes.ui || {};
+        for (const k in ui) if (ui[k] && ui[k].path) out.push(ui[k].path);
+        for (const p of ConfigMgr.resourceIconPaths()) out.push(p);
+        const icons = ConfigMgr.building.uiIcons || {};
+        for (const k in icons) if (typeof icons[k] === 'string') out.push(icons[k]);
+        for (const p of ConfigMgr.uiStylePaths()) out.push(p);
         return out;
+    }
+
+    /** Frame art of a button style ('menu' | 'game') from building.json "uiStyle.buttons", or null. */
+    static buttonStyle(name: string): any {
+        const st = ConfigMgr.building.uiStyle;
+        return st && st.buttons && st.buttons[name] ? st.buttons[name] : null;
+    }
+
+    /** Top bar frame from building.json "uiStyle.topBar", or null. */
+    static topBarStyle(): any {
+        const st = ConfigMgr.building.uiStyle;
+        return st && st.topBar ? st.topBar : null;
+    }
+
+    static uiStylePaths(): string[] {
+        const out: string[] = [];
+        const st = ConfigMgr.building.uiStyle || {};
+        for (const k in (st.buttons || {})) { const b = st.buttons[k]; if (b.frame) out.push(b.frame); if (b.fill) out.push(b.fill); }
+        if (st.topBar) { if (st.topBar.path) out.push(st.topBar.path); if (st.topBar.center && st.topBar.center.path) out.push(st.topBar.center.path); }
+        return out;
+    }
+
+    /** Picture of an icon button (building.json "uiIcons": pause, play): texture path and cell size, or null. */
+    static uiIcon(name: string): { path: string; size: number } | null {
+        const cfg = ConfigMgr.building.uiIcons;
+        return cfg && typeof cfg[name] === 'string' ? { path: cfg[name], size: cfg.size || 96 } : null;
+    }
+
+    /** Icon of a resource (building.json "resourceIcons"): texture path and cell size, or null. */
+    static resourceIcon(key: string): { path: string; size: number } | null {
+        const cfg = ConfigMgr.building.resourceIcons;
+        return cfg && cfg[key] ? { path: cfg[key], size: cfg.size || 64 } : null;
+    }
+
+    static resourceIconPaths(): string[] {
+        const cfg = ConfigMgr.building.resourceIcons || {};
+        return ['food', 'material', 'gold'].filter(k => !!cfg[k]).map(k => cfg[k]);
+    }
+
+    /** 9-slice frame config from heroes.json "ui" (cardFrame, popupBg, popupHeader), or null. */
+    static uiFrame(name: string): any {
+        const ui = ConfigMgr.heroes.ui;
+        return ui && ui[name] ? ui[name] : null;
     }
 
     /** Battlefield ground tiles (tower.json battlefield.ground). */
@@ -106,6 +155,9 @@ export class ConfigMgr {
         const wall = ConfigMgr.tower.battlefield.wall.sprite;
         if (wall && wall.path) out.push(wall.path);
         for (const p of ConfigMgr.groundTexturePaths()) out.push(p);
+        for (const p of ConfigMgr.resourceIconPaths()) out.push(p);
+        const icons = ConfigMgr.building.uiIcons || {};
+        for (const k in icons) if (typeof icons[k] === 'string') out.push(icons[k]);
         return out;
     }
 

@@ -313,5 +313,61 @@
       ],
       "footprint": 128
     }
-  ]
+  ],
+  "resourceIcons": {
+    "size": 64,
+    "food": "sprites/ui/icon_food",
+    "material": "sprites/ui/icon_material",
+    "gold": "sprites/ui/icon_gold"
+  },
+  "uiIcons": {
+    "size": 96,
+    "pause": "sprites/ui/btn_pause",
+    "play": "sprites/ui/btn_play"
+  },
+  "uiStyle": {
+    "buttons": {
+      "menu": {
+        "frame": "sprites/ui/btn_menu_frame",
+        "fill": "sprites/ui/btn_menu_fill",
+        "width": 98,
+        "height": 35,
+        "insets": {
+          "left": 12,
+          "right": 12,
+          "top": 6,
+          "bottom": 6
+        }
+      },
+      "game": {
+        "frame": "sprites/ui/btn_game_frame",
+        "fill": "sprites/ui/btn_game_fill",
+        "width": 103,
+        "height": 35,
+        "insets": {
+          "left": 25,
+          "right": 25,
+          "top": 6,
+          "bottom": 6
+        }
+      }
+    },
+    "topBar": {
+      "path": "sprites/ui/topbar_frame",
+      "width": 95,
+      "height": 17,
+      "insets": {
+        "left": 14,
+        "right": 14,
+        "top": 4,
+        "bottom": 9
+      },
+      "scale": 2,
+      "center": {
+        "path": "sprites/ui/topbar_frame_center",
+        "width": 28,
+        "height": 12
+      }
+    }
+  }
 }

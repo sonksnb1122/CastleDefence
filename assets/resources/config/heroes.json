@@ -231,5 +231,43 @@
       "stars": 5,
       "imagePath": "sprites/card_anim/27_card_sheet"
     }
-  ]
+  ],
+  "ui": {
+    "cardFrame": {
+      "path": "sprites/ui/hero_card_frame",
+      "width": 96,
+      "height": 96,
+      "insets": {
+        "left": 28,
+        "right": 28,
+        "top": 28,
+        "bottom": 28
+      },
+      "scale": 2
+    },
+    "popupBg": {
+      "path": "sprites/ui/popup_bg",
+      "width": 96,
+      "height": 96,
+      "insets": {
+        "left": 28,
+        "right": 28,
+        "top": 20,
+        "bottom": 18
+      },
+      "scale": 2
+    },
+    "popupHeader": {
+      "path": "sprites/ui/popup_header",
+      "width": 96,
+      "height": 32,
+      "insets": {
+        "left": 32,
+        "right": 32,
+        "top": 0,
+        "bottom": 0
+      },
+      "scale": 2
+    }
+  }
 }

@@ -1,11 +1,11 @@
-import { Node, Graphics, Texture2D, SpriteFrame, Label, isValid } from 'cc';
+import { Node, Graphics, Texture2D, SpriteFrame, Label, Color, EventTouch, isValid } from 'cc';
 import { SpriteAnim } from '../combat/SpriteAnim';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
 import { TopBar } from '../ui/TopBar';
-import { COLORS, ScrollList, UIButton, button, hex, mk, modal, panel, sprite, text, toast } from '../ui/UIKit';
+import { COLORS, ScrollList, UIButton, blocker, button, costRow, fancyModal, hex, mk, modal, panel, sliced, sprite, text, toast } from '../ui/UIKit';
 
 const CARD_H = 190;
 
@@ -107,7 +107,10 @@ export class HeroRecruitScreen {
 
         const cost = ConfigMgr.building.recruitCost;
         button(this.root, '< Back', -W / 2 + 70, -H / 2 + 30, 120, 40, () => G.main.goto('inCastle'), COLORS.buttonAlt, 17);
-        this.recruitBtn = button(this.root, `Recruit  (${ResourceMgr.costText(cost)})`, 0, -H / 2 + 30, 360, 42, () => this.recruit(), COLORS.buttonOk, 17);
+        this.recruitBtn = button(this.root, 'Recruit', 0, -H / 2 + 30, 360, 42, () => this.recruit(), COLORS.buttonOk, 17);
+        // Price with resource icons inside the button.
+        this.recruitBtn.label.node.setPosition(-110, 0, 0);
+        costRow(this.recruitBtn.node, cost, 50, 0, { align: 'center', size: 24, fontSize: 17, bold: true });
         this.rebuild();
     }
 
@@ -141,25 +144,34 @@ export class HeroRecruitScreen {
     private card(list: ScrollList, hero: any, index: number, owned: boolean) {
         const w = this.listW - 22, h = CARD_H - 8;
         const top = 4 + index * CARD_H;
-        const card = panel(list.content, 0, -top - CARD_H / 2 + 4, w, h, owned ? COLORS.panelLight : '#2c2836');
+        const cy = -top - CARD_H / 2 + 4;
+        // Ornate frame around the hero info; falls back to a plain panel without the art.
+        const frame = sliced(list.content, ConfigMgr.uiFrame('cardFrame'), 0, cy, w, h);
+        if (frame && !owned) frame.color = new Color(150, 150, 165, 255);     // heroes not recruited yet are dimmed
+        const framed = !!frame;
+        const card = framed ? mk('Card', list.content, 0, cy, w, h) : panel(list.content, 0, cy, w, h, owned ? COLORS.panelLight : '#2c2836');
         const c = ConfigMgr.heroCard;
-        const imgH = h - 10, imgW = Math.round(imgH * c.cellW / c.cellH);
-        const left = -w / 2 + 8 + imgW / 2;
+        const pad = framed ? 16 : 5;                                          // keep content inside the frame border
+        const imgH = h - pad * 2, imgW = Math.round(imgH * c.cellW / c.cellH);
+        const left = -w / 2 + pad + 3 + imgW / 2;
         // Placeholder shown until the card sheet is loaded (or when it does not exist).
         const holder = panel(card, left, 0, imgW - 8, imgH - 8, '#1c1826');
         text(holder, hero.name.split(' ')[0], 13, 0, 0, { color: COLORS.textDim });
         this.cards.push({ art: new CardArt(holder, hero.imagePath, imgW, imgH), list, top });
-        // Divider.
-        const dg = card.getComponent(Graphics)!;
-        const dx = -w / 2 + imgW + 14;
-        dg.fillColor = hex('#11101a');
-        dg.rect(dx, -h / 2 + 8, 3, h - 16);
-        dg.fill();
+        const dx = -w / 2 + pad + imgW + 9;
+        if (!framed) {
+            // Divider (plain panel only; the frame has its own ornaments).
+            const dg = card.getComponent(Graphics)!;
+            dg.fillColor = hex('#11101a');
+            dg.rect(dx, -h / 2 + 8, 3, h - 16);
+            dg.fill();
+        }
         // Name + buffs.
         const tx = dx + 12;
-        text(card, hero.name, 16, tx, h / 2 - 18, { ax: 0, bold: true, color: owned ? COLORS.text : COLORS.textDim });
-        if (hero.passive) text(card, `[${hero.passive.name}]`, 12, tx, h / 2 - 36, { ax: 0, color: COLORS.accent });
-        const y0 = h / 2 - (hero.passive ? 54 : 40);
+        const ty = h / 2 - (framed ? 26 : 18);
+        text(card, hero.name, 16, tx, ty, { ax: 0, bold: true, color: owned ? COLORS.text : COLORS.textDim });
+        if (hero.passive) text(card, `[${hero.passive.name}]`, 12, tx, ty - 18, { ax: 0, color: COLORS.accent });
+        const y0 = ty - (hero.passive ? 36 : 22);
         this.buffLines(hero.id).slice(0, 8).forEach((l, i) => text(card, l, 12, tx, y0 - i * 16, { ax: 0, color: owned ? '#bfe8b0' : COLORS.textDim }));
     }
 
@@ -171,15 +183,15 @@ export class HeroRecruitScreen {
         G.main.playSfx('win');
         // Reveal window with the animated card.
         const c = ConfigMgr.heroCard;
-        const m = modal(this.root, 'New Hero!', 560, 420);
+        const m = fancyModal(this.root, 'New Hero!', 560, 440);
         const imgH = 320, imgW = Math.round(imgH * c.cellW / c.cellH);
-        const holder = panel(m.box, -150, -16, imgW - 8, imgH - 8, '#1c1826');
+        const holder = panel(m.box, -150, -24, imgW - 8, imgH - 8, '#1c1826');
         this.popupArt = new CardArt(holder, hero.imagePath, imgW, imgH);
         this.popupArt.setWanted(true);
-        text(m.box, hero.name, 20, 0, 150, { ax: 0, bold: true });
-        if (hero.passive) text(m.box, `[${hero.passive.name}]`, 13, 0, 126, { ax: 0, color: COLORS.accent });
-        this.buffLines(hero.id).forEach((l, i) => text(m.box, l, 14, 0, 100 - i * 22, { ax: 0, color: '#bfe8b0' }));
-        button(m.box, 'Close', 130, -170, 150, 42, () => {
+        text(m.box, hero.name, 20, 0, 126, { ax: 0, bold: true });
+        if (hero.passive) text(m.box, `[${hero.passive.name}]`, 13, 0, 102, { ax: 0, color: COLORS.accent });
+        this.buffLines(hero.id).forEach((l, i) => text(m.box, l, 14, 0, 76 - i * 22, { ax: 0, color: '#bfe8b0' }));
+        button(m.box, 'Close', 130, -162, 150, 42, () => {
             if (this.popupArt) { this.popupArt.free(); this.popupArt = null; }
             m.close();
         });
