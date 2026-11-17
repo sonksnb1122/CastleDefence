@@ -1,10 +1,51 @@
-# Castle Defense (Cocos Creator 3.8.8, 2D)
+## About the game
 
-A castle defense strategy game: hold the wall against waves of monsters, grow the castle, research technologies and recruit heroes.
+**Castle Defense** is a 2D strategy game that mixes castle building and tower defense.
+You grow a small castle between battles, then defend its wall against waves of monsters.
+Each wave is harder than the one before.
 
-#Important note: 
-- If you want delete anything, notice me first for answer
-- requirement.txt is basic about game design and game play.
+### Core loop
+1. **Inside the castle (economy).** Build and upgrade buildings on a large scrolling map.
+   - **Base:** the heart of the castle. It makes gold and limits how many buildings and towers you can have.
+   - **Farm:** makes food.
+   - **Lumber & Quarry:** makes material.
+   - **Research Lab:** unlocks technologies.
+
+   Buildings produce resources after each wave and each one has 3 levels.
+2. **Outside the wall (defense).** During the preparation phase you place, move, upgrade
+   or destroy towers in the defense area behind the wall. Then you start the wave and watch the battle.
+3. **Survive and grow.** Every cleared wave gives you resources. Spend them to expand the castle,
+   repair the wall and get ready for the next, stronger wave. The game ends when the wall falls.
+
+### Combat
+- **Three towers, 3 levels each.** Each tower has a rotating weapon that turns to face
+  its target before it fires.
+  - **Crossbow:** fast physical shots at a single target.
+  - **Crystal:** magic damage over a medium area.
+  - **Catapult:** slow, long-range splash attacks that use whichever damage type is better against the target.
+- **Four enemy types.** Clampbeetle (tank), Scorpion (deals heavy damage to the wall),
+  Firebug (fast but fragile) and Magma Crab (slow juggernaut).
+- **Damage and defense.** Damage is physical or magic, and enemies have matching defenses.
+  Towers can also land critical hits. Enemy defense goes up every 10 waves.
+- **Targeting.** You choose each tower's target mode. A x1/x2 speed toggle and a pause button
+  let you control the battle.
+
+### Progression
+- **Heroes.** Recruit from a pool of 27 heroes rated 3★, 4★ or 5★, each shown on an animated card.
+  Every hero you own gives permanent buffs to towers, the economy or the wall.
+- **Research.** 22 technologies, such as stronger ammunition, faster reload, a sturdier wall
+  and better production.
+- **Save and load.** The game has multiple save slots.
+
+### Art style
+- Pixel-art fantasy: animated towers, monsters and buildings drawn from sprite sheets.
+- An ornate medieval UI with framed popups, parchment-scroll headers, decorated buttons and resource icons.
+- The main menu plays a live, endless battle in the background behind a dark veil.
+
+### Data-driven design
+Everything that affects balance is stored in JSON files under `assets/resources/config`,
+so you can tune the game without touching any code: buildings, towers, enemies, waves,
+heroes, hero buffs, research and status effects.
 
 ## Getting started
 1. Install Cocos Creator 3.8.8 (Cocos Dashboard).
