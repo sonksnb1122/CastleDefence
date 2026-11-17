@@ -343,18 +343,18 @@ export function fancyModal(parent: Node, title: string, w: number, h: number): {
 
 /** Yes / No confirmation popup. */
 export function confirm(parent: Node, title: string, body: string, onOk: () => void, okText = 'Confirm', cancelText = 'Cancel', price?: { label: string; cost: Cost }) {
-    const m = modal(parent, title, 440, 250);
-    text(m.box, body, 18, 0, 70, { width: 390, ay: 1, align: 'center' });
+    const m = fancyModal(parent, title, 460, 280);
+    text(m.box, body, 18, 0, 78, { width: 380, ay: 1, align: 'center' });
     // Cost / refund line with resource icons, just above the buttons.
-    if (price) costRow(m.box, price.cost, 0, -40, { align: 'center', label: price.label, size: 24, fontSize: 18, bold: true });
-    button(m.box, okText, -100, -90, 150, 44, () => { m.close(); onOk(); }, COLORS.buttonOk);
-    button(m.box, cancelText, 100, -90, 150, 44, () => m.close(), COLORS.buttonDanger);
+    if (price) costRow(m.box, price.cost, 0, -36, { align: 'center', label: price.label, size: 24, fontSize: 18, bold: true });
+    button(m.box, okText, -100, -92, 150, 44, () => { m.close(); onOk(); }, COLORS.buttonOk);
+    button(m.box, cancelText, 100, -92, 150, 44, () => m.close(), COLORS.buttonDanger);
 }
 
 /** Information popup with a single Close button. */
 export function message(parent: Node, title: string, body: string, onClose?: () => void, w = 460, h = 300): Node {
-    const m = modal(parent, title, w, h);
-    text(m.box, body, 17, 0, h / 2 - 56, { width: w - 50, ay: 1, align: 'left' });
+    const m = fancyModal(parent, title, w, h);
+    text(m.box, body, 17, 0, h / 2 - 62, { width: w - 70, ay: 1, align: 'left' });
     button(m.box, 'Close', 0, -h / 2 + 36, 150, 42, () => { m.close(); if (onClose) onClose(); });
     return m.root;
 }
@@ -410,9 +410,11 @@ export class ScrollList {
     get scroll(): number { return this.offset; }
     /** Height of the visible viewport. */
     get viewHeight(): number { return this.h - 6; }
-    constructor(parent: Node, x: number, y: number, public w: number, public h: number) {
+    /** `bg = false` leaves the area transparent so a framed background can be placed behind it. */
+    constructor(parent: Node, x: number, y: number, public w: number, public h: number, bg = true) {
         this.node = mk('ScrollList', parent, x, y, w, h);
-        panel(this.node, 0, 0, w, h, '#1c1826');
+        if (bg) panel(this.node, 0, 0, w, h, '#1c1826');
+        else panel(this.node, 0, 0, w, h, '#000000', null, 1);   // invisible: still catches drags between cards
         const view = mk('View', this.node, 0, 0, w - 6, h - 6);
         view.addComponent(Mask);
         this.content = mk('Content', view, 0, (h - 6) / 2, 0, 0, 0.5, 1);

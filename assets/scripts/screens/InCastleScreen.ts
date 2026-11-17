@@ -6,7 +6,7 @@ import { BuildingSave } from '../core/GameTypes';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
 import { TopBar, arcMenu } from '../ui/TopBar';
-import { COLORS, UIButton, button, confirm, costRow, hex, iconButton, mk, modal, panel, sprite, text, toLocal, toast } from '../ui/UIKit';
+import { COLORS, UIButton, button, confirm, costRow, fancyModal, hex, iconButton, mk, modal, panel, sliced, sprite, text, toLocal, toast } from '../ui/UIKit';
 import { InfoLine, infoWindow } from './Overlays';
 
 /**
@@ -301,24 +301,26 @@ export class InCastleScreen {
 
     private openBuildMenu() {
         const defs: any[] = ConfigMgr.building.buildings.filter((d: any) => d.buildable);
-        const h = 134 + defs.length * 70;
-        const m = modal(this.root, 'Build', 520, h);
-        const top = h / 2 - 60;
+        const h = 150 + defs.length * 70;
+        const m = fancyModal(this.root, 'Build', 540, h);
+        const top = h / 2 - 62;
         defs.forEach((def, i) => {
             const y = top - 30 - i * 70;
             const count = this.rm.countBuildings(def.id), max = this.rm.maxBuildingCount(def.id);
             const cost = def.levels[0].cost;
-            panel(m.box, 0, y, 480, 62, COLORS.panelLight);
+            // Row background: same ornate frame as the hero cards (smaller scale so the corners fit).
+            const fr = ConfigMgr.uiFrame('cardFrame');
+            if (!fr || !sliced(m.box, Object.assign({}, fr, { scale: 1 }), 0, y, 480, 64)) panel(m.box, 0, y, 480, 62, COLORS.panelLight);
             const sp = def.levels[0].sprite;
             const frames = sp ? Assets.frames(sp.path, sp.cellW, sp.cellH) : [];
-            if (frames.length > 0) sprite(m.box, frames[0], 52, 52, -205, y);
-            else panel(m.box, -205, y, 44, 44, def.color || '#888888');
-            text(m.box, `${def.name}  (${count}/${max})`, 17, -170, y + 12, { ax: 0, bold: true });
-            costRow(m.box, cost, -170, y - 12, { size: 18, fontSize: 13 });
-            const btn = button(m.box, 'Build', 180, y, 90, 38, () => { m.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); }, COLORS.buttonOk, 16);
+            if (frames.length > 0) sprite(m.box, frames[0], 50, 50, -198, y);
+            else panel(m.box, -198, y, 44, 44, def.color || '#888888');
+            text(m.box, `${def.name}  (${count}/${max})`, 17, -162, y + 12, { ax: 0, bold: true });
+            costRow(m.box, cost, -162, y - 12, { size: 18, fontSize: 13 });
+            const btn = button(m.box, 'Build', 172, y, 96, 38, () => { m.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); }, COLORS.buttonOk, 16);
             btn.setEnabled(count < max && this.rm.canAfford(cost));
         });
-        button(m.box, 'Close', 0, -h / 2 + 30, 140, 38, () => m.close());
+        button(m.box, 'Close', 0, -h / 2 + 38, 140, 38, () => m.close());
     }
 
     update(dt: number) {

@@ -37,7 +37,7 @@ export class PauseOverlay implements IOverlay {
 export class SettingsOverlay implements IOverlay {
     root: Node;
     constructor(parent: Node) {
-        const m = modal(parent, 'Setting', 460, 300);
+        const m = fancyModal(parent, 'Setting', 480, 300);
         this.root = m.root;
         const row = (name: string, y: number, get: () => number, set: (v: number) => void) => {
             text(m.box, name, 18, -200, y, { ax: 0 });
@@ -61,10 +61,10 @@ export class SaveLoadOverlay implements IOverlay {
     private box: Node;
     private rows: Node | null = null;
     constructor(parent: Node, private mode: 'load' | 'save') {
-        const m = modal(parent, mode === 'load' ? 'Load Game' : 'Save Game', 560, 420);
+        const m = fancyModal(parent, mode === 'load' ? 'Load Game' : 'Save Game', 580, 440);
         this.root = m.root;
         this.box = m.box;
-        menuButton(m.box, 'Back', 0, -170, 160, 44, () => G.main.closeOverlay());
+        menuButton(m.box, 'Back', 0, -176, 160, 44, () => G.main.closeOverlay());
         this.rebuild();
     }
 
@@ -116,11 +116,12 @@ export class ResearchOverlay implements IOverlay {
     private capLabel: any;
     private unsubscribe: () => void;
     constructor(parent: Node) {
-        const W = Math.min(900, G.main.W - 60), H = G.main.H - 60;
-        const m = modal(parent, 'Research', W, H);
+        // Shorter than the screen so the header scroll stays below the top bar.
+        const W = Math.min(900, G.main.W - 60), H = G.main.H - 150;
+        const m = fancyModal(parent, 'Research', W, H);
         this.root = m.root;
-        this.capLabel = text(m.box, '', 14, -W / 2 + 24, H / 2 - 62, { ax: 0, color: COLORS.textDim });
-        const list = new ScrollList(m.box, 0, -8, W - 40, H - 150);
+        this.capLabel = text(m.box, '', 14, -W / 2 + 36, H / 2 - 64, { ax: 0, color: COLORS.textDim });
+        const list = new ScrollList(m.box, 0, -10, W - 64, H - 160);
         const rowH = 62;
         const techs: any[] = ConfigMgr.research.techs;
         techs.forEach((t, i) => {
@@ -134,7 +135,7 @@ export class ResearchOverlay implements IOverlay {
             this.rows.push({ id: t.id, level, cost, btn });
         });
         list.setContentHeight(techs.length * rowH + 8);
-        button(m.box, 'Close', 0, -H / 2 + 34, 160, 42, () => G.main.closeOverlay());
+        button(m.box, 'Close', 0, -H / 2 + 40, 160, 42, () => G.main.closeOverlay());
         this.unsubscribe = ResourceMgr.inst.onChange(() => this.refresh());
         this.refresh();
     }
@@ -174,11 +175,11 @@ export function infoWindow(parent: Node, title: string, lines: InfoLine[]) {
     let rows = 0;
     for (const l of lines) rows += rowsOf(l);
     const maxH = G.main.H - 60;
-    const wanted = 130 + rows * LINE;
+    const wanted = 146 + rows * LINE;   // room for the header scroll and the frame border
     const scroll = wanted > maxH;
     const H = scroll ? maxH : wanted;
-    const m = modal(parent, title, W, H);
-    let host: Node = m.box, left = -W / 2 + 25, y = H / 2 - 56;
+    const m = fancyModal(parent, title, W, H);
+    let host: Node = m.box, left = -W / 2 + 32, y = H / 2 - 62;
     if (scroll) {
         const list = new ScrollList(m.box, 0, 8, W - 30, maxH - 130);
         list.setContentHeight(rows * LINE + 20);

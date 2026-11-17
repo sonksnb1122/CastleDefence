@@ -268,6 +268,18 @@
         "bottom": 0
       },
       "scale": 2
+    },
+    "listBg": {
+      "path": "sprites/ui/hero_list_bg",
+      "width": 72,
+      "height": 72,
+      "insets": {
+        "left": 20,
+        "right": 20,
+        "top": 20,
+        "bottom": 20
+      },
+      "scale": 2
     }
   }
 }

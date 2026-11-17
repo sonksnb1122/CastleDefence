@@ -97,13 +97,19 @@ export class HeroRecruitScreen {
         g.fill();
         this.topBar = new TopBar(this.root);
 
-        this.listW = Math.min(490, W / 2 - 20);
-        const listH = H - 150;
+        this.listW = Math.min(470, W / 2 - 42);
+        // Lists sit between the title scrolls (below the top bar ornaments) and the bottom buttons.
+        const listTop = H / 2 - 126, listBottom = -H / 2 + 72;
+        const listH = listTop - listBottom, listY = (listTop + listBottom) / 2;
         const cx = W / 4;
-        this.ownedTitle = text(this.root, '', 18, -cx, H / 2 - 58, { bold: true, color: COLORS.accent });
-        this.lockedTitle = text(this.root, '', 18, cx, H / 2 - 58, { bold: true, color: COLORS.textDim });
-        this.owned = new ScrollList(this.root, -cx, -10, this.listW, listH);
-        this.locked = new ScrollList(this.root, cx, -10, this.listW, listH);
+        // Ornate background behind each list; without the art the lists keep their plain panel.
+        const bgCfg = ConfigMgr.uiFrame('listBg');
+        const framed = !!bgCfg && Assets.has(bgCfg.path);
+        if (framed) for (const sx of [-cx, cx]) sliced(this.root, bgCfg, sx, listY, this.listW + 36, listH + 36);
+        this.ownedTitle = this.titleScroll(-cx, H / 2 - 84);
+        this.lockedTitle = this.titleScroll(cx, H / 2 - 84);
+        this.owned = new ScrollList(this.root, -cx, listY, this.listW, listH, !framed);
+        this.locked = new ScrollList(this.root, cx, listY, this.listW, listH, !framed);
 
         const cost = ConfigMgr.building.recruitCost;
         button(this.root, '< Back', -W / 2 + 70, -H / 2 + 30, 120, 40, () => G.main.goto('inCastle'), COLORS.buttonAlt, 17);
@@ -151,14 +157,15 @@ export class HeroRecruitScreen {
         const framed = !!frame;
         const card = framed ? mk('Card', list.content, 0, cy, w, h) : panel(list.content, 0, cy, w, h, owned ? COLORS.panelLight : '#2c2836');
         const c = ConfigMgr.heroCard;
-        const pad = framed ? 16 : 5;                                          // keep content inside the frame border
-        const imgH = h - pad * 2, imgW = Math.round(imgH * c.cellW / c.cellH);
-        const left = -w / 2 + pad + 3 + imgW / 2;
+        // Keep the picture clear of the frame's corner ornaments.
+        const padX = framed ? 34 : 5, padY = framed ? 18 : 5;
+        const imgH = h - padY * 2, imgW = Math.round(imgH * c.cellW / c.cellH);
+        const left = -w / 2 + padX + imgW / 2;
         // Placeholder shown until the card sheet is loaded (or when it does not exist).
         const holder = panel(card, left, 0, imgW - 8, imgH - 8, '#1c1826');
         text(holder, hero.name.split(' ')[0], 13, 0, 0, { color: COLORS.textDim });
         this.cards.push({ art: new CardArt(holder, hero.imagePath, imgW, imgH), list, top });
-        const dx = -w / 2 + pad + imgW + 9;
+        const dx = -w / 2 + padX + imgW + 6;
         if (!framed) {
             // Divider (plain panel only; the frame has its own ornaments).
             const dg = card.getComponent(Graphics)!;
@@ -195,6 +202,14 @@ export class HeroRecruitScreen {
             if (this.popupArt) { this.popupArt.free(); this.popupArt = null; }
             m.close();
         });
+    }
+
+    /** List title on the parchment scroll used by the popup headers. */
+    private titleScroll(x: number, y: number): Label {
+        const cfg = ConfigMgr.uiFrame('popupHeader');
+        const scrolled = !!cfg && !!sliced(this.root, Object.assign({}, cfg, { scale: 1.5 }), x, y, 280, 48);
+        if (!scrolled) panel(this.root, x, y, 280, 40, COLORS.panelLight);
+        return text(this.root, '', 18, x, y, { bold: true, color: scrolled ? '#5a2a1a' : COLORS.accent });
     }
 
     update(dt: number) {
