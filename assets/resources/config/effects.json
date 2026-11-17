@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "statusEffects": [
+    {
+      "id": "slow",
+      "type": "slow",
+      "name": "Slow",
+      "description": "Reduces movement speed by value %.",
+      "duration": 2.5,
+      "value": 35,
+      "stacking": "ReplaceStronger",
+      "maxStacks": 1,
+      "visual": {
+        "label": "SLOW",
+        "color": "#7fd4ff"
+      }
+    },
+    {
+      "id": "stun",
+      "type": "stun",
+      "name": "Stun",
+      "description": "Prevents movement.",
+      "duration": 1.0,
+      "value": 0,
+      "stacking": "ReplaceStronger",
+      "maxStacks": 1,
+      "visual": {
+        "label": "STUN",
+        "color": "#ffe066"
+      }
+    },
+    {
+      "id": "bleed",
+      "type": "bleed",
+      "name": "Bleed",
+      "description": "Physical damage every tick.",
+      "duration": 4,
+      "value": 8,
+      "tickInterval": 1,
+      "damageType": "physic",
+      "stacking": "StackValue",
+      "maxStacks": 3,
+      "visual": {
+        "label": "BLEED",
+        "color": "#ff5a5a"
+      }
+    },
+    {
+      "id": "burn",
+      "type": "burn",
+      "name": "Burn",
+      "description": "Magic damage every tick.",
+      "duration": 3,
+      "value": 10,
+      "tickInterval": 0.5,
+      "damageType": "magic",
+      "stacking": "RefreshDuration",
+      "maxStacks": 1,
+      "visual": {
+        "label": "BURN",
+        "color": "#ff9a3c"
+      }
+    },
+    {
+      "id": "armor_break",
+      "type": "armorBreak",
+      "name": "Armor Break",
+      "description": "Removes value points of effective defense.",
+      "duration": 4,
+      "value": 20,
+      "damageTypes": [
+        "physic",
+        "magic"
+      ],
+      "stacking": "RefreshDuration",
+      "maxStacks": 1,
+      "visual": {
+        "label": "BREAK",
+        "color": "#c9a0ff"
+      }
+    },
+    {
+      "id": "hunter_mark",
+      "type": "mark",
+      "name": "Hunter's Mark",
+      "description": "Takes value % more damage from Crossbow towers.",
+      "duration": 5,
+      "value": 25,
+      "towerIds": [
+        "crossbow"
+      ],
+      "stacking": "RefreshDuration",
+      "maxStacks": 1,
+      "visual": {
+        "label": "MARK",
+        "color": "#ffffff"
+      }
+    },
+    {
+      "id": "arcane_mark",
+      "type": "mark",
+      "name": "Arcane Vulnerability",
+      "description": "Takes value % more magic damage.",
+      "duration": 4,
+      "value": 20,
+      "damageTypes": [
+        "magic"
+      ],
+      "stacking": "RefreshDuration",
+      "maxStacks": 1,
+      "visual": {
+        "label": "VULN",
+        "color": "#b48cff"
+      }
+    }
+  ],
+  "towerEffects": [
+    {
+      "id": "piercing_bolt",
+      "name": "Piercing Bolt",
+      "trigger": "onHit",
+      "kind": "chain",
+      "chance": 25,
+      "value": 100,
+      "range": 110,
+      "maxTargets": 1,
+      "cooldown": 0,
+      "targetType": "enemy"
+    },
+    {
+      "id": "bleeding_bolt",
+      "name": "Bleeding Bolt",
+      "trigger": "onHit",
+      "kind": "status",
+      "statusId": "bleed",
+      "chance": 30,
+      "maxTargets": 1,
+      "cooldown": 0,
+      "targetType": "enemy"
+    },
+    {
+      "id": "hunters_mark",
+      "name": "Hunter's Mark",
+      "trigger": "onHit",
+      "kind": "status",
+      "statusId": "hunter_mark",
+      "chance": 20,
+      "maxTargets": 1,
+      "cooldown": 2,
+      "targetType": "enemy"
+    },
+    {
+      "id": "frost_explosion",
+      "name": "Frost Explosion",
+      "trigger": "onHit",
+      "kind": "status",
+      "statusId": "slow",
+      "chance": 40,
+      "maxTargets": 99,
+      "cooldown": 0,
+      "targetType": "enemy"
+    },
+    {
+      "id": "chain_lightning",
+      "name": "Chain Lightning",
+      "trigger": "onHit",
+      "kind": "chain",
+      "chance": 25,
+      "value": 50,
+      "range": 140,
+      "maxTargets": 3,
+      "cooldown": 1,
+      "targetType": "enemy"
+    },
+    {
+      "id": "arcane_vulnerability",
+      "name": "Arcane Vulnerability",
+      "trigger": "onHit",
+      "kind": "status",
+      "statusId": "arcane_mark",
+      "chance": 35,
+      "maxTargets": 99,
+      "cooldown": 0,
+      "targetType": "enemy"
+    },
+    {
+      "id": "shockwave",
+      "name": "Shockwave",
+      "trigger": "onHit",
+      "kind": "status",
+      "statusId": "stun",
+      "chance": 20,
+      "maxTargets": 99,
+      "cooldown": 0,
+      "targetType": "enemy"
+    },
+    {
+      "id": "heavy_impact",
+      "name": "Heavy Impact",
+      "trigger": "onHit",
+      "kind": "bonusMaxHp",
+      "chance": 100,
+      "value": 6,
+      "cap": 150,
+      "maxTargets": 99,
+      "cooldown": 0,
+      "targetType": "enemy"
+    },
+    {
+      "id": "armor_break",
+      "name": "Armor Break",
+      "trigger": "onHit",
+      "kind": "status",
+      "statusId": "armor_break",
+      "chance": 30,
+      "maxTargets": 99,
+      "cooldown": 0,
+      "targetType": "enemy"
+    }
+  ]
+}

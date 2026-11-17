@@ -1,0 +1,810 @@
+{
+  "version": 2,
+  "battlefield": {
+    "worldWidth": 1354,
+    "worldHeight": 576,
+    "constructionArea": {
+      "x": 40,
+      "y": 96,
+      "width": 314,
+      "height": 330
+    },
+    "wall": {
+      "x": 394,
+      "y": 0,
+      "width": 39,
+      "height": 576,
+      "sprite": {
+        "path": "sprites/map/wall_v",
+        "width": 72,
+        "height": 164,
+        "bodyWidth": 66
+      }
+    },
+    "enemyLaneY": [
+      110,
+      420
+    ],
+    "spawnX": 1394,
+    "towerMinSpacing": 46,
+    "towerSelectRadius": 40,
+    "towerScale": 0.7,
+    "ground": {
+      "scale": 0.75,
+      "grass": {
+        "path": "sprites/map/ground_grass",
+        "width": 256,
+        "height": 256
+      },
+      "sand": {
+        "path": "sprites/map/ground_sand",
+        "width": 160,
+        "height": 160
+      },
+      "edgeTop": {
+        "path": "sprites/map/ground_edge_top",
+        "width": 200,
+        "height": 84
+      },
+      "edgeBottom": {
+        "path": "sprites/map/ground_edge_bottom",
+        "width": 200,
+        "height": 84
+      }
+    }
+  },
+  "defaults": {
+    "critRate": 5,
+    "critDamage": 175,
+    "targetMode": "First",
+    "rotateSpeed": 540,
+    "alignTolerance": 4
+  },
+  "targetModes": [
+    "First",
+    "LowestHP",
+    "HighestHP",
+    "Nearest"
+  ],
+  "towers": [
+    {
+      "id": "crossbow",
+      "name": "Crossbow",
+      "description": "Fast physical single-target tower. Explosion range is fixed.",
+      "damageTypes": [
+        "physic"
+      ],
+      "explosionBuffable": false,
+      "base": {
+        "path": "sprites/towers/base_t1",
+        "cellW": 64,
+        "cellH": 128
+      },
+      "buildCost": {
+        "gold": 100,
+        "material": 40
+      },
+      "levels": [
+        {
+          "level": 1,
+          "damage": 30,
+          "attackSpeed": 1,
+          "attackRange": 384,
+          "explosionRange": 20,
+          "critRate": 5,
+          "critDamage": 175,
+          "upgradeCost": {
+            "gold": 100,
+            "material": 40
+          },
+          "effects": [
+            {
+              "id": "piercing_bolt",
+              "enabled": false
+            },
+            {
+              "id": "bleeding_bolt",
+              "enabled": false
+            },
+            {
+              "id": "hunters_mark",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 0,
+            "weaponY": 72,
+            "weapon": {
+              "path": "sprites/towers/t1_l1_weapon",
+              "cellW": 96,
+              "cellH": 96,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 1
+              },
+              "attack": {
+                "row": 0,
+                "start": 0,
+                "count": 6
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.07,
+              "fireFrame": 1,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t1_l1_proj",
+              "cellW": 8,
+              "cellH": 40,
+              "frameTime": 0.06,
+              "speed": 620,
+              "muzzle": 30,
+              "tip": 18,
+              "faceOffset": 90,
+              "arc": 0
+            },
+            "impact": {
+              "path": "sprites/towers/t1_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.05,
+              "anchorY": 0.5,
+              "frames": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          }
+        },
+        {
+          "level": 2,
+          "damage": 60,
+          "attackSpeed": 2,
+          "attackRange": 461,
+          "explosionRange": 20,
+          "critRate": 15,
+          "critDamage": 200,
+          "upgradeCost": {
+            "gold": 200,
+            "material": 90
+          },
+          "effects": [
+            {
+              "id": "piercing_bolt",
+              "enabled": false
+            },
+            {
+              "id": "bleeding_bolt",
+              "enabled": false
+            },
+            {
+              "id": "hunters_mark",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 1,
+            "weaponY": 81,
+            "weapon": {
+              "path": "sprites/towers/t1_l2_weapon",
+              "cellW": 96,
+              "cellH": 96,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 1
+              },
+              "attack": {
+                "row": 0,
+                "start": 0,
+                "count": 6
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.07,
+              "fireFrame": 1,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t1_l2_proj",
+              "cellW": 15,
+              "cellH": 40,
+              "frameTime": 0.06,
+              "speed": 620,
+              "muzzle": 30,
+              "tip": 18,
+              "faceOffset": 90,
+              "arc": 0
+            },
+            "impact": {
+              "path": "sprites/towers/t1_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.05,
+              "anchorY": 0.5,
+              "frames": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          }
+        },
+        {
+          "level": 3,
+          "damage": 120,
+          "attackSpeed": 4,
+          "attackRange": 553,
+          "explosionRange": 20,
+          "critRate": 25,
+          "critDamage": 250,
+          "upgradeCost": {
+            "gold": 440,
+            "material": 200
+          },
+          "effects": [
+            {
+              "id": "piercing_bolt",
+              "enabled": false
+            },
+            {
+              "id": "bleeding_bolt",
+              "enabled": false
+            },
+            {
+              "id": "hunters_mark",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 2,
+            "weaponY": 90,
+            "weapon": {
+              "path": "sprites/towers/t1_l3_weapon",
+              "cellW": 96,
+              "cellH": 96,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 1
+              },
+              "attack": {
+                "row": 0,
+                "start": 0,
+                "count": 6
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.07,
+              "fireFrame": 1,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t1_l3_proj",
+              "cellW": 22,
+              "cellH": 40,
+              "frameTime": 0.06,
+              "speed": 620,
+              "muzzle": 30,
+              "tip": 18,
+              "faceOffset": 90,
+              "arc": 0
+            },
+            "impact": {
+              "path": "sprites/towers/t1_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.05,
+              "anchorY": 0.5,
+              "frames": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "crystal",
+      "name": "Crystal",
+      "description": "Magic tower with a medium area of effect.",
+      "damageTypes": [
+        "magic"
+      ],
+      "explosionBuffable": true,
+      "base": {
+        "path": "sprites/towers/base_t2",
+        "cellW": 64,
+        "cellH": 192
+      },
+      "buildCost": {
+        "gold": 140,
+        "material": 60
+      },
+      "levels": [
+        {
+          "level": 1,
+          "damage": 45,
+          "attackSpeed": 0.5,
+          "attackRange": 384,
+          "explosionRange": 40,
+          "critRate": 5,
+          "critDamage": 175,
+          "upgradeCost": {
+            "gold": 140,
+            "material": 60
+          },
+          "effects": [
+            {
+              "id": "frost_explosion",
+              "enabled": false
+            },
+            {
+              "id": "chain_lightning",
+              "enabled": false
+            },
+            {
+              "id": "arcane_vulnerability",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 0,
+            "weaponY": 76,
+            "weapon": {
+              "path": "sprites/towers/t2_l1_weapon",
+              "cellW": 48,
+              "cellH": 48,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 10
+              },
+              "attack": {
+                "row": 1,
+                "start": 0,
+                "count": 16
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.05,
+              "fireFrame": 2,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t2_l1_proj",
+              "cellW": 32,
+              "cellH": 32,
+              "frameTime": 0.04,
+              "speed": 560,
+              "muzzle": 14,
+              "tip": 4,
+              "faceOffset": -45,
+              "arc": 0
+            },
+            "impact": {
+              "path": "sprites/towers/t2_l1_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.06,
+              "anchorY": 0.41,
+              "frames": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          }
+        },
+        {
+          "level": 2,
+          "damage": 90,
+          "attackSpeed": 1.0,
+          "attackRange": 461,
+          "explosionRange": 80,
+          "critRate": 15,
+          "critDamage": 200,
+          "upgradeCost": {
+            "gold": 280,
+            "material": 130
+          },
+          "effects": [
+            {
+              "id": "frost_explosion",
+              "enabled": false
+            },
+            {
+              "id": "chain_lightning",
+              "enabled": false
+            },
+            {
+              "id": "arcane_vulnerability",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 1,
+            "weaponY": 85,
+            "weapon": {
+              "path": "sprites/towers/t2_l2_weapon",
+              "cellW": 64,
+              "cellH": 64,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 16
+              },
+              "attack": {
+                "row": 1,
+                "start": 0,
+                "count": 17
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.05,
+              "fireFrame": 2,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t2_l2_proj",
+              "cellW": 32,
+              "cellH": 32,
+              "frameTime": 0.04,
+              "speed": 560,
+              "muzzle": 14,
+              "tip": 4,
+              "faceOffset": -45,
+              "arc": 0
+            },
+            "impact": {
+              "path": "sprites/towers/t2_l2_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.06,
+              "anchorY": 0.41,
+              "frames": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          }
+        },
+        {
+          "level": 3,
+          "damage": 180,
+          "attackSpeed": 2.0,
+          "attackRange": 553,
+          "explosionRange": 160,
+          "critRate": 25,
+          "critDamage": 225,
+          "upgradeCost": {
+            "gold": 600,
+            "material": 280
+          },
+          "effects": [
+            {
+              "id": "frost_explosion",
+              "enabled": false
+            },
+            {
+              "id": "chain_lightning",
+              "enabled": false
+            },
+            {
+              "id": "arcane_vulnerability",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 2,
+            "weaponY": 94,
+            "weapon": {
+              "path": "sprites/towers/t2_l3_weapon",
+              "cellW": 64,
+              "cellH": 64,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 20
+              },
+              "attack": {
+                "row": 1,
+                "start": 0,
+                "count": 19
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.05,
+              "fireFrame": 2,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t2_l3_proj",
+              "cellW": 32,
+              "cellH": 32,
+              "frameTime": 0.04,
+              "speed": 560,
+              "muzzle": 14,
+              "tip": 4,
+              "faceOffset": -45,
+              "arc": 0
+            },
+            "impact": {
+              "path": "sprites/towers/t2_l3_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.06,
+              "anchorY": 0.41,
+              "frames": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "catapult",
+      "name": "Catapult",
+      "description": "Slow long-range siege tower. Uses the better of physical or magic damage.",
+      "damageTypes": [
+        "physic",
+        "magic"
+      ],
+      "explosionBuffable": true,
+      "base": {
+        "path": "sprites/towers/base_t4",
+        "cellW": 64,
+        "cellH": 128
+      },
+      "buildCost": {
+        "gold": 240,
+        "material": 120
+      },
+      "levels": [
+        {
+          "level": 1,
+          "damage": 100,
+          "attackSpeed": 0.25,
+          "attackRange": 600,
+          "explosionRange": 80,
+          "critRate": 10,
+          "critDamage": 200,
+          "upgradeCost": {
+            "gold": 240,
+            "material": 120
+          },
+          "effects": [
+            {
+              "id": "shockwave",
+              "enabled": false
+            },
+            {
+              "id": "heavy_impact",
+              "enabled": false
+            },
+            {
+              "id": "armor_break",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 0,
+            "weaponY": 72,
+            "weapon": {
+              "path": "sprites/towers/t4_l1_weapon",
+              "cellW": 128,
+              "cellH": 128,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 1
+              },
+              "attack": {
+                "row": 0,
+                "start": 0,
+                "count": 17
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.055,
+              "fireFrame": 5,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t4_l1_proj",
+              "cellW": 8,
+              "cellH": 8,
+              "frameTime": 0.05,
+              "speed": 420,
+              "muzzle": 20,
+              "tip": 4,
+              "faceOffset": 0,
+              "arc": 70
+            },
+            "impact": {
+              "path": "sprites/towers/t4_l1_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.07,
+              "anchorY": 0.52,
+              "frames": [
+                0,
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "level": 2,
+          "damage": 200,
+          "attackSpeed": 0.5,
+          "attackRange": 750,
+          "explosionRange": 160,
+          "critRate": 20,
+          "critDamage": 250,
+          "upgradeCost": {
+            "gold": 480,
+            "material": 260
+          },
+          "effects": [
+            {
+              "id": "shockwave",
+              "enabled": false
+            },
+            {
+              "id": "heavy_impact",
+              "enabled": false
+            },
+            {
+              "id": "armor_break",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 1,
+            "weaponY": 81,
+            "weapon": {
+              "path": "sprites/towers/t4_l2_weapon",
+              "cellW": 128,
+              "cellH": 128,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 1
+              },
+              "attack": {
+                "row": 0,
+                "start": 0,
+                "count": 17
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.055,
+              "fireFrame": 5,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t4_l2_proj",
+              "cellW": 15,
+              "cellH": 12,
+              "frameTime": 0.05,
+              "speed": 420,
+              "muzzle": 20,
+              "tip": 4,
+              "faceOffset": 0,
+              "arc": 70
+            },
+            "impact": {
+              "path": "sprites/towers/t4_l2_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.07,
+              "anchorY": 0.52,
+              "frames": [
+                0,
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "level": 3,
+          "damage": 400,
+          "attackSpeed": 1.0,
+          "attackRange": 900,
+          "explosionRange": 320,
+          "critRate": 40,
+          "critDamage": 300,
+          "upgradeCost": {
+            "gold": 1000,
+            "material": 560
+          },
+          "effects": [
+            {
+              "id": "shockwave",
+              "enabled": false
+            },
+            {
+              "id": "heavy_impact",
+              "enabled": false
+            },
+            {
+              "id": "armor_break",
+              "enabled": false
+            }
+          ],
+          "sprite": {
+            "baseFrame": 2,
+            "weaponY": 90,
+            "weapon": {
+              "path": "sprites/towers/t4_l3_weapon",
+              "cellW": 128,
+              "cellH": 128,
+              "idle": {
+                "row": 0,
+                "start": 0,
+                "count": 1
+              },
+              "attack": {
+                "row": 0,
+                "start": 0,
+                "count": 17
+              },
+              "idleFrameTime": 0.1,
+              "attackFrameTime": 0.055,
+              "fireFrame": 5,
+              "faceOffset": 90
+            },
+            "projectile": {
+              "path": "sprites/towers/t4_l3_proj",
+              "cellW": 10,
+              "cellH": 10,
+              "frameTime": 0.05,
+              "speed": 420,
+              "muzzle": 20,
+              "tip": 4,
+              "faceOffset": 0,
+              "arc": 70
+            },
+            "impact": {
+              "path": "sprites/towers/t4_l3_impact",
+              "cellW": 64,
+              "cellH": 64,
+              "frameTime": 0.07,
+              "anchorY": 0.52,
+              "frames": [
+                0,
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

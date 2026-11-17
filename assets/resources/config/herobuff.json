@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "buffs": [
+    {
+      "key": "attackSpeed",
+      "name": "Tower attack speed",
+      "min": 5,
+      "max": 10,
+      "unit": "%"
+    },
+    {
+      "key": "damage",
+      "name": "Tower damage",
+      "min": 5,
+      "max": 10,
+      "unit": "%"
+    },
+    {
+      "key": "attackRange",
+      "name": "Tower attack range",
+      "min": 5,
+      "max": 15,
+      "unit": "%"
+    },
+    {
+      "key": "explosionRange",
+      "name": "Explosion range",
+      "min": 10,
+      "max": 20,
+      "unit": "%"
+    },
+    {
+      "key": "foodProduction",
+      "name": "Food production",
+      "min": 30,
+      "max": 50,
+      "unit": "%"
+    },
+    {
+      "key": "materialProduction",
+      "name": "Material production",
+      "min": 30,
+      "max": 50,
+      "unit": "%"
+    },
+    {
+      "key": "goldProduction",
+      "name": "Gold production",
+      "min": 30,
+      "max": 50,
+      "unit": "%"
+    },
+    {
+      "key": "killGold",
+      "name": "Gold from kills",
+      "min": 10,
+      "max": 20,
+      "unit": "%"
+    },
+    {
+      "key": "researchCostReduce",
+      "name": "Research cost reduction",
+      "min": 5,
+      "max": 7,
+      "unit": "%"
+    },
+    {
+      "key": "enemyPhysicDefReduce",
+      "name": "Enemy physic def reduction",
+      "min": 5,
+      "max": 15,
+      "unit": ""
+    },
+    {
+      "key": "enemyMagicDefReduce",
+      "name": "Enemy magic def reduction",
+      "min": 5,
+      "max": 15,
+      "unit": ""
+    },
+    {
+      "key": "enemyDamageReduce",
+      "name": "Enemy damage reduction",
+      "min": 5,
+      "max": 7,
+      "unit": "%"
+    },
+    {
+      "key": "enemyMoveSpeedReduce",
+      "name": "Enemy move speed reduction",
+      "min": 5,
+      "max": 7,
+      "unit": "%"
+    },
+    {
+      "key": "enemyHpReduce",
+      "name": "Enemy HP reduction",
+      "min": 5,
+      "max": 7,
+      "unit": "%"
+    },
+    {
+      "key": "critRate",
+      "name": "Crit rate",
+      "min": 1,
+      "max": 3,
+      "unit": "%"
+    },
+    {
+      "key": "critDamage",
+      "name": "Crit damage",
+      "min": 15,
+      "max": 30,
+      "unit": "%"
+    }
+  ],
+  "extraBuffKeys": [
+    {
+      "key": "wallHp",
+      "name": "Wall HP",
+      "unit": "%"
+    },
+    {
+      "key": "wallDef",
+      "name": "Wall physic & magic def",
+      "unit": ""
+    },
+    {
+      "key": "slowEffect",
+      "name": "Slow effectiveness",
+      "unit": "%"
+    },
+    {
+      "key": "slowDuration",
+      "name": "Slow duration",
+      "unit": "%"
+    },
+    {
+      "key": "stunDuration",
+      "name": "Stun duration",
+      "unit": "%"
+    },
+    {
+      "key": "bleedDamage",
+      "name": "Bleed damage",
+      "unit": "%"
+    },
+    {
+      "key": "burnDamage",
+      "name": "Burn damage",
+      "unit": "%"
+    },
+    {
+      "key": "effectChance",
+      "name": "Special effect chance",
+      "unit": "%"
+    },
+    {
+      "key": "projectileSpeed",
+      "name": "Projectile speed",
+      "unit": "%"
+    }
+  ]
+}

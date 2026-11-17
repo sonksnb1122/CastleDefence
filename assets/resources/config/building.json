@@ -1,0 +1,317 @@
+{
+  "version": 2,
+  "map": {
+    "path": "sprites/map/map",
+    "width": 3548,
+    "height": 1774,
+    "scale": 1.5,
+    "buildArea": {
+      "x": 260,
+      "y": 384,
+      "width": 3010,
+      "height": 1100
+    },
+    "buildingScale": 2,
+    "minGap": 8,
+    "zoom": 0.5
+  },
+  "startResources": {
+    "food": 300,
+    "material": 420,
+    "gold": 500
+  },
+  "destroyRefundRate": 0.5,
+  "recruitCost": {
+    "gold": 150,
+    "food": 120
+  },
+  "wall": {
+    "hp": 1000,
+    "physicDef": 0,
+    "magicDef": 0,
+    "maxDef": 70,
+    "repairCostPerHp": {
+      "gold": 0.15,
+      "material": 0.1
+    }
+  },
+  "buildings": [
+    {
+      "id": "base",
+      "name": "Base",
+      "description": "Heart of the castle. Produces gold after each wave and limits other buildings.",
+      "fixed": true,
+      "buildable": false,
+      "color": "#c9a227",
+      "actions": [
+        "upgrade",
+        "info",
+        "recruit"
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "cost": {},
+          "production": {
+            "gold": 120
+          },
+          "towerLimit": 3,
+          "sprite": {
+            "path": "sprites/buildings/castle_l1_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 2,
+          "cost": {
+            "gold": 300,
+            "material": 200,
+            "food": 150
+          },
+          "production": {
+            "gold": 190
+          },
+          "towerLimit": 6,
+          "sprite": {
+            "path": "sprites/buildings/castle_l2_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 3,
+          "cost": {
+            "gold": 700,
+            "material": 500,
+            "food": 400
+          },
+          "production": {
+            "gold": 280
+          },
+          "towerLimit": 10,
+          "sprite": {
+            "path": "sprites/buildings/castle_l3_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        }
+      ],
+      "footprint": 128
+    },
+    {
+      "id": "farm",
+      "name": "Farm",
+      "description": "Produces food after each wave.",
+      "fixed": false,
+      "buildable": true,
+      "color": "#6dbb4a",
+      "maxCountBase": 1,
+      "maxCountPerBaseLevel": 1,
+      "actions": [
+        "upgrade",
+        "move",
+        "destroy",
+        "info"
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "cost": {
+            "gold": 60,
+            "material": 100
+          },
+          "production": {
+            "food": 70
+          },
+          "sprite": {
+            "path": "sprites/buildings/farm_l1_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 2,
+          "cost": {
+            "gold": 140,
+            "material": 220
+          },
+          "production": {
+            "food": 120
+          },
+          "sprite": {
+            "path": "sprites/buildings/farm_l2_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 3,
+          "cost": {
+            "gold": 320,
+            "material": 480
+          },
+          "production": {
+            "food": 190
+          },
+          "sprite": {
+            "path": "sprites/buildings/farm_l3_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        }
+      ],
+      "footprint": 128
+    },
+    {
+      "id": "material",
+      "name": "Lumber & Quarry",
+      "description": "Produces raw material after each wave.",
+      "fixed": false,
+      "buildable": true,
+      "color": "#8b97a8",
+      "maxCountBase": 1,
+      "maxCountPerBaseLevel": 1,
+      "actions": [
+        "upgrade",
+        "move",
+        "destroy",
+        "info"
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "cost": {
+            "gold": 80,
+            "food": 80
+          },
+          "production": {
+            "material": 90
+          },
+          "sprite": {
+            "path": "sprites/buildings/lumber_quarry_l1_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 2,
+          "cost": {
+            "gold": 180,
+            "food": 180
+          },
+          "production": {
+            "material": 150
+          },
+          "sprite": {
+            "path": "sprites/buildings/lumber_quarry_l2_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 3,
+          "cost": {
+            "gold": 400,
+            "food": 400
+          },
+          "production": {
+            "material": 230
+          },
+          "sprite": {
+            "path": "sprites/buildings/lumber_quarry_l3_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        }
+      ],
+      "footprint": 128
+    },
+    {
+      "id": "research",
+      "name": "Research Lab",
+      "description": "Unlocks technology research. Higher levels allow higher technology levels.",
+      "fixed": false,
+      "buildable": true,
+      "color": "#5b8bd9",
+      "maxCountBase": 1,
+      "maxCountPerBaseLevel": 0,
+      "actions": [
+        "upgrade",
+        "research",
+        "move",
+        "destroy",
+        "info"
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "cost": {
+            "gold": 150,
+            "material": 150,
+            "food": 100
+          },
+          "maxTechLevel": 3,
+          "sprite": {
+            "path": "sprites/buildings/research_l1_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 2,
+          "cost": {
+            "gold": 350,
+            "material": 350,
+            "food": 250
+          },
+          "maxTechLevel": 6,
+          "sprite": {
+            "path": "sprites/buildings/research_l2_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        },
+        {
+          "level": 3,
+          "cost": {
+            "gold": 800,
+            "material": 800,
+            "food": 600
+          },
+          "maxTechLevel": 10,
+          "sprite": {
+            "path": "sprites/buildings/research_l3_anim",
+            "cellW": 128,
+            "cellH": 128,
+            "frames": 8,
+            "frameTime": 0.12
+          }
+        }
+      ],
+      "footprint": 128
+    }
+  ]
+}

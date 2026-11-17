@@ -1,0 +1,313 @@
+{
+  "version": 1,
+  "techs": [
+    {
+      "id": "r_damage",
+      "name": "Sharpened Ammunition",
+      "description": "+5% tower damage per level",
+      "buffKey": "damage",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 120,
+        "material": 100,
+        "food": 60
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_aspd",
+      "name": "Rapid Reload",
+      "description": "+5% tower attack speed per level",
+      "buffKey": "attackSpeed",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 120,
+        "material": 100,
+        "food": 60
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_range",
+      "name": "Long Sight",
+      "description": "+5% tower attack range per level",
+      "buffKey": "attackRange",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 120,
+        "material": 100,
+        "food": 60
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_expl",
+      "name": "Volatile Payload",
+      "description": "+10% explosion range per level (not Crossbow)",
+      "buffKey": "explosionRange",
+      "valuePerLevel": 10,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_food",
+      "name": "Crop Rotation",
+      "description": "+10% food production per level",
+      "buffKey": "foodProduction",
+      "valuePerLevel": 10,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_material",
+      "name": "Better Tools",
+      "description": "+10% material production per level",
+      "buffKey": "materialProduction",
+      "valuePerLevel": 10,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_gold",
+      "name": "Taxation",
+      "description": "+10% gold production per level",
+      "buffKey": "goldProduction",
+      "valuePerLevel": 10,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_killgold",
+      "name": "Bounty Hunting",
+      "description": "+5% gold from kills per level",
+      "buffKey": "killGold",
+      "valuePerLevel": 5,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_wallhp",
+      "name": "Reinforced Wall",
+      "description": "+5% wall HP per level",
+      "buffKey": "wallHp",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_walldef",
+      "name": "Wall Plating",
+      "description": "+7 wall physic & magic def per level (max 70)",
+      "buffKey": "wallDef",
+      "valuePerLevel": 7,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_pdef",
+      "name": "Armor Piercing",
+      "description": "-5 enemy physic def per level",
+      "buffKey": "enemyPhysicDefReduce",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_mdef",
+      "name": "Spell Piercing",
+      "description": "-5 enemy magic def per level",
+      "buffKey": "enemyMagicDefReduce",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_edmg",
+      "name": "Weakening Hex",
+      "description": "-5% enemy damage per level",
+      "buffKey": "enemyDamageReduce",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_ehp",
+      "name": "Withering Curse",
+      "description": "-5% enemy HP per level",
+      "buffKey": "enemyHpReduce",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_crit",
+      "name": "Precision",
+      "description": "+3% crit rate per level",
+      "buffKey": "critRate",
+      "valuePerLevel": 3,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 120,
+        "material": 100,
+        "food": 60
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_critdmg",
+      "name": "Lethality",
+      "description": "+5% crit damage per level",
+      "buffKey": "critDamage",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 120,
+        "material": 100,
+        "food": 60
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_slowdur",
+      "name": "Lingering Frost",
+      "description": "+10% Slow duration per level",
+      "buffKey": "slowDuration",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_stundur",
+      "name": "Concussion",
+      "description": "+10% Stun duration per level",
+      "buffKey": "stunDuration",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_bleed",
+      "name": "Serrated Tips",
+      "description": "+10% Bleed damage per level",
+      "buffKey": "bleedDamage",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_burn",
+      "name": "Wildfire",
+      "description": "+10% Burn damage per level",
+      "buffKey": "burnDamage",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_effect",
+      "name": "Arcane Mastery",
+      "description": "+5% special effect chance per level",
+      "buffKey": "effectChance",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 160,
+        "material": 140,
+        "food": 100
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_projspeed",
+      "name": "Aerodynamics",
+      "description": "+5% projectile speed per level",
+      "buffKey": "projectileSpeed",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 90,
+        "material": 60,
+        "food": 90
+      },
+      "costGrowth": 1.45
+    }
+  ]
+}

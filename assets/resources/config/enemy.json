@@ -1,0 +1,196 @@
+{
+  "version": 2,
+  "enemies": [
+    {
+      "id": "tank",
+      "name": "Clampbeetle (Tank)",
+      "description": "Very high HP and physical defense.",
+      "spritePath": "sprites/enemies/clampbeetle_move",
+      "animationPaths": {
+        "move": {
+          "path": "sprites/enemies/clampbeetle_move",
+          "cellW": 64,
+          "cellH": 64,
+          "frames": 8,
+          "frameTime": 0.09
+        },
+        "dead": {
+          "path": "sprites/enemies/clampbeetle_dead",
+          "cellW": 64,
+          "cellH": 64,
+          "frames": 13,
+          "frameTime": 0.07
+        }
+      },
+      "hp": 240,
+      "damage": 25,
+      "damageType": "physic",
+      "physicDef": 20,
+      "magicDef": 5,
+      "moveSpeed": 12.5,
+      "goldReward": 12,
+      "spawnWeight": 3,
+      "scale": 1,
+      "radius": 22,
+      "statusEffectResistance": {
+        "stun": 50
+      },
+      "specialAbilities": [
+        {
+          "type": "physicDamageReduction",
+          "name": "Iron Skin",
+          "enabled": false,
+          "value": 20
+        }
+      ]
+    },
+    {
+      "id": "berserker",
+      "name": "Scorpion (Berserker)",
+      "description": "High damage against the wall.",
+      "spritePath": "sprites/enemies/scorpion_move",
+      "animationPaths": {
+        "move": {
+          "path": "sprites/enemies/scorpion_move",
+          "cellW": 64,
+          "cellH": 64,
+          "frames": 8,
+          "frameTime": 0.09
+        },
+        "dead": {
+          "path": "sprites/enemies/scorpion_dead",
+          "cellW": 64,
+          "cellH": 64,
+          "frames": 8,
+          "frameTime": 0.07
+        }
+      },
+      "hp": 97.5,
+      "damage": 55,
+      "damageType": "physic",
+      "physicDef": 5,
+      "magicDef": 8,
+      "moveSpeed": 20,
+      "goldReward": 10,
+      "spawnWeight": 5,
+      "scale": 1,
+      "radius": 22,
+      "statusEffectResistance": {},
+      "specialAbilities": [
+        {
+          "type": "lowHpSpeed",
+          "name": "Rage",
+          "enabled": false,
+          "hpThreshold": 40,
+          "value": 50
+        },
+        {
+          "type": "lowHpDamage",
+          "name": "Last Stand",
+          "enabled": false,
+          "hpThreshold": 20,
+          "value": 50
+        }
+      ]
+    },
+    {
+      "id": "runner",
+      "name": "Firebug (Runner)",
+      "description": "Very fast but fragile.",
+      "spritePath": "sprites/enemies/firebug_move",
+      "animationPaths": {
+        "move": {
+          "path": "sprites/enemies/firebug_move",
+          "cellW": 64,
+          "cellH": 72,
+          "frames": 8,
+          "frameTime": 0.09
+        },
+        "dead": {
+          "path": "sprites/enemies/firebug_dead",
+          "cellW": 64,
+          "cellH": 72,
+          "frames": 11,
+          "frameTime": 0.07
+        }
+      },
+      "hp": 60,
+      "damage": 15,
+      "damageType": "magic",
+      "physicDef": 3,
+      "magicDef": 3,
+      "moveSpeed": 42.5,
+      "goldReward": 8,
+      "spawnWeight": 5,
+      "scale": 1,
+      "radius": 20,
+      "statusEffectResistance": {},
+      "specialAbilities": [
+        {
+          "type": "dodge",
+          "name": "Evasion",
+          "enabled": false,
+          "value": 10
+        },
+        {
+          "type": "sprint",
+          "name": "Sprint",
+          "enabled": false,
+          "value": 60,
+          "duration": 1.5,
+          "interval": 6
+        }
+      ]
+    },
+    {
+      "id": "juggernaut",
+      "name": "Magma Crab (Juggernaut)",
+      "description": "High HP and damage but slow.",
+      "spritePath": "sprites/enemies/magma_crab_move",
+      "animationPaths": {
+        "move": {
+          "path": "sprites/enemies/magma_crab_move",
+          "cellW": 64,
+          "cellH": 64,
+          "frames": 8,
+          "frameTime": 0.09
+        },
+        "dead": {
+          "path": "sprites/enemies/magma_crab_dead",
+          "cellW": 64,
+          "cellH": 64,
+          "frames": 10,
+          "frameTime": 0.07
+        }
+      },
+      "hp": 210,
+      "damage": 50,
+      "damageType": "magic",
+      "physicDef": 15,
+      "magicDef": 15,
+      "moveSpeed": 10,
+      "goldReward": 25,
+      "spawnWeight": 2,
+      "scale": 1,
+      "radius": 24,
+      "statusEffectResistance": {
+        "stun": 30,
+        "slow": 30
+      },
+      "specialAbilities": [
+        {
+          "type": "aoeReduction",
+          "name": "Fortified Body",
+          "enabled": false,
+          "value": 25
+        },
+        {
+          "type": "wallDamageBonus",
+          "name": "Destructive Impact",
+          "enabled": false,
+          "value": 50
+        }
+      ]
+    }
+  ]
+}

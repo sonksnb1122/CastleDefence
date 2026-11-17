@@ -1,0 +1,91 @@
+{
+  "version": 2,
+  "enemyCountBase": 8,
+  "enemyCountPerWave": 2,
+  "spawnInterval": 1.4,
+  "spawnIntervalDecayPerWave": 0.03,
+  "minSpawnInterval": 0.45,
+  "growth": {
+    "everyWaves": 3,
+    "hp": 1.08,
+    "damage": 1.08,
+    "moveSpeed": 1.03
+  },
+  "tiers": [
+    {
+      "fromWave": 1,
+      "toWave": 3,
+      "weights": {
+        "berserker": 5,
+        "runner": 5
+      }
+    },
+    {
+      "fromWave": 4,
+      "toWave": 6,
+      "weights": {
+        "berserker": 4,
+        "runner": 4,
+        "tank": 3
+      }
+    },
+    {
+      "fromWave": 7,
+      "toWave": 9,
+      "weights": {
+        "berserker": 4,
+        "runner": 4,
+        "tank": 3,
+        "juggernaut": 2
+      }
+    },
+    {
+      "fromWave": 10,
+      "toWave": 9999,
+      "weights": {
+        "berserker": 5,
+        "runner": 5,
+        "tank": 3,
+        "juggernaut": 2
+      }
+    }
+  ],
+  "bossRule": {
+    "every": 10,
+    "enemyId": "juggernaut",
+    "count": 1,
+    "statMul": {
+      "hp": 6,
+      "damage": 3,
+      "goldReward": 8
+    },
+    "scale": 1.7,
+    "keepNormalEnemies": true
+  },
+  "overrides": [
+    {
+      "wave": 5,
+      "name": "Swarm",
+      "type": "special",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 14,
+          "interval": 0.5,
+          "delay": 0
+        },
+        {
+          "enemyId": "berserker",
+          "count": 6,
+          "interval": 1.2,
+          "delay": 4
+        }
+      ]
+    }
+  ],
+  "defenseGrowth": {
+    "everyWaves": 10,
+    "add": 10,
+    "max": 80
+  }
+}
