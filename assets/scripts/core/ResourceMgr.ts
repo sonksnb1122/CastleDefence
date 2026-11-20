@@ -142,7 +142,7 @@ export class ResourceMgr {
         const research = raw.research || {};
         for (const t of ConfigMgr.research.techs) {
             const lv = research[t.id];
-            if (typeof lv === 'number' && lv > 0) d.research[t.id] = Math.min(t.maxLevel, Math.floor(lv));
+            if (typeof lv === 'number' && lv > 0) d.research[t.id] = t.maxLevel ? Math.min(t.maxLevel, Math.floor(lv)) : Math.floor(lv);
         }
         return { data: d };
     }
@@ -449,6 +449,13 @@ export class ResourceMgr {
         return next ? next.upgradeCost : null;
     }
 
+    /** Why the next upgrade of a tower is not possible yet (cost aside), or null. */
+    towerUpgradeBlock(t: TowerSave): string | null {
+        if (!this.towerUpgradeCost(t)) return 'Already at max level';
+        if (t.level >= this.baseLevel) return 'Upgrade the Base first';
+        return null;
+    }
+
     buildTower(id: string, x: number, y: number): string | null {
         const def = ConfigMgr.towerDef(id);
         if (!this.isPreparation) return 'Cannot build during combat';
@@ -465,8 +472,9 @@ export class ResourceMgr {
         const t = this.tower(uid);
         if (!this.isPreparation) return 'Cannot upgrade during combat';
         if (!t) return 'Tower not found';
-        const cost = this.towerUpgradeCost(t);
-        if (!cost) return 'Already at max level';
+        const block = this.towerUpgradeBlock(t);
+        if (block) return block;
+        const cost = this.towerUpgradeCost(t)!;
         if (!this.canAfford(cost)) return 'Not enough resources';
         t.level++;
         this.spend(cost);
@@ -517,9 +525,13 @@ export class ResourceMgr {
     }
     wallRepairCost(): Cost {
         const missing = this.wallMaxHp() - this.data.wallHp;
-        const per = ConfigMgr.building.wall.repairCostPerHp || {};
+        const wall = ConfigMgr.building.wall;
+        const per = wall.repairCostPerHp || {};
+        // Repairs get more expensive with every Base level (wall.repairCostMul, one value per level).
+        const muls: number[] = wall.repairCostMul || [];
+        const mul = muls.length ? muls[Math.min(muls.length, this.baseLevel) - 1] : 1;
         const out: Cost = {};
-        for (const k in per) out[k] = Math.ceil(missing * per[k]);
+        for (const k in per) out[k] = Math.ceil(missing * per[k] * mul);
         return out;
     }
     repairWall(): string | null {
@@ -545,23 +557,64 @@ export class ResourceMgr {
         return max;
     }
 
-    /** Cost of the next level of a technology, research discount included. */
+    /** Level of the Research Lab (0 = none built). */
+    get labLevel(): number {
+        let lv = 0;
+        for (const b of this.data.buildings) if (b.id === 'research') lv = Math.max(lv, b.level);
+        return lv;
+    }
+
+    /** Endless technologies have maxLevel 0. */
+    static isEndless(t: any): boolean { return !t.maxLevel; }
+
+    /** Why a technology cannot be researched at all yet (missing lab level / prerequisites), or null. */
+    techLock(id: string): string | null {
+        const t = ConfigMgr.techDef(id);
+        const req = t && t.requires;
+        if (!req) return null;
+        if (req.labLevel && this.labLevel < req.labLevel) return `Needs Research Lab Lv ${req.labLevel}`;
+        for (const rid of (req.techsMaxed || [])) {
+            const r = ConfigMgr.techDef(rid);
+            if (r && this.techLevel(rid) < r.maxLevel) return `Needs ${r.name} at max level`;
+        }
+        return null;
+    }
+
+    /**
+     * Cost of the next level of a technology, research discount included.
+     * `growthKeys` (optional) limits the cost growth to some resources; the others stay at the base cost.
+     */
     techCost(id: string): Cost {
         const t = ConfigMgr.techDef(id);
         const lv = this.techLevel(id);
         const discount = Math.min(90, this.buff('researchCostReduce'));
+        const keys: string[] | null = Array.isArray(t.growthKeys) ? t.growthKeys : null;
         const out: Cost = {};
-        for (const k in t.baseCost) out[k] = Math.ceil(t.baseCost[k] * Math.pow(t.costGrowth, lv) * (1 - discount / 100));
+        for (const k in t.baseCost) {
+            const growth = !keys || keys.indexOf(k) >= 0 ? Math.pow(t.costGrowth, lv) : 1;
+            out[k] = Math.ceil(t.baseCost[k] * growth * (1 - discount / 100));
+        }
         return out;
     }
 
-    doResearch(id: string): string | null {
+    /** Why the next level of a technology cannot be researched (cost aside), or null. */
+    techBlock(id: string): string | null {
         const t = ConfigMgr.techDef(id);
-        if (!this.isPreparation) return 'Cannot research during combat';
         if (!t) return 'Unknown technology';
+        const lock = this.techLock(id);
+        if (lock) return lock;
         const lv = this.techLevel(id);
+        if (ResourceMgr.isEndless(t)) return null;
         if (lv >= t.maxLevel) return 'Already at max level';
-        if (lv >= this.maxTechLevel) return 'Upgrade the Research Lab first';
+        if (lv >= this.maxTechLevel) return this.maxTechLevel === 0 ? 'Build a Research Lab first' : 'Upgrade the Research Lab first';
+        return null;
+    }
+
+    doResearch(id: string): string | null {
+        if (!this.isPreparation) return 'Cannot research during combat';
+        const block = this.techBlock(id);
+        if (block) return block;
+        const lv = this.techLevel(id);
         const cost = this.techCost(id);
         if (!this.canAfford(cost)) return 'Not enough resources';
         const wallBefore = this.wallMaxHp();
@@ -576,12 +629,31 @@ export class ResourceMgr {
     // ------------------------------------------------------------------ heroes
     ownsHero(id: string): boolean { return this.data.heroes.indexOf(id) >= 0; }
 
+    /** Heroes that can be owned at the current Base level. */
+    get heroLimit(): number {
+        const lv = ConfigMgr.buildingLevel('base', this.baseLevel);
+        return lv && typeof lv.heroLimit === 'number' ? lv.heroLimit : ConfigMgr.heroes.heroes.length;
+    }
+
+    /** Price of the next recruit: base cost plus a bit more for every hero already owned. */
+    recruitCost(): Cost {
+        const cfg = ConfigMgr.building;
+        const base: Cost = cfg.recruitCost || {};
+        const per: Cost = cfg.recruitCostPerHero || {};
+        const n = this.data.heroes.length;
+        const out: Cost = {};
+        for (const k in base) out[k] = Math.round(base[k] + (per[k] || 0) * n);
+        for (const k in per) if (!(k in out)) out[k] = Math.round(per[k] * n);
+        return out;
+    }
+
     /** Gacha: pay the recruit cost and get a random hero not owned yet. */
     recruitHero(): { heroId?: string; error?: string } {
         if (!this.isPreparation) return { error: 'Cannot recruit during combat' };
         const pool: any[] = ConfigMgr.heroes.heroes.filter((h: any) => !this.ownsHero(h.id));
         if (pool.length === 0) return { error: 'All heroes are already recruited' };
-        const cost: Cost = ConfigMgr.building.recruitCost;
+        if (this.data.heroes.length >= this.heroLimit) return { error: `Hero limit reached (${this.heroLimit}). Upgrade the Base` };
+        const cost = this.recruitCost();
         if (!this.canAfford(cost)) return { error: 'Not enough resources' };
         const weights = ConfigMgr.heroes.starWeights || {};
         let total = 0;

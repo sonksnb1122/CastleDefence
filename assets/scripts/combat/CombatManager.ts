@@ -77,8 +77,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     private spawn(entry: SpawnEntry) {
         const def = ConfigMgr.enemyDef(entry.enemyId);
         const bf = ConfigMgr.tower.battlefield;
-        const growth = ConfigMgr.waves.defenseGrowth;
-        const defMax = (growth && growth.max) || 80;
+        const defMax = entry.defMax || WaveMgr.defCaps().normal;
         // Consistent rounding: HP / damage / gold are rounded to integers, speed keeps decimals.
         const stats = {
             hp: Math.max(1, Math.round(def.hp * entry.hpMul * (1 - Math.min(90, this.buff('enemyHpReduce')) / 100))),

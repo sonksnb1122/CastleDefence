@@ -9,11 +9,31 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 120,
-        "material": 100,
-        "food": 60
+        "gold": 70,
+        "material": 146,
+        "food": 146
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_damage_inf",
+      "name": "Masterwork Ammunition",
+      "description": "+5% tower damage per level. Endless.",
+      "buffKey": "damage",
+      "valuePerLevel": 5,
+      "maxLevel": 0,
+      "requires": {
+        "labLevel": 3,
+        "techsMaxed": [
+          "r_damage"
+        ]
+      },
+      "baseCost": {
+        "gold": 12000,
+        "material": 3500,
+        "food": 3500
+      },
+      "costGrowth": 1.08
     },
     {
       "id": "r_aspd",
@@ -23,11 +43,11 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 120,
-        "material": 100,
-        "food": 60
+        "gold": 70,
+        "material": 146,
+        "food": 146
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_range",
@@ -37,25 +57,25 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 120,
-        "material": 100,
-        "food": 60
+        "gold": 70,
+        "material": 146,
+        "food": 146
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_expl",
       "name": "Volatile Payload",
-      "description": "+10% explosion range per level (not Crossbow)",
+      "description": "+5% explosion range per level (not Crossbow)",
       "buffKey": "explosionRange",
-      "valuePerLevel": 10,
+      "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_food",
@@ -65,11 +85,11 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_material",
@@ -79,11 +99,11 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_gold",
@@ -93,11 +113,11 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_killgold",
@@ -107,11 +127,11 @@
       "valuePerLevel": 5,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_wallhp",
@@ -121,11 +141,31 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_wallhp_inf",
+      "name": "Living Stone",
+      "description": "+5% wall HP per level. Endless.",
+      "buffKey": "wallHp",
+      "valuePerLevel": 5,
+      "maxLevel": 0,
+      "requires": {
+        "labLevel": 3,
+        "techsMaxed": [
+          "r_wallhp"
+        ]
+      },
+      "baseCost": {
+        "gold": 9000,
+        "material": 3500,
+        "food": 3500
+      },
+      "costGrowth": 1.08
     },
     {
       "id": "r_walldef",
@@ -135,39 +175,39 @@
       "valuePerLevel": 7,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_pdef",
       "name": "Armor Piercing",
-      "description": "-5 enemy physic def per level",
+      "description": "-10 enemy physic def per level",
       "buffKey": "enemyPhysicDefReduce",
-      "valuePerLevel": 5,
+      "valuePerLevel": 10,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_mdef",
       "name": "Spell Piercing",
-      "description": "-5 enemy magic def per level",
+      "description": "-10 enemy magic def per level",
       "buffKey": "enemyMagicDefReduce",
-      "valuePerLevel": 5,
+      "valuePerLevel": 10,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_edmg",
@@ -177,11 +217,11 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_ehp",
@@ -191,11 +231,11 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_crit",
@@ -205,11 +245,11 @@
       "valuePerLevel": 3,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 120,
-        "material": 100,
-        "food": 60
+        "gold": 70,
+        "material": 146,
+        "food": 146
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_critdmg",
@@ -219,11 +259,11 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 120,
-        "material": 100,
-        "food": 60
+        "gold": 70,
+        "material": 146,
+        "food": 146
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_slowdur",
@@ -233,11 +273,11 @@
       "valuePerLevel": 10,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_stundur",
@@ -247,11 +287,11 @@
       "valuePerLevel": 10,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_bleed",
@@ -261,11 +301,11 @@
       "valuePerLevel": 10,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_burn",
@@ -275,11 +315,11 @@
       "valuePerLevel": 10,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_effect",
@@ -289,11 +329,11 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 160,
-        "material": 140,
-        "food": 100
+        "gold": 94,
+        "material": 195,
+        "food": 195
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     },
     {
       "id": "r_projspeed",
@@ -303,11 +343,11 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 90,
-        "material": 60,
-        "food": 90
+        "gold": 52,
+        "material": 110,
+        "food": 110
       },
-      "costGrowth": 1.45
+      "costGrowth": 1.42
     }
   ]
 }

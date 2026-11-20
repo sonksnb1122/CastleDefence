@@ -5,6 +5,7 @@ import { ConfigMgr } from '../core/ConfigMgr';
 import { BuildingSave } from '../core/GameTypes';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
+import { DefTab } from '../ui/DefTab';
 import { TopBar, arcMenu } from '../ui/TopBar';
 import { COLORS, UIButton, button, confirm, costRow, fancyModal, hex, iconButton, mk, modal, panel, sliced, sprite, text, toLocal, toast } from '../ui/UIKit';
 import { InfoLine, infoWindow } from './Overlays';
@@ -19,6 +20,7 @@ export class InCastleScreen {
     private rm = ResourceMgr.inst;
     private cfg = ConfigMgr.building.map;
     private topBar: TopBar;
+    private defTab: DefTab;
     private world: Node;
     private areaNode: Node;
     private buildingLayer: Node;
@@ -94,6 +96,7 @@ export class InCastleScreen {
 
         // ---- HUD (fixed on screen)
         this.topBar = new TopBar(this.root);
+        this.defTab = new DefTab(this.root, -W / 2 + 6, H / 2 - 50);
         button(this.root, 'Go Outside >', W / 2 - 86, H / 2 - 66, 156, 40, () => G.main.goto('outCastle'), COLORS.buttonOk, 17);
         // Pause button (picture); falls back to the text button when the art is missing.
         if (!iconButton(this.root, 'pause', -W / 2 + 34, -H / 2 + 34, 52, () => G.main.openOverlay('pause'))) {
@@ -289,6 +292,7 @@ export class InCastleScreen {
         const prod = this.rm.production(b);
         if (Object.keys(prod).length > 0) lines.push({ label: 'Produces after each wave:', cost: prod });
         if (lv.towerLimit) lines.push(`Defense tower limit: ${lv.towerLimit}`);
+        if (lv.heroLimit) lines.push(`Hero limit: ${lv.heroLimit}`);
         if (lv.maxTechLevel) lines.push(`Max technology level: ${lv.maxTechLevel}`);
         const cost = this.rm.buildingUpgradeCost(b);
         lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');
@@ -332,6 +336,7 @@ export class InCastleScreen {
     destroy() {
         this.unsubscribe();
         this.topBar.destroy();
+        this.defTab.destroy();
         this.root.destroy();
     }
 }

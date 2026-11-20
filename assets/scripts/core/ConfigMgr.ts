@@ -297,8 +297,13 @@ export class ConfigMgr {
         }
         if (uniqueIds('research.json', ConfigMgr.research.techs, 'techs')) {
             for (const t of ConfigMgr.research.techs) {
-                num('research.json', t, 'valuePerLevel', t.id); num('research.json', t, 'maxLevel', t.id, 1); num('research.json', t, 'costGrowth', t.id, 1);
+                // maxLevel 0 = endless technology (needs "requires").
+                num('research.json', t, 'valuePerLevel', t.id); num('research.json', t, 'maxLevel', t.id, 0); num('research.json', t, 'costGrowth', t.id, 1);
                 cost('research.json', t.baseCost, t.id);
+                for (const id of ((t.requires && t.requires.techsMaxed) || [])) {
+                    const req = ConfigMgr.techDef(id);
+                    if (!req || !req.maxLevel) E.push(`research.json: tech "${t.id}" requires unknown or endless tech "${id}"`);
+                }
                 if (!buffKeys[t.buffKey]) E.push(`research.json: tech "${t.id}" uses unknown buff key "${t.buffKey}"`);
             }
         }

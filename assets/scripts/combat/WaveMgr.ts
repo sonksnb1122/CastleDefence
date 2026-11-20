@@ -12,7 +12,12 @@ export interface SpawnEntry {
     boss: boolean;
     /** Flat defense added to physic and magic def (grows every N waves). */
     defAdd: number;
+    /** Highest physic / magic def this enemy can have (normal 70, boss 90 by default). */
+    defMax?: number;
 }
+
+/** Defense of the enemies of a wave (highest values among the enemies that can appear). */
+export interface WaveDefense { physic: number; magic: number; bossPhysic: number; bossMagic: number; hasBoss: boolean; }
 
 export interface WavePlan { wave: number; name: string; entries: SpawnEntry[]; }
 
@@ -26,11 +31,71 @@ export class WaveMgr {
         return Math.floor((wave - 1) / ConfigMgr.waves.growth.everyWaves);
     }
 
-    /** Defense bonus of a wave: +add for every `everyWaves` waves (waves.json defenseGrowth). */
+    /**
+     * Defense bonus of a wave (waves.json defenseGrowth): nothing before `startWave`,
+     * then +`add` at `startWave` and again every `everyWaves` waves.
+     */
     static defenseAdd(wave: number): number {
         const g = ConfigMgr.waves.defenseGrowth;
         if (!g || !g.everyWaves) return 0;
-        return (g.add || 0) * Math.floor((wave - 1) / g.everyWaves);
+        const start = g.startWave || 1;
+        if (wave < start) return 0;
+        return (g.add || 0) * (1 + Math.floor((wave - start) / g.everyWaves));
+    }
+
+    /** First wave after `wave` where enemy defense goes up again (0 when it is already maxed everywhere). */
+    static nextDefenseWave(wave: number): number {
+        const g = ConfigMgr.waves.defenseGrowth;
+        if (!g || !g.everyWaves) return 0;
+        const now = WaveMgr.defense(wave);
+        for (let w = wave + 1; w <= wave + 200; w++) {
+            const d = WaveMgr.defense(w);
+            if (d.physic > now.physic || d.magic > now.magic || d.bossPhysic > now.bossPhysic || d.bossMagic > now.bossMagic) return w;
+        }
+        return 0;
+    }
+
+    static defCaps(): { normal: number; boss: number } {
+        const g = ConfigMgr.waves.defenseGrowth || {};
+        return { normal: g.max || 70, boss: g.bossMax || g.max || 90 };
+    }
+
+    /** Highest physic / magic def among the enemies (and the boss) of a wave. */
+    static defense(wave: number): WaveDefense {
+        const g = ConfigMgr.waves.defenseGrowth || {};
+        const caps = WaveMgr.defCaps();
+        const add = WaveMgr.defenseAdd(wave);
+        const out: WaveDefense = { physic: 0, magic: 0, bossPhysic: 0, bossMagic: 0, hasBoss: false };
+        for (const id in WaveMgr.weightsFor(wave)) {
+            const d = ConfigMgr.enemyDef(id);
+            if (!d) continue;
+            out.physic = Math.max(out.physic, Math.min(caps.normal, d.physicDef + add));
+            out.magic = Math.max(out.magic, Math.min(caps.normal, d.magicDef + add));
+        }
+        const boss = ConfigMgr.waves.bossRule;
+        const bd = boss && ConfigMgr.enemyDef(boss.enemyId);
+        if (bd) {
+            out.hasBoss = wave % boss.every === 0;
+            out.bossPhysic = Math.min(caps.boss, bd.physicDef + add + (g.bossAdd || 0));
+            out.bossMagic = Math.min(caps.boss, bd.magicDef + add + (g.bossAdd || 0));
+        }
+        return out;
+    }
+
+    /**
+     * Enemy HP multiplier of a wave. With waves.json "hpCurve" ({ base, segments: [{ fromWave, perWave }] })
+     * HP grows every wave by the factor of the segment the wave is in; otherwise growth.hp every growth.everyWaves.
+     */
+    static hpGrowth(wave: number): number {
+        const c = ConfigMgr.waves.hpCurve;
+        if (!c || !Array.isArray(c.segments) || c.segments.length === 0) return Math.pow(ConfigMgr.waves.growth.hp, WaveMgr.growthStep(wave));
+        let mul = c.base || 1;
+        for (let w = 2; w <= wave; w++) {
+            let f = 1;
+            for (const s of c.segments) if (w >= s.fromWave) f = s.perWave;
+            mul *= f;
+        }
+        return mul;
     }
 
     static enemyCount(wave: number): number {
@@ -42,16 +107,25 @@ export class WaveMgr {
         const cfg = ConfigMgr.waves;
         const step = WaveMgr.growthStep(wave);
         const g = cfg.growth;
-        const hpG = Math.pow(g.hp, step), dmgG = Math.pow(g.damage, step), spdG = Math.pow(g.moveSpeed, step);
+        const hpG = WaveMgr.hpGrowth(wave), dmgG = Math.pow(g.damage, step), spdG = Math.pow(g.moveSpeed, step);
+        // Gold per kill grows with the enemies, so stronger waves pay for the endless research.
+        const goldG = Math.pow(g.goldReward || 1, step);
+        const dg = cfg.defenseGrowth || {};
+        const caps = WaveMgr.defCaps();
+        // Milestone waves (waves.json milestones): extra strong checkpoints of the progression.
+        let ms: any = null;
+        for (const m of (cfg.milestones || [])) if (m.wave === wave) ms = m;
+        const msHp = (ms && ms.hpMul) || 1, msDmg = (ms && ms.damageMul) || 1;
         const entry = (time: number, enemyId: string, mul: any, scale: number, boss: boolean): SpawnEntry => ({
             time, enemyId,
-            hpMul: hpG * ((mul && mul.hp) || 1),
-            damageMul: dmgG * ((mul && mul.damage) || 1),
+            hpMul: hpG * msHp * ((mul && mul.hp) || 1),
+            damageMul: dmgG * msDmg * ((mul && mul.damage) || 1),
             speedMul: spdG * ((mul && mul.moveSpeed) || 1),
-            goldMul: (mul && mul.goldReward) || 1,
+            goldMul: goldG * ((mul && mul.goldReward) || 1),
             scale: scale || 1,
             boss,
-            defAdd: WaveMgr.defenseAdd(wave),
+            defAdd: WaveMgr.defenseAdd(wave) + (boss ? (dg.bossAdd || 0) : 0),
+            defMax: boss ? caps.boss : caps.normal,
         });
         const entries: SpawnEntry[] = [];
         let name = `Wave ${wave}`;
@@ -71,15 +145,17 @@ export class WaveMgr {
             const boss = cfg.bossRule && wave % cfg.bossRule.every === 0 ? cfg.bossRule : null;
             const interval = Math.max(cfg.minSpawnInterval, cfg.spawnInterval - (cfg.spawnIntervalDecayPerWave || 0) * (wave - 1));
             let normalCount = 0;
+            if (ms && ms.name) name = `Wave ${wave} - ${ms.name}`;
             if (!boss || boss.keepNormalEnemies) {
-                normalCount = WaveMgr.enemyCount(wave);
+                normalCount = Math.round(WaveMgr.enemyCount(wave) * ((ms && ms.countMul) || 1));
                 const weights = WaveMgr.weightsFor(wave);
                 for (let i = 0; i < normalCount; i++) entries.push(entry(i * interval, WaveMgr.pick(weights), null, 1, false));
             }
             if (boss) {
-                name = `Wave ${wave} - Boss`;
+                if (!ms || !ms.name) name = `Wave ${wave} - Boss`;
                 const at = normalCount * interval * 0.5;
-                for (let i = 0; i < (boss.count || 1); i++) entries.push(entry(at + i * 2, boss.enemyId, boss.statMul, boss.scale, true));
+                const bossCount = (ms && ms.bossCount) || boss.count || 1;
+                for (let i = 0; i < bossCount; i++) entries.push(entry(at + i * 2, boss.enemyId, boss.statMul, boss.scale, true));
             }
         }
         entries.sort((a, b) => a.time - b.time);
@@ -87,7 +163,7 @@ export class WaveMgr {
     }
 
     /** Spawn weights of the tier that contains this wave. */
-    private static weightsFor(wave: number): { [id: string]: number } {
+    static weightsFor(wave: number): { [id: string]: number } {
         const cfg = ConfigMgr.waves;
         let tier = cfg.tiers[cfg.tiers.length - 1];
         for (const t of cfg.tiers) if (wave >= t.fromWave && wave <= t.toWave) { tier = t; break; }

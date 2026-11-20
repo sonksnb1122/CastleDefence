@@ -142,16 +142,23 @@ export class ResearchOverlay implements IOverlay {
     private refresh() {
         const rm = ResourceMgr.inst;
         const cap = rm.maxTechLevel;
-        this.capLabel.string = `Research Lab allows technology level ${cap}. Costs are reduced by hero buffs.`;
+        const lab = rm.labLevel;
+        this.capLabel.string = lab === 0
+            ? 'Build a Research Lab to unlock research.'
+            : `Research Lab Lv ${lab}: technologies up to level ${cap}. Upgrade the Lab to raise the limit.`;
         for (const r of this.rows) {
             const t = ConfigMgr.techDef(r.id);
             const lv = rm.techLevel(r.id);
-            r.level.string = `Lv ${lv}/${t.maxLevel}   (+${t.valuePerLevel * lv}${ConfigMgr.buffInfo(t.buffKey).unit})`;
+            const endless = ResourceMgr.isEndless(t);
+            const bonus = `(+${t.valuePerLevel * lv}${ConfigMgr.buffInfo(t.buffKey).unit})`;
+            r.level.string = endless ? `Lv ${lv} (endless)   ${bonus}` : `Lv ${lv}/${Math.min(t.maxLevel, cap)}   ${bonus}`;
             r.cost.destroyAllChildren();
-            if (lv >= t.maxLevel) { text(r.cost, 'Max level', 13, 0, 0, { ax: 0 }); r.btn.setEnabled(false); continue; }
+            const lock = rm.techLock(r.id);
+            if (lock) { text(r.cost, lock, 13, 0, 0, { ax: 0, color: COLORS.textDim }); r.btn.setEnabled(false); continue; }
+            if (!endless && lv >= t.maxLevel) { text(r.cost, 'Max level', 13, 0, 0, { ax: 0 }); r.btn.setEnabled(false); continue; }
             const cost = rm.techCost(r.id);
             costRow(r.cost, cost, 0, 0, { size: 18, fontSize: 13 });
-            r.btn.setEnabled(lv < cap && rm.canAfford(cost) && rm.isPreparation);
+            r.btn.setEnabled(!rm.techBlock(r.id) && rm.canAfford(cost) && rm.isPreparation);
         }
     }
 

@@ -6,6 +6,7 @@ import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
+import { DefTab } from '../ui/DefTab';
 import { TopBar, arcMenu } from '../ui/TopBar';
 import { Bar, COLORS, UIButton, button, confirm, costRow, hex, iconButton, message, mk, panel, setVisible, sliced, sprite, text, toLocal, toast } from '../ui/UIKit';
 import { BattlefieldGround } from './BattlefieldGround';
@@ -43,6 +44,7 @@ export class OutCastleScreen implements CombatEvents {
     private buildBar: Node;
     private buildBtns: Array<{ id: string; btn: UIButton }> = [];
     private wallBar: Bar;
+    private defTab: DefTab;
     private wallLabel: Label;
     private waveInfo: Label;
     private unsubscribe: () => void;
@@ -56,7 +58,7 @@ export class OutCastleScreen implements CombatEvents {
         // ---- scrolling world (origin = bottom-left corner of the battlefield)
         this.world = mk('World', this.root, -W / 2, -H / 2, bf.worldWidth, H, 0, 0);
         this.ground = new BattlefieldGround(this.world, H);
-        text(this.world, 'DEFENSE AREA', 14, bf.constructionArea.x + bf.constructionArea.width / 2, bf.constructionArea.y + bf.constructionArea.height + 12, { color: '#1f3d14', bold: true });
+        text(this.world, 'DEFENSE AREA', 14, bf.constructionArea.x + bf.constructionArea.width / 2, bf.constructionArea.y - 12, { color: '#1f3d14', bold: true });
         text(this.world, 'ENEMIES COME FROM HERE  >>>', 13, bf.worldWidth - 150, bf.enemyLaneY[1] + 60, { color: '#1f3d14', bold: true });
 
         this.towerLayer = mk('Towers', this.world);
@@ -81,6 +83,7 @@ export class OutCastleScreen implements CombatEvents {
         text(this.root, 'Wall', 14, -W / 2 + 14, H / 2 - 56, { ax: 0, bold: true });
         this.wallBar = new Bar(this.root, -W / 2 + 150, H / 2 - 56, 180, 12, '#6ad66a');
         this.wallLabel = text(this.root, '', 13, -W / 2 + 250, H / 2 - 56, { ax: 0 });
+        this.defTab = new DefTab(this.root, -W / 2 + 6, H / 2 - 76);
         this.repairBtn = button(this.root, 'Repair', -W / 2 + 470, H / 2 - 58, 86, 28, () => this.repairWall(), COLORS.button, 13);
 
         this.enterBtn = button(this.root, '< Enter Castle', W / 2 - 86, H / 2 - 66, 156, 40, () => G.main.goto('inCastle'), COLORS.buttonOk, 17);
@@ -155,8 +158,9 @@ export class OutCastleScreen implements CombatEvents {
         const t = this.rm.tower(uid);
         if (!t) return;
         const def = ConfigMgr.towerDef(t.id);
-        const cost = this.rm.towerUpgradeCost(t);
-        if (!cost) { toast(this.root, 'Already at max level'); return; }
+        const block = this.rm.towerUpgradeBlock(t);
+        if (block) { toast(this.root, block === 'Upgrade the Base first' ? `Tower level is limited by the Base level (${this.rm.baseLevel})` : block); return; }
+        const cost = this.rm.towerUpgradeCost(t)!;
         const next = ConfigMgr.towerLevel(t.id, t.level + 1);
         const body = `Upgrade to level ${t.level + 1}?\nDamage ${next.damage}, ${next.attackSpeed}/s, range ${next.attackRange}`;
         confirm(this.root, `Upgrade ${def.name}`, body, () => {
@@ -355,6 +359,7 @@ export class OutCastleScreen implements CombatEvents {
         this.ground.draw(G.main.H);
         this.world.getComponent(UITransform)!.setContentSize(this.bf.worldWidth, G.main.H);
         this.topBar.layout();
+        this.defTab.setTopLeft(-G.main.W / 2 + 6, G.main.H / 2 - 76);
         this.setCamera(this.camX);
     }
 
@@ -372,6 +377,7 @@ export class OutCastleScreen implements CombatEvents {
     destroy() {
         this.unsubscribe();
         this.topBar.destroy();
+        this.defTab.destroy();
         this.combat.clear();
         this.root.destroy();
     }

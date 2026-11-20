@@ -88,7 +88,7 @@
         {
           "level": 1,
           "damage": 30,
-          "attackSpeed": 1,
+          "attackSpeed": 1.5,
           "attackRange": 384,
           "explosionRange": 20,
           "critRate": 5,
@@ -163,14 +163,15 @@
         {
           "level": 2,
           "damage": 60,
-          "attackSpeed": 2,
+          "attackSpeed": 3.0,
           "attackRange": 461,
           "explosionRange": 20,
           "critRate": 15,
           "critDamage": 200,
           "upgradeCost": {
-            "gold": 200,
-            "material": 90
+            "gold": 140,
+            "material": 160,
+            "food": 100
           },
           "effects": [
             {
@@ -238,14 +239,15 @@
         {
           "level": 3,
           "damage": 120,
-          "attackSpeed": 4,
+          "attackSpeed": 6.0,
           "attackRange": 553,
           "explosionRange": 20,
           "critRate": 25,
           "critDamage": 250,
           "upgradeCost": {
-            "gold": 440,
-            "material": 200
+            "gold": 1100,
+            "material": 1200,
+            "food": 900
           },
           "effects": [
             {
@@ -333,7 +335,7 @@
         {
           "level": 1,
           "damage": 45,
-          "attackSpeed": 0.5,
+          "attackSpeed": 0.75,
           "attackRange": 384,
           "explosionRange": 40,
           "critRate": 5,
@@ -407,14 +409,15 @@
         {
           "level": 2,
           "damage": 90,
-          "attackSpeed": 1.0,
+          "attackSpeed": 1.5,
           "attackRange": 461,
-          "explosionRange": 80,
+          "explosionRange": 60,
           "critRate": 15,
           "critDamage": 200,
           "upgradeCost": {
-            "gold": 280,
-            "material": 130
+            "gold": 190,
+            "material": 220,
+            "food": 140
           },
           "effects": [
             {
@@ -482,14 +485,15 @@
         {
           "level": 3,
           "damage": 180,
-          "attackSpeed": 2.0,
+          "attackSpeed": 3.0,
           "attackRange": 553,
-          "explosionRange": 160,
+          "explosionRange": 80,
           "critRate": 25,
           "critDamage": 225,
           "upgradeCost": {
-            "gold": 600,
-            "material": 280
+            "gold": 1400,
+            "material": 1600,
+            "food": 1200
           },
           "effects": [
             {
@@ -581,7 +585,7 @@
           "damage": 100,
           "attackSpeed": 0.25,
           "attackRange": 600,
-          "explosionRange": 80,
+          "explosionRange": 70,
           "critRate": 10,
           "critDamage": 200,
           "upgradeCost": {
@@ -657,12 +661,13 @@
           "damage": 200,
           "attackSpeed": 0.5,
           "attackRange": 750,
-          "explosionRange": 160,
+          "explosionRange": 95,
           "critRate": 20,
           "critDamage": 250,
           "upgradeCost": {
-            "gold": 480,
-            "material": 260
+            "gold": 310,
+            "material": 350,
+            "food": 230
           },
           "effects": [
             {
@@ -733,12 +738,13 @@
           "damage": 400,
           "attackSpeed": 1.0,
           "attackRange": 900,
-          "explosionRange": 320,
+          "explosionRange": 120,
           "critRate": 40,
           "critDamage": 300,
           "upgradeCost": {
-            "gold": 1000,
-            "material": 560
+            "gold": 2100,
+            "material": 2400,
+            "food": 1800
           },
           "effects": [
             {

@@ -84,6 +84,7 @@ export class HeroRecruitScreen {
     private ownedTitle: Label;
     private lockedTitle: Label;
     private recruitBtn: UIButton;
+    private costNode: Node;
     private listW: number;
     private cards: CardEntry[] = [];
     private popupArt: CardArt | null = null;
@@ -111,12 +112,11 @@ export class HeroRecruitScreen {
         this.owned = new ScrollList(this.root, -cx, listY, this.listW, listH, !framed);
         this.locked = new ScrollList(this.root, cx, listY, this.listW, listH, !framed);
 
-        const cost = ConfigMgr.building.recruitCost;
         button(this.root, '< Back', -W / 2 + 70, -H / 2 + 30, 120, 40, () => G.main.goto('inCastle'), COLORS.buttonAlt, 17);
         this.recruitBtn = button(this.root, 'Recruit', 0, -H / 2 + 30, 360, 42, () => this.recruit(), COLORS.buttonOk, 17);
         // Price with resource icons inside the button.
         this.recruitBtn.label.node.setPosition(-110, 0, 0);
-        costRow(this.recruitBtn.node, cost, 50, 0, { align: 'center', size: 24, fontSize: 17, bold: true });
+        this.costNode = mk('Cost', this.recruitBtn.node, 50, 0);
         this.rebuild();
     }
 
@@ -126,11 +126,17 @@ export class HeroRecruitScreen {
         const heroes: any[] = ConfigMgr.heroes.heroes;
         const mine = heroes.filter(h => this.rm.ownsHero(h.id));
         const others = heroes.filter(h => !this.rm.ownsHero(h.id));
-        this.ownedTitle.string = `Owned heroes (${mine.length})`;
+        const limit = this.rm.heroLimit;
+        this.ownedTitle.string = `Owned heroes (${mine.length}/${limit})`;
         this.lockedTitle.string = `Not recruited (${others.length})`;
         this.fill(this.owned, mine, true);
         this.fill(this.locked, others, false);
-        this.recruitBtn.setEnabled(others.length > 0);
+        // The price grows with every hero owned; the Base level limits how many heroes can be owned.
+        this.costNode.destroyAllChildren();
+        const full = mine.length >= limit;
+        if (others.length > 0 && !full) costRow(this.costNode, this.rm.recruitCost(), 0, 0, { align: 'center', size: 24, fontSize: 17, bold: true });
+        else text(this.costNode, others.length === 0 ? 'All recruited' : 'Upgrade the Base', 15, 0, 0, { bold: true });
+        this.recruitBtn.setEnabled(others.length > 0 && !full);
     }
 
     private fill(list: ScrollList, heroes: any[], owned: boolean) {

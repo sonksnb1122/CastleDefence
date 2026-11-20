@@ -25,29 +25,29 @@
     {
       "key": "explosionRange",
       "name": "Explosion range",
-      "min": 10,
-      "max": 20,
+      "min": 5,
+      "max": 10,
       "unit": "%"
     },
     {
       "key": "foodProduction",
       "name": "Food production",
-      "min": 30,
-      "max": 50,
+      "min": 10,
+      "max": 20,
       "unit": "%"
     },
     {
       "key": "materialProduction",
       "name": "Material production",
-      "min": 30,
-      "max": 50,
+      "min": 10,
+      "max": 20,
       "unit": "%"
     },
     {
       "key": "goldProduction",
       "name": "Gold production",
-      "min": 30,
-      "max": 50,
+      "min": 10,
+      "max": 20,
       "unit": "%"
     },
     {
@@ -67,36 +67,36 @@
     {
       "key": "enemyPhysicDefReduce",
       "name": "Enemy physic def reduction",
-      "min": 5,
-      "max": 15,
+      "min": 2,
+      "max": 6,
       "unit": ""
     },
     {
       "key": "enemyMagicDefReduce",
       "name": "Enemy magic def reduction",
-      "min": 5,
-      "max": 15,
+      "min": 2,
+      "max": 6,
       "unit": ""
     },
     {
       "key": "enemyDamageReduce",
       "name": "Enemy damage reduction",
-      "min": 5,
-      "max": 7,
+      "min": 3,
+      "max": 5,
       "unit": "%"
     },
     {
       "key": "enemyMoveSpeedReduce",
       "name": "Enemy move speed reduction",
-      "min": 5,
-      "max": 7,
+      "min": 3,
+      "max": 5,
       "unit": "%"
     },
     {
       "key": "enemyHpReduce",
       "name": "Enemy HP reduction",
-      "min": 5,
-      "max": 7,
+      "min": 3,
+      "max": 5,
       "unit": "%"
     },
     {
@@ -109,8 +109,8 @@
     {
       "key": "critDamage",
       "name": "Crit damage",
-      "min": 15,
-      "max": 30,
+      "min": 10,
+      "max": 20,
       "unit": "%"
     }
   ],
