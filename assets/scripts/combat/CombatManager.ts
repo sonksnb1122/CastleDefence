@@ -112,6 +112,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             if (p.update(dt)) {
+                if (p.target) p.target.pendingDamage = Math.max(0, p.target.pendingDamage - ((p.shot as any).pending || 0));
                 this.explode(p.shot, p.tx, p.ty, p.target, p.cfg);
                 p.node.destroy();
                 this.projectiles.splice(i, 1);
@@ -160,6 +161,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
     selectTarget(tower: TowerUnit): Enemy | null {
         const mode = tower.save.targetMode;
+        if (mode === 'Smart') return this.smartTarget(tower);
         let best: Enemy | null = null;
         let bestScore = Infinity;
         for (const e of this.enemies) {
@@ -176,10 +178,88 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         return best;
     }
 
+    /** Smart targeting keeps a target unless another one is clearly better (saves weapon turning). */
+    shouldRetarget(tower: TowerUnit): boolean {
+        if (tower.save.targetMode !== 'Smart') return false;
+        tower.retargetTimer -= 1;
+        if (tower.retargetTimer > 0) return false;
+        tower.retargetTimer = 10; // re-evaluate every 10 frames
+        const cur = tower.target;
+        if (!cur || !this.isValidTarget(tower, cur)) return true;
+        const best = this.smartTarget(tower);
+        return !!best && best !== cur && this.smartScore(tower, best) > this.smartScore(tower, cur) * 1.25;
+    }
+
+    /**
+     * Smart targeting (Research Lab Lv 3):
+     *  - every tower: ignores enemies that the shots already in flight will kill (no overkill),
+     *    prefers enemies close to the wall (danger) and finishing blows;
+     *  - Crossbow / Crystal: highest damage after defense (lowest def) and the nearest enemies;
+     *    marks are used (Hunter's Mark for Crossbow, Arcane Vulnerability for magic);
+     *  - Catapult: the enemy at the center of the biggest group inside its explosion.
+     */
+    smartTarget(tower: TowerUnit): Enemy | null {
+        let best: Enemy | null = null, bestScore = -Infinity;
+        for (const e of this.enemies) {
+            if (!this.isValidTarget(tower, e)) continue;
+            const sc = this.smartScore(tower, e);
+            if (sc > bestScore) { bestScore = sc; best = e; }
+        }
+        return best;
+    }
+
+    smartScore(tower: TowerUnit, e: Enemy): number {
+        const s = tower.stats();
+        const types = tower.def.damageTypes as DamageType[];
+        const hpLeft = e.hp - e.pendingDamage;
+        if (hpLeft <= 0) return -1e9 + e.hp;               // already dead once the shots land
+        // Damage of one shot against this enemy (defense, marks).
+        const hit = (en: Enemy) => {
+            let m = -Infinity;
+            for (const t of types) m = Math.max(m, this.defenseMultiplier(en, t) * (1 + en.markBonus(tower.save.id, t) / 100));
+            return Math.max(0.01, m) * tower.lv.damage * (1 + this.buff('damage', tower.save.id) / 100);
+        };
+        // Length of the field between the spawn and the wall (used for the "close to the wall" weights).
+        const fieldW = ConfigMgr.tower.battlefield.worldWidth - this.wallRightX;
+        // Useful damage: never more than what is left (no overkill); a kill is worth a bonus.
+        const useful = (en: Enemy) => {
+            const left = en.hp - en.pendingDamage;
+            if (left <= 0) return 0;
+            const d = hit(en);
+            return Math.min(d, left) / en.maxHp + (d >= left ? 0.5 : 0);
+        };
+        if (s.explosion > 40 && tower.def.explosionBuffable) {
+            // Area towers: total useful damage of the explosion centred on this enemy.
+            const r2 = s.explosion * s.explosion;
+            let total = 0;
+            for (const o of this.enemies) {
+                if (!o.alive) continue;
+                const dx = o.x - e.x, dy = o.y - e.y;
+                if (dx * dx + dy * dy <= r2) {
+                    const od = 1 + 2 * Math.max(0, Math.min(1, 1 - (o.x - this.wallRightX) / fieldW));
+                    total += useful(o) * od;
+                }
+            }
+            return total;
+        }
+        // Single target (Crossbow / Crystal): enemies close to the wall get a much higher priority
+        // (x1 at the spawn, x5 at a quarter of the field, up to x9 at the wall), then damage dealt and distance.
+        const c = Math.max(0, Math.min(1, 1 - (e.x - this.wallRightX) / fieldW));
+        const nearWall = 1 + 4 * c + (c > 0.75 ? 16 * (c - 0.75) : 0);
+        const dist = Math.hypot(e.x - tower.cx, e.y - tower.cy);
+        return useful(e) * nearWall * (1 + e.wallDamage() / 100) * (1.1 - 0.2 * dist / Math.max(1, s.range));
+    }
+
     spawnProjectile(tower: TowerUnit, shot: ShotInfo, target: Enemy, fromX: number, fromY: number, angleDeg: number) {
         const cfg = tower.lv.sprite.projectile;
         const speed = cfg.speed * (1 + this.buff('projectileSpeed', shot.towerId) / 100);
         (shot as any).impact = tower.lv.sprite.impact;
+        // Expected damage (no crit) so Smart targeting does not overkill.
+        const t0 = shot.damageTypes;
+        let mul = -Infinity;
+        for (const t of t0) mul = Math.max(mul, this.defenseMultiplier(target, t));
+        (shot as any).pending = Math.max(1, shot.damage * (1 + this.buff('damage', shot.towerId) / 100) * mul);
+        target.pendingDamage += (shot as any).pending;
         this.projectiles.push(new Projectile(this.fxLayer, shot, cfg, target, fromX, fromY, angleDeg, speed, tower.scale));
         if (!this.demo) G.main.playSfx('shoot');
     }
@@ -266,7 +346,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         }
         this.impactFx(shot, x, y);
         const tower = this.towerByUid(shot.towerUid);
-        const chance = (ef: any) => ef.chance * (1 + this.buff('effectChance', shot.towerId) / 100);
+        const chance = (ef: any) => Math.min(ef.maxChance || 100, ef.chance * (1 + this.buff('effectChance', shot.towerId) / 100));
         const ready = (ef: any) => !tower || !(tower.effectCooldowns[ef.id] > 0);
         const used = (ef: any) => { if (tower && ef.cooldown > 0) tower.effectCooldowns[ef.id] = ef.cooldown; };
         const statusCount: { [id: string]: number } = {};
@@ -276,7 +356,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             let bonus = 0;
             for (const ef of shot.effects) {
                 if (ef.kind === 'bonusMaxHp' && ready(ef) && Math.random() * 100 < chance(ef)) {
-                    bonus += Math.min(ef.cap || Infinity, e.maxHp * ef.value / 100);
+                    bonus += Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100);
                 }
             }
             this.applyDamage(e, this.computeDamage(shot, e, 1, bonus));
@@ -286,7 +366,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
                 if (ef.kind !== 'status' || !ready(ef)) continue;
                 if ((statusCount[ef.id] || 0) >= (ef.maxTargets || 1)) continue;
                 if (Math.random() * 100 >= chance(ef)) continue;
-                this.applyStatusFromTower(e, ef.statusId, shot.towerUid);
+                this.applyStatusFromTower(e, ef.statusId, shot.towerUid, shot.damage * (1 + this.buff('damage', shot.towerId) / 100));
                 statusCount[ef.id] = (statusCount[ef.id] || 0) + 1;
             }
         }
@@ -316,11 +396,12 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (!this.demo) G.main.playSfx(shot.isAoe ? 'explode' : 'hit');
     }
 
-    private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number) {
+    /** `hitDamage`: damage of the shot before defense; statuses with "percentOfHit" scale their value with it. */
+    private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number, hitDamage = 0) {
         const def = ConfigMgr.statusDef(statusId);
         if (!def) return;
-        const rm = this.rm;
         let durationMul = 1, valueMul = 1;
+        if (def.percentOfHit) valueMul = Math.max(0.01, hitDamage / 100);
         if (def.type === 'slow') { durationMul += this.buff('slowDuration') / 100; valueMul += this.buff('slowEffect') / 100; }
         if (def.type === 'stun') durationMul += this.buff('stunDuration') / 100;
         if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) this.float('RESIST', e.x, e.y + e.radius + 26, '#aaaaaa', 11);

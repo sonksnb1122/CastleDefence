@@ -43,6 +43,8 @@ export class Enemy {
     reachedWall = false;
     rewarded = false;
     statuses: StatusInstance[] = [];
+    /** Expected damage of the projectiles already flying at this enemy (Smart targeting avoids overkill). */
+    pendingDamage = 0;
 
     private anim: SpriteAnim;
     private spriteComp: Sprite;

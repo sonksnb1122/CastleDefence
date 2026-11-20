@@ -19,8 +19,8 @@ export const DEMO = {
     /** Seconds between spawns (randomised +-40%). */
     spawnInterval: 0.25,
     /** Enemy HP and speed multipliers: just above what 24 level 3 towers can hold, so some get through. */
-    hpMul: 120,
-    speedMul: 6,
+    hpMul: 90,
+    speedMul: 5,
     /** Seconds simulated before the menu shows, so the field is already busy. */
     prewarm: 14,
 };
@@ -90,7 +90,7 @@ export class MainMenuScreen implements CombatEvents {
             const level = Math.min(DEMO.towerLevel, ConfigMgr.towerDef(id).levels.length);
             const x = a.x + a.width - marginX - c * stepX;
             const off = c % 2 === 1 ? DEMO.stagger : 0;
-            for (let r = 0; r < rows; r++) saves.push({ uid: uid--, id, level, x: Math.round(x), y: Math.round(a.y + marginY + off + r * stepY), targetMode: 'First' });
+            for (let r = 0; r < rows; r++) saves.push({ uid: uid--, id, level, x: Math.round(x), y: Math.round(a.y + marginY + off + r * stepY), targetMode: 'Smart' });
         });
         // Towers lower on the screen are drawn in front.
         saves.sort((p, q) => q.y - p.y);

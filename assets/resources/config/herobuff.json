@@ -159,6 +159,56 @@
       "key": "projectileSpeed",
       "name": "Projectile speed",
       "unit": "%"
+    },
+    {
+      "key": "effect:piercing_bolt",
+      "name": "Piercing Bolt chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:bleeding_bolt",
+      "name": "Bleeding Bolt chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:hunters_mark",
+      "name": "Hunter's Mark chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:frost_explosion",
+      "name": "Frost Explosion chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:chain_lightning",
+      "name": "Chain Lightning chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:arcane_vulnerability",
+      "name": "Arcane Vulnerability chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:shockwave",
+      "name": "Shockwave chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:heavy_impact",
+      "name": "Heavy Impact chance",
+      "unit": "%"
+    },
+    {
+      "key": "effect:armor_break",
+      "name": "Armor Break chance",
+      "unit": "%"
+    },
+    {
+      "key": "smartTarget",
+      "name": "Smart Targeting",
+      "unit": ""
     }
   ]
 }

@@ -20,7 +20,7 @@
       "type": "stun",
       "name": "Stun",
       "description": "Prevents movement.",
-      "duration": 1.0,
+      "duration": 0.3,
       "value": 0,
       "stacking": "ReplaceStronger",
       "maxStacks": 1,
@@ -33,9 +33,9 @@
       "id": "bleed",
       "type": "bleed",
       "name": "Bleed",
-      "description": "Physical damage every tick.",
+      "description": "Physical damage every tick: value % of the hit that caused it.",
       "duration": 4,
-      "value": 8,
+      "value": 20,
       "tickInterval": 1,
       "damageType": "physic",
       "stacking": "StackValue",
@@ -43,7 +43,8 @@
       "visual": {
         "label": "BLEED",
         "color": "#ff5a5a"
-      }
+      },
+      "percentOfHit": true
     },
     {
       "id": "burn",
@@ -85,7 +86,7 @@
       "name": "Hunter's Mark",
       "description": "Takes value % more damage from Crossbow towers.",
       "duration": 5,
-      "value": 25,
+      "value": 50,
       "towerIds": [
         "crossbow"
       ],
@@ -122,8 +123,8 @@
       "kind": "chain",
       "chance": 25,
       "value": 100,
-      "range": 110,
-      "maxTargets": 1,
+      "range": 140,
+      "maxTargets": 2,
       "cooldown": 0,
       "targetType": "enemy"
     },
@@ -146,7 +147,7 @@
       "statusId": "hunter_mark",
       "chance": 20,
       "maxTargets": 1,
-      "cooldown": 2,
+      "cooldown": 0,
       "targetType": "enemy"
     },
     {
@@ -166,10 +167,10 @@
       "trigger": "onHit",
       "kind": "chain",
       "chance": 25,
-      "value": 50,
+      "value": 80,
       "range": 140,
       "maxTargets": 3,
-      "cooldown": 1,
+      "cooldown": 0,
       "targetType": "enemy"
     },
     {
@@ -201,10 +202,10 @@
       "kind": "bonusMaxHp",
       "chance": 100,
       "value": 6,
-      "cap": 150,
       "maxTargets": 99,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "capHitMul": 1.0
     },
     {
       "id": "armor_break",

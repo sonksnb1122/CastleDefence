@@ -58,7 +58,8 @@
     "critDamage": 175,
     "targetMode": "First",
     "rotateSpeed": 540,
-    "alignTolerance": 4
+    "alignTolerance": 4,
+    "maxEffectChance": 50
   },
   "targetModes": [
     "First",

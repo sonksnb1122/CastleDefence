@@ -348,6 +348,176 @@
         "food": 110
       },
       "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_piercing_bolt",
+      "name": "Piercing Bolt",
+      "description": "Crossbow: +5% chance, bolt pierces 2 more enemies (max 50%)",
+      "buffKey": "effect:piercing_bolt",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 500,
+        "material": 250,
+        "food": 250
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_bleeding_bolt",
+      "name": "Bleeding Bolt",
+      "description": "Crossbow: +5% chance to make the target bleed (max 50%)",
+      "buffKey": "effect:bleeding_bolt",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 500,
+        "material": 250,
+        "food": 250
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_hunters_mark",
+      "name": "Hunter's Mark",
+      "description": "Crossbow: +5% chance, target takes +50% Crossbow dmg (max 50%)",
+      "buffKey": "effect:hunters_mark",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 500,
+        "material": 250,
+        "food": 250
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_frost_explosion",
+      "name": "Frost Explosion",
+      "description": "Crystal: +5% chance to slow enemies hit (max 50%)",
+      "buffKey": "effect:frost_explosion",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 2250,
+        "material": 1125,
+        "food": 1125
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_chain_lightning",
+      "name": "Chain Lightning",
+      "description": "Crystal: +5% chance, lightning jumps to 3 enemies (max 50%)",
+      "buffKey": "effect:chain_lightning",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 1250,
+        "material": 625,
+        "food": 625
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_arcane_vulnerability",
+      "name": "Arcane Vulnerability",
+      "description": "Crystal: +5% chance, enemies take +20% magic dmg (max 50%)",
+      "buffKey": "effect:arcane_vulnerability",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 1250,
+        "material": 625,
+        "food": 625
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_shockwave",
+      "name": "Shockwave",
+      "description": "Catapult: +5% chance to stun enemies hit (max 50%)",
+      "buffKey": "effect:shockwave",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 3250,
+        "material": 1500,
+        "food": 1500
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_heavy_impact",
+      "name": "Heavy Impact",
+      "description": "Catapult: +5% chance, +6% max HP bonus damage (max 50%)",
+      "buffKey": "effect:heavy_impact",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 1250,
+        "material": 625,
+        "food": 625
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_armor_break",
+      "name": "Armor Break",
+      "description": "Catapult: +5% chance, enemies lose 20 defense (max 50%)",
+      "buffKey": "effect:armor_break",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 2250,
+        "material": 1125,
+        "food": 1125
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_smart",
+      "name": "Smart Targeting",
+      "description": "Towers aim at the best target by themselves",
+      "buffKey": "smartTarget",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 100000,
+        "material": 40000,
+        "food": 40000
+      },
+      "costGrowth": 1
     }
   ]
 }

@@ -17,6 +17,8 @@ export interface ITowerHost {
     selectTarget(tower: TowerUnit): Enemy | null;
     isValidTarget(tower: TowerUnit, e: Enemy | null): boolean;
     spawnProjectile(tower: TowerUnit, shot: ShotInfo, target: Enemy, fromX: number, fromY: number, angleDeg: number): void;
+    /** Smart targeting: true when a clearly better target than the current one exists. */
+    shouldRetarget(tower: TowerUnit): boolean;
 }
 
 /** Effective (buffed) stats of a tower. */
@@ -33,6 +35,8 @@ export class TowerUnit {
     target: Enemy | null = null;
     /** Remaining cooldown per special effect id. */
     effectCooldowns: { [id: string]: number } = {};
+    /** Frames until Smart targeting looks for a better target again. */
+    retargetTimer = 0;
 
     private baseSprite: Sprite;
     private weaponNode: Node;
@@ -141,9 +145,12 @@ export class TowerUnit {
         const s = this.stats();
         const effects: any[] = [];
         for (const e of (this.lv.effects || [])) {
-            if (!e.enabled) continue;
             const def = ConfigMgr.towerEffectDef(e.id);
-            if (def) effects.push(def);
+            if (!def) continue;
+            // Effect research (Lab Lv 3) turns an effect on with its own chance: +5% per level, max 50%.
+            const researched = this.demo ? 0 : ResourceMgr.inst.buff('effect:' + e.id);
+            if (researched > 0) effects.push(Object.assign({}, def, { chance: researched, maxChance: ConfigMgr.tower.defaults.maxEffectChance || 50 }));
+            else if (e.enabled) effects.push(def);
         }
         return {
             towerUid: this.save.uid, towerId: this.save.id, level: this.save.level,
@@ -161,7 +168,7 @@ export class TowerUnit {
 
         let aligned = false;
         if (host) {
-            if (!host.isValidTarget(this, this.target)) this.target = host.selectTarget(this);
+            if (!host.isValidTarget(this, this.target) || host.shouldRetarget(this)) this.target = host.selectTarget(this);
             if (this.target) {
                 // Turn the weapon toward the target, limited by the rotate speed.
                 const cfg = ConfigMgr.tower.defaults;

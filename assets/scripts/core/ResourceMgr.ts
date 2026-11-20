@@ -112,7 +112,7 @@ export class ResourceMgr {
             else d.buildings.push({ uid, id: b.id, level, x, y });
         }
         if (!d.buildings.some(b => b.id === 'base')) return { error: 'Save file has no base building' };
-        const modes: string[] = ConfigMgr.tower.targetModes;
+        const modes: string[] = ConfigMgr.tower.targetModes.concat(['Smart']);
         for (const t of (Array.isArray(raw.towers) ? raw.towers : [])) {
             const def = t && ConfigMgr.towerDef(t.id);
             if (!def) continue;
@@ -463,7 +463,7 @@ export class ResourceMgr {
         if (this.data.towers.length >= this.towerLimit) return `Tower limit reached (${this.towerLimit}). Upgrade the Base`;
         if (!this.canPlaceTower(x, y)) return 'Invalid position';
         if (!this.canAfford(def.buildCost)) return 'Not enough resources';
-        this.data.towers.push({ uid: this.uid(), id, level: 1, x: Math.round(x), y: Math.round(y), targetMode: ConfigMgr.tower.defaults.targetMode });
+        this.data.towers.push({ uid: this.uid(), id, level: 1, x: Math.round(x), y: Math.round(y), targetMode: this.hasSmartTarget ? 'Smart' : ConfigMgr.tower.defaults.targetMode });
         this.spend(def.buildCost);
         return null;
     }
@@ -500,9 +500,18 @@ export class ResourceMgr {
         return null;
     }
 
+    /** Smart Targeting research (Lab Lv 3). */
+    get hasSmartTarget(): boolean { return this.buff('smartTarget') > 0; }
+
+    /** Target modes a tower can cycle through ("Smart" first once researched). */
+    targetModes(): string[] {
+        const base: string[] = ConfigMgr.tower.targetModes;
+        return this.hasSmartTarget ? ['Smart'].concat(base) : base;
+    }
+
     cycleTargetMode(uid: number): string {
         const t = this.tower(uid);
-        const modes: string[] = ConfigMgr.tower.targetModes;
+        const modes = this.targetModes();
         if (!t) return modes[0];
         t.targetMode = modes[(modes.indexOf(t.targetMode) + 1) % modes.length];
         this.notify();
@@ -620,6 +629,8 @@ export class ResourceMgr {
         const wallBefore = this.wallMaxHp();
         this.data.research[id] = lv + 1;
         this.buffCache = null;
+        // Smart Targeting switches every tower to the new mode (the player can still pick another one).
+        if (ConfigMgr.techDef(id).buffKey === 'smartTarget') for (const t of this.data.towers) t.targetMode = 'Smart';
         // A bigger wall keeps the HP it gained.
         this.data.wallHp += Math.max(0, this.wallMaxHp() - wallBefore);
         this.spend(cost);
