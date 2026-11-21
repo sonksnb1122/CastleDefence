@@ -88,7 +88,7 @@
       "levels": [
         {
           "level": 1,
-          "damage": 30,
+          "damage": 45,
           "attackSpeed": 1.5,
           "attackRange": 384,
           "explosionRange": 20,
@@ -163,7 +163,7 @@
         },
         {
           "level": 2,
-          "damage": 60,
+          "damage": 85,
           "attackSpeed": 3.0,
           "attackRange": 461,
           "explosionRange": 20,
@@ -313,7 +313,8 @@
             }
           }
         }
-      ]
+      ],
+      "smartRole": "closestToWall"
     },
     {
       "id": "crystal",
@@ -558,7 +559,8 @@
                 6
               ]
             }
-          }
+          },
+          "effectChanceMul": 2
         }
       ]
     },
@@ -583,7 +585,7 @@
       "levels": [
         {
           "level": 1,
-          "damage": 100,
+          "damage": 70,
           "attackSpeed": 0.25,
           "attackRange": 600,
           "explosionRange": 70,
@@ -659,7 +661,7 @@
         },
         {
           "level": 2,
-          "damage": 200,
+          "damage": 150,
           "attackSpeed": 0.5,
           "attackRange": 750,
           "explosionRange": 95,
@@ -736,7 +738,7 @@
         },
         {
           "level": 3,
-          "damage": 400,
+          "damage": 550,
           "attackSpeed": 1.0,
           "attackRange": 900,
           "explosionRange": 120,

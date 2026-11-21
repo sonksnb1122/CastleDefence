@@ -19,7 +19,7 @@ export const DEMO = {
     /** Seconds between spawns (randomised +-40%). */
     spawnInterval: 0.25,
     /** Enemy HP and speed multipliers: just above what 24 level 3 towers can hold, so some get through. */
-    hpMul: 90,
+    hpMul: 95,
     speedMul: 5,
     /** Seconds simulated before the menu shows, so the field is already busy. */
     prewarm: 14,

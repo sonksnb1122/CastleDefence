@@ -194,7 +194,8 @@ export class CombatManager implements IEnemyHost, ITowerHost {
      * Smart targeting (Research Lab Lv 3):
      *  - every tower: ignores enemies that the shots already in flight will kill (no overkill),
      *    prefers enemies close to the wall (danger) and finishing blows;
-     *  - Crossbow / Crystal: highest damage after defense (lowest def) and the nearest enemies;
+     *  - Crossbow (smartRole "closestToWall"): the enemy closest to the wall;
+     *  - Crystal: highest damage after defense (lowest def) and the nearest enemies;
      *    marks are used (Hunter's Mark for Crossbow, Arcane Vulnerability for magic);
      *  - Catapult: the enemy at the center of the biggest group inside its explosion.
      */
@@ -242,7 +243,11 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             }
             return total;
         }
-        // Single target (Crossbow / Crystal): enemies close to the wall get a much higher priority
+        // Crossbow: its job is the enemy closest to the wall (skipping the ones the shots in flight will kill).
+        if (tower.def.smartRole === 'closestToWall') {
+            return 10 - (e.x - this.wallRightX) / fieldW;
+        }
+        // Single target (Crystal): enemies close to the wall get a much higher priority
         // (x1 at the spawn, x5 at a quarter of the field, up to x9 at the wall), then damage dealt and distance.
         const c = Math.max(0, Math.min(1, 1 - (e.x - this.wallRightX) / fieldW));
         const nearWall = 1 + 4 * c + (c > 0.75 ? 16 * (c - 0.75) : 0);

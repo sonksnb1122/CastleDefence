@@ -84,7 +84,8 @@ export class WaveMgr {
 
     /**
      * Enemy HP multiplier of a wave. With waves.json "hpCurve" ({ base, segments: [{ fromWave, perWave }] })
-     * HP grows every wave by the factor of the segment the wave is in; otherwise growth.hp every growth.everyWaves.
+     * HP grows every wave by the factor of the segment the wave is in, times every "steps" entry already reached;
+     * otherwise growth.hp every growth.everyWaves.
      */
     static hpGrowth(wave: number): number {
         const c = ConfigMgr.waves.hpCurve;
@@ -95,6 +96,8 @@ export class WaveMgr {
             for (const s of c.segments) if (w >= s.fromWave) f = s.perWave;
             mul *= f;
         }
+        // One-off steps: from "fromWave" on, HP is multiplied by "mul" (e.g. x1.2 after wave 100).
+        for (const b of (c.steps || [])) if (wave >= b.fromWave) mul *= b.mul;
         return mul;
     }
 
@@ -116,6 +119,10 @@ export class WaveMgr {
         let ms: any = null;
         for (const m of (cfg.milestones || [])) if (m.wave === wave) ms = m;
         const msHp = (ms && ms.hpMul) || 1, msDmg = (ms && ms.damageMul) || 1;
+        // countScaleRef: more enemies than the reference count share the same total HP and gold
+        // (each normal enemy gets refCount / count of them), so a bigger crowd does not change the balance.
+        const ref = cfg.countScaleRef;
+        const share = ref ? Math.min(1, (ref.base + ref.perWave * (wave - 1)) / WaveMgr.enemyCount(wave)) : 1;
         const entry = (time: number, enemyId: string, mul: any, scale: number, boss: boolean): SpawnEntry => ({
             time, enemyId,
             hpMul: hpG * msHp * ((mul && mul.hp) || 1),
@@ -149,7 +156,8 @@ export class WaveMgr {
             if (!boss || boss.keepNormalEnemies) {
                 normalCount = Math.round(WaveMgr.enemyCount(wave) * ((ms && ms.countMul) || 1));
                 const weights = WaveMgr.weightsFor(wave);
-                for (let i = 0; i < normalCount; i++) entries.push(entry(i * interval, WaveMgr.pick(weights), null, 1, false));
+                const shared = share < 1 ? { hp: share, goldReward: share } : null;
+                for (let i = 0; i < normalCount; i++) entries.push(entry(i * interval, WaveMgr.pick(weights), shared, 1, false));
             }
             if (boss) {
                 if (!ms || !ms.name) name = `Wave ${wave} - Boss`;

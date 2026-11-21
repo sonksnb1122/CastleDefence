@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "enemyCountBase": 8,
+  "enemyCountBase": 24,
   "enemyCountPerWave": 2,
-  "spawnInterval": 1.4,
-  "spawnIntervalDecayPerWave": 0.03,
+  "spawnInterval": 0.55,
+  "spawnIntervalDecayPerWave": 0.002,
   "minSpawnInterval": 0.45,
   "growth": {
     "everyWaves": 3,
@@ -71,15 +71,23 @@
       "groups": [
         {
           "enemyId": "runner",
-          "count": 14,
-          "interval": 0.5,
-          "delay": 0
+          "count": 42,
+          "interval": 0.35,
+          "delay": 0,
+          "statMul": {
+            "hp": 0.18,
+            "goldReward": 0.333
+          }
         },
         {
           "enemyId": "berserker",
-          "count": 6,
-          "interval": 1.2,
-          "delay": 4
+          "count": 18,
+          "interval": 0.8,
+          "delay": 4,
+          "statMul": {
+            "hp": 0.18,
+            "goldReward": 0.333
+          }
         }
       ]
     }
@@ -97,7 +105,7 @@
     {
       "wave": 10,
       "name": "Siege",
-      "hpMul": 1.3,
+      "hpMul": 1.17,
       "countMul": 1.3,
       "bossCount": 1
     },
@@ -111,7 +119,7 @@
     {
       "wave": 70,
       "name": "Doom Siege",
-      "hpMul": 0.6,
+      "hpMul": 0.69,
       "countMul": 1.3,
       "bossCount": 2
     }
@@ -143,6 +151,16 @@
         "fromWave": 71,
         "perWave": 1.025
       }
+    ],
+    "steps": [
+      {
+        "fromWave": 101,
+        "mul": 1.2
+      }
     ]
+  },
+  "countScaleRef": {
+    "base": 8,
+    "perWave": 2
   }
 }

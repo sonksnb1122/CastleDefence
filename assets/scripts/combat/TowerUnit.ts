@@ -149,7 +149,9 @@ export class TowerUnit {
             if (!def) continue;
             // Effect research (Lab Lv 3) turns an effect on with its own chance: +5% per level, max 50%.
             const researched = this.demo ? 0 : ResourceMgr.inst.buff('effect:' + e.id);
-            if (researched > 0) effects.push(Object.assign({}, def, { chance: researched, maxChance: ConfigMgr.tower.defaults.maxEffectChance || 50 }));
+            // effectChanceMul (per tower level, e.g. Crystal Lv 3 x2) multiplies the chance and its cap.
+            const mul = this.lv.effectChanceMul || 1;
+            if (researched > 0) effects.push(Object.assign({}, def, { chance: researched * mul, maxChance: (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul }));
             else if (e.enabled) effects.push(def);
         }
         return {
