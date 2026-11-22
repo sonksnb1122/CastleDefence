@@ -16,31 +16,31 @@
       "id": 1,
       "name": "Aria Windsong",
       "stars": 4,
-      "imagePath": "sprites/card_anim/1_card_sheet"
+      "imagePath": "heroes:1_card_sheet"
     },
     {
       "id": 2,
       "name": "Lyra Dawnbloom",
       "stars": 3,
-      "imagePath": "sprites/card_anim/2_card_sheet"
+      "imagePath": "heroes:2_card_sheet"
     },
     {
       "id": 3,
       "name": "Mei Lin",
       "stars": 3,
-      "imagePath": "sprites/card_anim/3_card_sheet"
+      "imagePath": "heroes:3_card_sheet"
     },
     {
       "id": 4,
       "name": "Selene Frostveil",
       "stars": 3,
-      "imagePath": "sprites/card_anim/4_card_sheet"
+      "imagePath": "heroes:4_card_sheet"
     },
     {
       "id": 5,
       "name": "Yue Qing",
       "stars": 5,
-      "imagePath": "sprites/card_anim/5_card_sheet",
+      "imagePath": "heroes:5_card_sheet",
       "passive": {
         "name": "Crossbow Specialist",
         "buffs": [
@@ -61,13 +61,13 @@
       "id": 6,
       "name": "Hana Mizuki",
       "stars": 3,
-      "imagePath": "sprites/card_anim/6_card_sheet"
+      "imagePath": "heroes:6_card_sheet"
     },
     {
       "id": 7,
       "name": "Isolde Nightbloom",
       "stars": 5,
-      "imagePath": "sprites/card_anim/7_card_sheet",
+      "imagePath": "heroes:7_card_sheet",
       "passive": {
         "name": "Crystal Guardian",
         "buffs": [
@@ -87,31 +87,31 @@
       "id": 8,
       "name": "Freya Stormborn",
       "stars": 4,
-      "imagePath": "sprites/card_anim/8_card_sheet"
+      "imagePath": "heroes:8_card_sheet"
     },
     {
       "id": 9,
       "name": "Xiao Lan",
       "stars": 4,
-      "imagePath": "sprites/card_anim/9_card_sheet"
+      "imagePath": "heroes:9_card_sheet"
     },
     {
       "id": 10,
       "name": "Elena Brightwater",
       "stars": 4,
-      "imagePath": "sprites/card_anim/10_card_sheet"
+      "imagePath": "heroes:10_card_sheet"
     },
     {
       "id": 11,
       "name": "Sakura Aoi",
       "stars": 4,
-      "imagePath": "sprites/card_anim/11_card_sheet"
+      "imagePath": "heroes:11_card_sheet"
     },
     {
       "id": 12,
       "name": "Ling Yue",
       "stars": 5,
-      "imagePath": "sprites/card_anim/12_card_sheet",
+      "imagePath": "heroes:12_card_sheet",
       "passive": {
         "name": "Siege Commander",
         "buffs": [
@@ -132,7 +132,7 @@
       "id": 13,
       "name": "Seraphina Vale",
       "stars": 5,
-      "imagePath": "sprites/card_anim/13_card_sheet",
+      "imagePath": "heroes:13_card_sheet",
       "passive": {
         "name": "Treasurer",
         "buffs": [
@@ -151,85 +151,85 @@
       "id": 14,
       "name": "Mira Thornfield",
       "stars": 3,
-      "imagePath": "sprites/card_anim/14_card_sheet"
+      "imagePath": "heroes:14_card_sheet"
     },
     {
       "id": 15,
       "name": "Rin Akane",
       "stars": 4,
-      "imagePath": "sprites/card_anim/15_card_sheet"
+      "imagePath": "heroes:15_card_sheet"
     },
     {
       "id": 16,
       "name": "Clara Ashdown",
       "stars": 3,
-      "imagePath": "sprites/card_anim/16_card_sheet"
+      "imagePath": "heroes:16_card_sheet"
     },
     {
       "id": 17,
       "name": "Yuna Shirayuki",
       "stars": 3,
-      "imagePath": "sprites/card_anim/17_card_sheet"
+      "imagePath": "heroes:17_card_sheet"
     },
     {
       "id": 18,
       "name": "Elowen Starcaller",
       "stars": 4,
-      "imagePath": "sprites/card_anim/18_card_sheet"
+      "imagePath": "heroes:18_card_sheet"
     },
     {
       "id": 19,
       "name": "Nia Emberly",
       "stars": 3,
-      "imagePath": "sprites/card_anim/19_card_sheet"
+      "imagePath": "heroes:19_card_sheet"
     },
     {
       "id": 20,
       "name": "Su Wan",
       "stars": 3,
-      "imagePath": "sprites/card_anim/20_card_sheet"
+      "imagePath": "heroes:20_card_sheet"
     },
     {
       "id": 21,
       "name": "Thalia Greenleaf",
       "stars": 3,
-      "imagePath": "sprites/card_anim/21_card_sheet"
+      "imagePath": "heroes:21_card_sheet"
     },
     {
       "id": 22,
       "name": "Kira Moonshade",
       "stars": 3,
-      "imagePath": "sprites/card_anim/22_card_sheet"
+      "imagePath": "heroes:22_card_sheet"
     },
     {
       "id": 23,
       "name": "Bai Xue",
       "stars": 5,
-      "imagePath": "sprites/card_anim/23_card_sheet"
+      "imagePath": "heroes:23_card_sheet"
     },
     {
       "id": 24,
       "name": "Odette Silverlake",
       "stars": 3,
-      "imagePath": "sprites/card_anim/24_card_sheet"
+      "imagePath": "heroes:24_card_sheet"
     },
     {
       "id": 25,
       "name": "Vivienne Rosewood",
       "stars": 4,
-      "imagePath": "sprites/card_anim/25_card_sheet"
+      "imagePath": "heroes:25_card_sheet"
     },
     {
       "id": 26,
       "name": "Akemi Hoshino",
       "stars": 4,
-      "imagePath": "sprites/card_anim/26_card_sheet"
+      "imagePath": "heroes:26_card_sheet"
     },
     {
       "id": 27,
       "name": "Qing Luan",
       "stars": 5,
-      "imagePath": "sprites/card_anim/27_card_sheet"
+      "imagePath": "heroes:27_card_sheet"
     }
   ],
   "ui": {

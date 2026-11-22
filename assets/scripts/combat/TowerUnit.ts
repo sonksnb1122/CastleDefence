@@ -3,7 +3,7 @@ import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { ShotInfo, TowerSave } from '../core/GameTypes';
 import { ResourceMgr } from '../core/ResourceMgr';
-import { hex, mk, sprite, text } from '../ui/UIKit';
+import { hex, mk, sprite, text } from '../views/common/UIKit';
 import { Enemy } from './Enemy';
 import { SpriteAnim } from './SpriteAnim';
 

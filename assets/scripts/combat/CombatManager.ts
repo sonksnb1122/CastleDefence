@@ -1,17 +1,19 @@
-import { Node, Graphics, UIOpacity } from 'cc';
+import { Node, Graphics, UIOpacity, UITransform, isValid } from 'cc';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { DamageResult, DamageType, ShotInfo } from '../core/GameTypes';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
-import { FloatText, hex, mk, sprite } from '../ui/UIKit';
+import { hex, mk, sprite } from '../views/common/UIKit';
+import { CombatText } from './CombatText';
 import { Enemy, IEnemyHost } from './Enemy';
 import { Projectile } from './Projectile';
 import { SpriteAnim } from './SpriteAnim';
 import { ITowerHost, TowerUnit } from './TowerUnit';
 import { SpawnEntry, WaveMgr, WavePlan } from './WaveMgr';
 
-interface Fx { node: Node; anim?: SpriteAnim; life?: number; total?: number; op?: UIOpacity; }
+/** A short visual effect. `kind` says which pool it goes back to. */
+interface Fx { kind: 'impact' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; }
 
 export interface CombatEvents {
     onWallChanged(): void;
@@ -38,7 +40,12 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     private queue: SpawnEntry[] = [];
     private elapsed = 0;
     private fx: Fx[] = [];
-    private floats: FloatText[] = [];
+    private floats: CombatText[] = [];
+    // Pools: finished objects keep their (hidden) nodes and are reused instead of being destroyed.
+    private enemyPool: Enemy[] = [];
+    private projectilePool: Projectile[] = [];
+    private fxPool: { impact: Fx[]; ring: Fx[]; line: Fx[] } = { impact: [], ring: [], line: [] };
+    private textPool: CombatText[] = [];
     private sortTimer = 0;
     private gameOver = false;
     private rm = ResourceMgr.inst;
@@ -90,14 +97,21 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             magicDef: Math.min(defMax, def.magicDef + entry.defAdd),
         };
         const y = bf.enemyLaneY[0] + Math.random() * (bf.enemyLaneY[1] - bf.enemyLaneY[0]);
-        this.enemies.push(new Enemy(this.enemyLayer, def, stats, bf.spawnX, y));
+        const e = this.enemyPool.pop() || new Enemy(this.enemyLayer);
+        e.spawn(def, stats, bf.spawnX, y);
+        this.enemies.push(e);
     }
 
     // ------------------------------------------------------------------ update
     update(dt: number) {
         // Visual effects keep running even between waves.
-        for (let i = this.fx.length - 1; i >= 0; i--) if (!this.updateFx(this.fx[i], dt)) this.fx.splice(i, 1);
-        for (let i = this.floats.length - 1; i >= 0; i--) if (!this.floats[i].update(dt)) this.floats.splice(i, 1);
+        for (let i = this.fx.length - 1; i >= 0; i--) {
+            const f = this.fx[i];
+            if (!this.updateFx(f, dt)) { this.fx.splice(i, 1); f.node.active = false; this.fxPool[f.kind].push(f); }
+        }
+        for (let i = this.floats.length - 1; i >= 0; i--) {
+            if (!this.floats[i].update(dt)) this.textPool.push(this.floats.splice(i, 1)[0]);
+        }
 
         const host = this.active ? this : null;
         for (const t of this.towers) t.update(dt, host);
@@ -114,13 +128,15 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             if (p.update(dt)) {
                 if (p.target) p.target.pendingDamage = Math.max(0, p.target.pendingDamage - ((p.shot as any).pending || 0));
                 this.explode(p.shot, p.tx, p.ty, p.target, p.cfg);
-                p.node.destroy();
+                p.release();
+                this.projectilePool.push(p);
                 this.projectiles.splice(i, 1);
             }
         }
 
         for (let i = this.enemies.length - 1; i >= 0; i--) {
-            if (this.enemies[i].removed) { this.enemies[i].node.destroy(); this.enemies.splice(i, 1); }
+            const e = this.enemies[i];
+            if (e.removed) { e.release(); this.enemyPool.push(e); this.enemies.splice(i, 1); }
         }
 
         // Draw order: enemies lower on the screen are in front.
@@ -133,7 +149,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
         if (this.active && !this.demo && !this.gameOver && this.queue.length === 0 && !this.enemies.some(e => e.alive)) {
             this.active = false;
-            for (const p of this.projectiles) p.node.destroy();
+            for (const p of this.projectiles) { p.release(); this.projectilePool.push(p); }
             this.projectiles.length = 0;
             this.events.onWaveCleared(this.wave, this.goldFromKills);
         }
@@ -141,11 +157,15 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
     /** Remove everything that belongs to the running battle. */
     clear() {
-        for (const e of this.enemies) e.node.destroy();
-        for (const p of this.projectiles) p.node.destroy();
-        for (const f of this.fx) f.node.destroy();
-        for (const f of this.floats) f.node.destroy();
+        const all: Node[] = [];
+        for (const e of this.enemies.concat(this.enemyPool)) all.push(e.node);
+        for (const p of this.projectiles.concat(this.projectilePool)) all.push(p.node);
+        for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
+        for (const t of this.floats.concat(this.textPool)) all.push(t.node);
+        for (const n of all) if (isValid(n)) n.destroy();
         this.enemies.length = 0; this.projectiles.length = 0; this.fx.length = 0; this.floats.length = 0;
+        this.enemyPool.length = 0; this.projectilePool.length = 0; this.textPool.length = 0;
+        this.fxPool = { impact: [], ring: [], line: [] };
         this.queue.length = 0;
         this.active = false;
     }
@@ -265,7 +285,9 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         for (const t of t0) mul = Math.max(mul, this.defenseMultiplier(target, t));
         (shot as any).pending = Math.max(1, shot.damage * (1 + this.buff('damage', shot.towerId) / 100) * mul);
         target.pendingDamage += (shot as any).pending;
-        this.projectiles.push(new Projectile(this.fxLayer, shot, cfg, target, fromX, fromY, angleDeg, speed, tower.scale));
+        const p = this.projectilePool.pop() || new Projectile(this.fxLayer);
+        p.launch(shot, cfg, target, fromX, fromY, angleDeg, speed, tower.scale);
+        this.projectiles.push(p);
         if (!this.demo) G.main.playSfx('shoot');
     }
 
@@ -441,7 +463,21 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     // ------------------------------------------------------------------ visual feedback
     float(str: string, x: number, y: number, color: string, size: number, important = false, icon?: string) {
         if (!important && this.floats.length >= MAX_FLOAT_TEXTS) return; // keep big fights readable
-        this.floats.push(new FloatText(this.textLayer, str, x, y, color, size, 0.8, icon));
+        const t = this.textPool.pop() || new CombatText(this.textLayer);
+        t.show(str, x, y, color, size, 0.8, icon);
+        this.floats.push(t);
+    }
+
+    /** A pooled effect node of one kind (created the first time). */
+    private takeFx(kind: 'impact' | 'ring' | 'line'): Fx {
+        const f = this.fxPool[kind].pop();
+        if (f) { f.node.active = true; return f; }
+        if (kind === 'impact') {
+            const sp = sprite(this.fxLayer, null, 1, 1);
+            return { kind, node: sp.node, anim: new SpriteAnim(sp), life: 0, total: 1 };
+        }
+        const n = mk(kind === 'ring' ? 'Ring' : 'Line', this.fxLayer);
+        return { kind, node: n, g: n.addComponent(Graphics), op: n.addComponent(UIOpacity), life: 0, total: 1 };
     }
 
     private impactFx(shot: ShotInfo, x: number, y: number) {
@@ -449,17 +485,21 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (im) {
             const frames = Assets.pick(im.path, im.cellW, im.cellH, im.frames);
             if (frames.length > 0) {
-                const sp = sprite(this.fxLayer, null, im.cellW, im.cellH, x, y, 0.5, im.anchorY);
-                const anim = new SpriteAnim(sp);
-                anim.play(frames, im.frameTime, false);
-                this.fx.push({ node: sp.node, anim });
+                const f = this.takeFx('impact');
+                const ui = f.node.getComponent(UITransform)!;
+                ui.setContentSize(im.cellW, im.cellH);
+                ui.setAnchorPoint(0.5, im.anchorY === undefined ? 0.5 : im.anchorY);
+                f.node.setPosition(x, y, 0);
+                f.anim!.play(frames, im.frameTime, false);
+                this.fx.push(f);
             }
         }
         if (shot.explosionRange >= 30) {
             // Ring that shows the real explosion radius.
-            const n = mk('Ring', this.fxLayer, x, y);
-            const g = n.addComponent(Graphics);
+            const f = this.takeFx('ring');
+            const g = f.g!;
             const c = shot.damageTypes.length > 1 ? '#c8ff7a' : shot.damageTypes[0] === 'magic' ? '#9fe8ff' : '#ffffff';
+            g.clear();
             g.fillColor = hex(c, 50);
             g.circle(0, 0, shot.explosionRange);
             g.fill();
@@ -467,28 +507,33 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             g.strokeColor = hex(c, 220);
             g.circle(0, 0, shot.explosionRange);
             g.stroke();
-            this.fx.push({ node: n, life: 0.28, total: 0.28, op: n.addComponent(UIOpacity) });
+            f.node.setPosition(x, y, 0);
+            f.life = f.total = 0.28;
+            f.op!.opacity = 255;
+            this.fx.push(f);
         }
     }
 
     private lineFx(x1: number, y1: number, x2: number, y2: number, color: string) {
-        const n = mk('Line', this.fxLayer, 0, 0);
-        const g = n.addComponent(Graphics);
+        const f = this.takeFx('line');
+        const g = f.g!;
+        g.clear();
         g.lineWidth = 3;
         g.strokeColor = hex(color);
         g.moveTo(x1, y1);
         g.lineTo(x2, y2);
         g.stroke();
-        this.fx.push({ node: n, life: 0.2, total: 0.2, op: n.addComponent(UIOpacity) });
+        f.node.setPosition(0, 0, 0);
+        f.life = f.total = 0.2;
+        f.op!.opacity = 255;
+        this.fx.push(f);
     }
 
+    /** Returns false when the effect is over (it then goes back to its pool). */
     private updateFx(f: Fx, dt: number): boolean {
-        if (f.anim) {
-            if (f.anim.update(dt) || f.anim.finished) { f.node.destroy(); return false; }
-            return true;
-        }
-        f.life = (f.life || 0) - dt;
-        if (f.life <= 0) { f.node.destroy(); return false; }
+        if (f.anim) return !(f.anim.update(dt) || f.anim.finished);
+        f.life -= dt;
+        if (f.life <= 0) return false;
         if (f.op) f.op.opacity = Math.round(255 * f.life / (f.total || 1));
         return true;
     }

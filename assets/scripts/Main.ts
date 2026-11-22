@@ -6,17 +6,25 @@ import { Assets } from './core/Assets';
 import { ConfigMgr } from './core/ConfigMgr';
 import { G, IMain } from './core/Globals';
 import { ResourceMgr } from './core/ResourceMgr';
-import { HeroRecruitScreen } from './screens/HeroRecruitScreen';
-import { InCastleScreen } from './screens/InCastleScreen';
-import { LoadingScreen } from './screens/LoadingScreen';
-import { MainMenuScreen } from './screens/MainMenuScreen';
-import { OutCastleScreen } from './screens/OutCastleScreen';
-import { IOverlay, PauseOverlay, ResearchOverlay, SaveLoadOverlay, SettingsOverlay } from './screens/Overlays';
+import { HeroRecruitScreen } from './views/HeroRecruitScreen';
+import { InCastleScreen } from './views/InCastleScreen';
+import { LoadingScreen } from './views/LoadingScreen';
+import { MainMenuScreen } from './views/MainMenuScreen';
+import { OutCastleScreen } from './views/OutCastleScreen';
+import { IOverlay, PauseOverlay, ResearchOverlay, SaveLoadOverlay, SettingsOverlay } from './views/Overlays';
 
 const { ccclass } = _decorator;
 
 const DESIGN_W = 1024;
 const DESIGN_H = 576;
+/** Prefabs of assets/prefabs preloaded at start (every screen, popup and list item of the game). */
+const PREFABS = [
+    'screens/Loading', 'screens/MainMenu', 'screens/InCastle', 'screens/OutCastle', 'screens/HeroRecruit',
+    'popups/Pause', 'popups/Settings', 'popups/SaveLoad', 'popups/Research', 'popups/Confirm', 'popups/Message',
+    'popups/Info', 'popups/Build', 'popups/NewHero',
+    'items/TopBar', 'items/DefTab', 'items/SaveSlot', 'items/ResearchRow', 'items/BuildRow', 'items/HeroCard',
+    'items/LevelTag', 'items/ArcButton', 'items/Toast', 'items/TowerButton',
+];
 const SAVE_KEY = 'castle_defense_save_';
 const SETTINGS_KEY = 'castle_defense_settings';
 
@@ -58,8 +66,6 @@ export class Main extends Component implements IMain {
         this.music = this.makeLayer('Music').addComponent(AudioSource);
         this.sfx = this.makeLayer('Sfx').addComponent(AudioSource);
         this.loadSettings();
-        // Shown from the very first frame so the player never looks at an empty screen.
-        this.loading = new LoadingScreen(this.screenLayer);
         // Save when the player leaves the game (tab hidden / app sent to background).
         game.on(Game.EVENT_HIDE, this.onHide, this);
     }
@@ -80,6 +86,8 @@ export class Main extends Component implements IMain {
         if (w <= 0 || h <= 0 || (w === this.W && h === this.H)) return false;
         this.W = w;
         this.H = h;
+        // Screen / popup prefabs stretch to the layers with Widgets, so the layers are as big as the screen.
+        for (const l of [this.screenLayer, this.overlayLayer]) if (l) l.getComponent(UITransform)!.setContentSize(w, h);
         return true;
     }
 
@@ -100,12 +108,21 @@ export class Main extends Component implements IMain {
     private makeLayer(name: string): Node {
         const n = new Node(name);
         n.layer = Layers.Enum.UI_2D;
-        n.addComponent(UITransform);
+        n.addComponent(UITransform).setContentSize(this.W, this.H);
         this.node.addChild(n);
         return n;
     }
 
     start() {
+        // The loading screen is a prefab too: load it first (it is small), then everything else.
+        Assets.loadPrefabs(['screens/Loading'], () => {
+            if (!Assets.prefab('screens/Loading')) return;
+            this.loading = new LoadingScreen(this.screenLayer);
+            this.boot();
+        });
+    }
+
+    private boot() {
         const loading = this.loading!;
         loading.set(0.05, 'Loading configuration...');
         ConfigMgr.load(() => {
@@ -118,7 +135,8 @@ export class Main extends Component implements IMain {
             const paths = ConfigMgr.texturePaths();
             for (const p of ConfigMgr.linearTexturePaths()) Assets.linear.add(p);
             loading.set(0.1, 'Loading sprites...');
-            Assets.loadTextures(paths, () => {
+            // Combat sheets come from one packed atlas (fewer draw calls); everything else is loaded one by one.
+            Assets.loadAtlas('sprites/atlas/combat', () => Assets.loadPrefabs(PREFABS, () => Assets.loadTextures(paths, () => {
                 ConfigMgr.checkAssets();
                 loading.set(0.9, 'Loading audio...');
                 this.loadAudio(() => {
@@ -130,7 +148,7 @@ export class Main extends Component implements IMain {
                         this.goto('menu');
                     });
                 });
-            }, (loaded, total) => loading.set(0.1 + 0.8 * loaded / total, `Loading sprites... ${loaded}/${total}`));
+            }, (loaded, total) => loading.set(0.1 + 0.8 * loaded / total, `Loading sprites... ${loaded}/${total}`))));
         });
     }
 

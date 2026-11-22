@@ -1,1031 +1,345 @@
-## About the game
+# Castle Defense
 
-**Castle Defense** is a 2D strategy game that mixes castle building and tower defense.
-You grow a small castle between battles, then defend its wall against waves of monsters.
-Each wave is harder than the one before.
+**Castle Defense** is a 2D strategy game made with **Cocos Creator 3.8.8** and **TypeScript**.
+It mixes castle building and tower defense: between battles you grow a small castle, then
+you defend its wall against endless waves of monsters. Every wave is harder than the one
+before, and the game ends when the wall falls.
 
 Video demo: https://drive.google.com/drive/folders/15IWJf0NY1LbKzWitaf19cV2dwojPjyHZ?usp=drive_link
 
-### Core loop
-1. **Inside the castle (economy).** Build and upgrade buildings on a large scrolling map.
-   - **Base:** the heart of the castle. It makes gold and limits how many buildings and towers you can have.
-   - **Farm:** makes food.
-   - **Lumber & Quarry:** makes material.
-   - **Research Lab:** unlocks technologies.
+---
 
-   Buildings produce resources after each wave and each one has 3 levels.
-2. **Outside the wall (defense).** During the preparation phase you place, move, upgrade
-   or destroy towers in the defense area behind the wall. Then you start the wave and watch the battle.
-3. **Survive and grow.** Every cleared wave gives you resources. Spend them to expand the castle,
-   repair the wall and get ready for the next, stronger wave. The game ends when the wall falls.
+## Contents
+- [Gameplay](#gameplay)
+- [Castle buildings](#castle-buildings)
+- [Defense towers](#defense-towers)
+- [Enemies and waves](#enemies-and-waves)
+- [Combat rules](#combat-rules)
+- [Heroes](#heroes)
+- [Research](#research)
+- [Art style](#art-style)
+- [Getting started](#getting-started)
+- [Project architecture](#project-architecture)
+- [Tools](#tools)
+- [Credits](#credits)
 
-### Combat
-- **Three towers, 3 levels each.** Each tower has a rotating weapon that turns to face
-  its target before it fires.
-  - **Crossbow:** fast physical shots at a single target.
-  - **Crystal:** magic damage over a medium area.
-  - **Catapult:** slow, long-range splash attacks that use whichever damage type is better against the target.
-- **Four enemy types.** Clampbeetle (tank), Scorpion (deals heavy damage to the wall),
-  Firebug (fast but fragile) and Magma Crab (slow juggernaut).
-- **Damage and defense.** Damage is physical or magic, and enemies have matching defenses.
-  Towers can also land critical hits. Enemy defense goes up every 10 waves.
-- **Targeting.** You choose each tower's target mode. A x1/x2 speed toggle and a pause button
-  let you control the battle.
+---
 
-### Progression
-- **Heroes.** Recruit from a pool of 27 heroes rated 3★, 4★ or 5★, each shown on an animated card.
-  Every hero you own gives permanent buffs to towers, the economy or the wall.
-- **Research.** 22 technologies, such as stronger ammunition, faster reload, a sturdier wall
-  and better production.
-- **Save and load.** The game has multiple save slots.
+## Gameplay
 
-### Art style
-- Pixel-art fantasy: animated towers, monsters and buildings drawn from sprite sheets.
-- An ornate medieval UI with framed popups, parchment-scroll headers, decorated buttons and resource icons.
-- The main menu plays a live, endless battle in the background behind a dark veil.
+The game always runs in landscape. One run is a loop of two phases:
 
-### Data-driven design
-Everything that affects balance is stored in JSON files under `assets/resources/config`,
-so you can tune the game without touching any code: buildings, towers, enemies, waves,
-heroes, hero buffs, research and status effects.
+1. **Preparation.** Nothing attacks you.
+   - **Inside the castle:** build, upgrade, move or destroy buildings on a large scrolling map.
+   - **Outside the wall:** place, move, upgrade or destroy defense towers in the defense area behind the wall.
+   - Recruit heroes, research technologies, repair the wall and save the game.
+2. **Combat.** Press **Start Wave**. Monsters walk from the right towards the wall and the towers
+   fire by themselves. You can pause, change the game speed (x1 / x2 / x3), change a tower's
+   target mode and open its info. Building and saving are locked until the wave is over.
+
+When every monster of the wave is dead:
+- the gold from kills and the production of every building are added to your resources;
+- the game saves automatically;
+- the next wave is ready.
+
+If the wall's HP reaches 0, the game is over.
+
+**Starting resources:** 600 food, 700 material, 700 gold.
+
+**Saving:** one autosave slot (written after every wave and when the app goes to the background)
+and three manual slots. Saving is only possible during preparation.
+
+---
+
+## Castle buildings
+
+Buildings are placed freely inside the castle's build area. They do not snap to a grid and
+cannot overlap. Every building has 3 levels, and the Base level limits everything else.
+Destroying a building refunds 50% of its build cost.
+
+| Building | Produces after each wave (Lv 1 / 2 / 3) | Limit | Notes |
+|---|---|---|---|
+| **Base** | 120 / 250 / 500 gold | 1 (fixed in the centre) | Raises the tower limit (10 / 20 / 30), the hero limit (3 / 7 / 12), the number of other buildings and the max tower level. Upgrade: 900 gold + 500 material + 400 food, then 4000 gold + 6000 material + 6000 food. |
+| **Farm** | 95 / 150 / 330 food | 5 per Base level | Build: 60 gold + 100 material |
+| **Lumber & Quarry** | 115 / 180 / 320 material | 5 per Base level | Build: 80 gold + 80 food |
+| **Research Lab** | nothing | 1 | Opens research. Max technology level is 2 / 5 / 10 at Lab Lv 1 / 2 / 3. Lab Lv 3 also unlocks the tower special effects, Smart Targeting and the endless technologies. |
+
+---
+
+## Defense towers
+
+There are three towers, and each has 3 levels.
+- **Placement:** towers stand in the defense area and keep a minimum distance from each other.
+- **Aiming:** each tower has a rotating weapon that turns to face its target before it fires.
+- **Level cap:** a tower can never have a higher level than the Base.
+
+| | **Crossbow** | **Crystal** | **Catapult** |
+|---|---|---|---|
+| Role | Fast single target | Magic area damage | Slow long-range siege |
+| Damage type | Physical | Magic | Physical or magic, whichever hurts more |
+| Build cost | 100 gold, 40 material | 140 gold, 60 material | 240 gold, 120 material |
+| Damage (Lv 1 / 2 / 3) | 45 / 85 / 120 | 45 / 90 / 180 | 70 / 150 / 550 |
+| Attacks per second | 1.5 / 3 / 6 | 0.75 / 1.5 / 3 | 0.25 / 0.5 / 1 |
+| Range (px) | 384 / 461 / 553 | 384 / 461 / 553 | 600 / 750 / 900 |
+| Explosion radius (px) | 20 (fixed) | 40 / 60 / 80 | 70 / 95 / 120 |
+| Crit rate / crit damage | 5–25% / 175–250% | 5–25% / 175–225% | 10–40% / 200–300% |
+
+The Crossbow is strong early on. The Catapult starts weak but becomes the main damage dealer late in the game.
+
+**Target modes** (switch with the *Target* button of a selected tower):
+- **First:** the enemy closest to the wall.
+- **Lowest HP**, **Highest HP**, **Nearest** (to the tower).
+- **Smart:** unlocked by research. The tower picks the target where its damage is most useful.
+  - Area towers aim at groups.
+  - Shots never waste damage on an enemy that is already going to die.
+  - Enemies near the wall get priority.
+  - A Crossbow with Smart mode always hits the enemy closest to the wall.
+
+### Special effects
+Every tower has three special effects. They are unlocked and made more likely by research
+at Research Lab Lv 3: each research step adds +5% chance, up to 50%. The Crystal gets twice
+the chance at level 3, so a fully researched Crystal reaches 100%.
+
+| Tower | Effect | What it does |
+|---|---|---|
+| Crossbow | Piercing Bolt | The bolt goes on to hit 2 more enemies nearby. |
+| Crossbow | Bleeding Bolt | Bleed: 20% of the hit as physical damage every second for 4 s (stacks 3 times). |
+| Crossbow | Hunter's Mark | The target takes +50% damage from Crossbows for 5 s. |
+| Crystal | Frost Explosion | Every enemy in the explosion is slowed by 35% for 2.5 s. |
+| Crystal | Chain Lightning | Lightning jumps to 3 more enemies for 80% damage. |
+| Crystal | Arcane Vulnerability | Enemies hit take +20% magic damage for 4 s. |
+| Catapult | Shockwave | Enemies hit are stunned. |
+| Catapult | Heavy Impact | Bonus damage equal to 6% of the target's max HP. |
+| Catapult | Armor Break | Enemies hit lose 20 defense for 4 s. |
+
+---
+
+## Enemies and waves
+
+| Enemy | Role | HP | Wall damage | Speed | Phys / Magic def | Gold |
+|---|---|---|---|---|---|---|
+| **Scorpion** (Berserker) | Hits the wall hard | 97.5 | 55 physical | 20 | 5 / 8 | 10 |
+| **Firebug** (Runner) | Very fast, fragile | 60 | 15 magic | 42.5 | 3 / 3 | 8 |
+| **Clampbeetle** (Tank) | High HP and physical defense, resists stun | 240 | 25 physical | 12.5 | 20 / 5 | 12 |
+| **Magma Crab** (Juggernaut) | Slow, tough, resists stun and slow | 210 | 50 magic | 10 | 15 / 15 | 25 |
+
+Values are for wave 1. All stats grow with the wave number.
+
+**How waves scale:**
+- **Enemy count:** starts at 24 and grows by 2 every wave. Spawns come faster over time.
+- **Stats:** HP follows a curve tuned by segments. Damage, speed and gold grow every 3 waves.
+  HP gets an extra ×1.2 after wave 100.
+- **Enemy types:**
+
+  | Waves | Enemies |
+  |---|---|
+  | 1–3 | Scorpions and Firebugs |
+  | from 4 | Clampbeetles join |
+  | from 7 | Magma Crabs join |
+
+- **Wave 5, "Swarm":** a special wave with many weak Firebugs and Scorpions.
+- **Bosses:** every 10th wave adds a giant Magma Crab boss with ×4 HP, ×3 damage and ×8 gold.
+- **Milestones:** waves 10, 30 and 70 are sieges with more enemies and extra bosses.
+  - Wave 10: **Siege**
+  - Wave 30: **Great Siege**
+  - Wave 70: **Doom Siege**
+- **Enemy armour:**
+  - From wave 10, enemy defense rises by 5 every 6 waves, up to 70 (bosses up to 90).
+  - The *Enemy armor* tab in the top left corner shows how much Armor / Spell Piercing the next wave needs
+    compared with what you have.
+- **Enemy abilities:** they are implemented but switched off (`"enabled": false` in `enemy.json`).
+  - Iron Skin
+  - Rage
+  - Evasion
+  - Sprint
+  - Fortified Body
+  - …
+
+---
+
+## Combat rules
+
+All tower damage goes through one pipeline:
+
+1. **Base damage** = tower damage × (1 + damage buffs).
+2. **Effective defense** = enemy defense × 2 − defense reduction (research, heroes, Armor Break).
+   It can go below 0, which makes the enemy take extra damage.
+3. **Normal damage** = base damage × (1 − effective defense / 100).
+   The Catapult computes this for both damage types and keeps the higher one.
+4. **Critical hit:** roll the crit rate; a crit multiplies the damage by the crit damage.
+5. Round down, minimum 1. Apply the damage, then pay the gold reward once on death.
+
+**Explosions:** projectiles hit the target and every enemy inside the explosion radius.
+
+**Status effects:**
+- slow
+- stun
+- bleed
+- burn
+- armour break
+- marks
+
+Each effect has a duration and a stacking rule (replace if stronger, refresh, or stack), and
+some enemies resist some effects.
+
+**The wall:**
+- **HP:** starts with 1000 HP and has its own physical and magic defense (max 70).
+- **Damage:** enemies that reach it hit it until they die or the wall falls.
+- **Repair:** costs gold and material per missing HP. The price goes up with the Base level.
+
+---
+
+## Heroes
+
+Heroes are recruited at the Base. Each recruit is a random pick among the heroes you do not own yet.
+
+- **Pool:** 27 heroes: twelve 3★, nine 4★, six 5★. Each is shown as an animated card.
+- **Drop rate:** 3★ 60%, 4★ 30%, 5★ 10%.
+- **Buffs:** a hero gets one random buff per star (3 to 5 buffs). Buffs are rolled when a new game
+  starts, so every game is a little different.
+- **Buff types:**
+  - Tower damage, attack speed, range, explosion radius
+  - Crit rate and crit damage
+  - Food, material and gold production; gold from kills
+  - Research cost
+  - Enemy physical / magic defense, damage, speed and HP reduction
+- **Passives:** some 5★ heroes have an extra skill.
+  - *Crossbow Specialist*
+  - *Crystal Guardian*
+  - *Siege Commander*
+  - *Treasurer*
+- **Limits:** the Base level limits how many heroes you can own (3 / 7 / 12).
+- **Price:** each recruit costs 600 gold + 600 material + 600 food, plus 400 of each per hero you already own.
+
+The buffs of every owned hero are permanent and stack with research.
+
+---
+
+## Research
+
+The Research Lab has about 35 technologies. Each level costs more than the last, and the Lab
+level limits how high a technology can go (2 / 5 / 10).
+
+| Group | Technologies |
+|---|---|
+| Towers | Damage, Attack speed, Range, Explosion radius, Crit rate, Crit damage, Projectile speed |
+| Economy | Food, Material and Gold production, Gold from kills |
+| Wall | Wall HP, Wall defense |
+| Enemies | Armor Piercing (physical def), Spell Piercing (magic def), Weakening Hex (damage), Withering Curse (HP) |
+| Effects (Lab Lv 3) | One technology per tower special effect (9), Arcane Mastery (all effects), longer Slow / Stun, stronger Bleed / Burn |
+| Endless (Lab Lv 3) | *Masterwork Ammunition* (damage) and *Living Stone* (wall HP) have no max level. They open once the normal version is maxed. |
+| Smart Targeting (Lab Lv 3) | A very expensive one-time technology that adds the *Smart* target mode. |
+
+---
+
+## Art style
+
+- **Pixel-art fantasy:**
+  - animated towers with rotating weapons
+  - animated monsters with walk and death animations
+  - animated castle buildings for every level
+- **Ornate medieval UI:**
+  - framed popups with parchment-scroll titles
+  - decorated buttons
+  - resource icons
+  - a decorated top bar
+- **Live main menu:** the menu plays an endless battle in the background behind a dark veil.
+
+---
 
 ## Getting started
-1. Install Cocos Creator 3.8.8 (Cocos Dashboard).
-2. Clone this repository and add the folder in Cocos Dashboard (Add -> select the project folder).
-3. Open `assets/scenes/Main.scene` and press Play.
 
-The folders `library/`, `temp/`, `local/`, `build/` and `profiles/` are generated by Cocos Creator and are not part of the repository; the editor recreates them the first time the project is opened.
+1. Install **Cocos Creator 3.8.8** with the Cocos Dashboard.
+2. Clone this repository and add the folder in the Dashboard (*Add* → select the project folder).
+3. Open `assets/scenes/Main.scene` and press **Play**.
 
-## Structure
-- `assets/scripts/Main.ts`        singleton, the only Component: boot, screens, save/load, audio options
-- `assets/scripts/core/`          ResourceMgr (progress data), ConfigMgr (JSON + validation), Assets
-- `assets/scripts/combat/`        CombatManager (damage pipeline, targeting, explosions), Enemy, TowerUnit, Projectile, WaveMgr
-- `assets/scripts/screens/`       MainMenu, InCastle, OutCastle, HeroRecruit, overlays (pause, setting, save/load, research)
-- `assets/scripts/ui/`            code-built UI helpers
-- `assets/resources/config/`      building, tower, enemy, waves, heroes, herobuff, research, effects (.json) - all balancing
-- `assets/resources/sprites/`     towers, enemies, castle buildings, hero cards, castle map and ground tiles
-- `assets/resources/audio/`       optional clips (bgm, click, shoot, hit, explode, coin, win, lose)
+The design resolution is 1024 × 576.
+- The height always fits the screen.
+- The width follows the window, so the game works on wide phones and on desktop.
+- The UI sticks to the screen edges.
 
-All screens live in one scene and are built from code.
-Tower special effects and enemy abilities are implemented but `"enabled": false` in tower.json / enemy.json.
+The folders `library/`, `temp/`, `local/`, `build/` and `profiles/` are generated by Cocos
+Creator and are not in the repository; the editor recreates them the first time the project opens.
 
-## Game Design Requirements
+---
 
-The notes below are the design brief of the game. Part 1 is the original brief (translated from Vietnamese). Part 2 extends and clarifies it; where the two disagree, Part 2 wins.
+## Project architecture
 
-### Part 1 - Original brief
-
-#### Gameplay
-
-**Main features**
-
-- The game always runs in landscape orientation.
-- Castle defense: monsters attack in waves.
-- Resource management: collect the resources produced by the buildings inside the castle (food, raw material, gold).
-- Construct and upgrade buildings.
-- Research technologies.
-- Hero gacha (each hero has its own buff effects).
-
-**Scenes**
-
-- Main menu: New Game, Load Game, Setting, Quit Game.
-- Pause menu: opened while playing; Save Game, Load Game, Setting, Go To Main Menu, Quit Game.
-- Setting: audio options.
-- Load game: choose an earlier save file.
-- In castle: see "Inside the castle" below.
-- Out castle: see "Outside the castle" below.
-
-**The two main play screens**
-
-Inside the castle:
-
-- Plays like the city view of an SLG (strategy) game.
-- One Base is fixed in the middle of a fixed map; more buildings can be built around it.
-- Tapping an existing building shows its action buttons on an arc below the building (upgrade, move, destroy, ...).
-- A top bar shows the resources.
-- A button in the top-right corner leads outside the castle.
-- A button in the bottom-left corner opens the pause menu.
-- The data of every building is defined in `building.json`.
-
-Outside the castle:
-
-- Does not play like an SLG game.
-- There is one area on the left for building defense structures, then a fixed castle wall, and beyond the wall an open field.
-- This scene is wider than the screen and can be scrolled left and right to look at the map.
-- Monsters attack from right to left toward the castle wall. When the wall is destroyed the game is over and returns to the main menu.
-- The defense structures behind the wall attack and kill the monsters; every monster killed drops gold.
-- A button in the top-right corner leads into the castle.
-- A button in the bottom-right corner starts the wave. Once the fight starts, the "enter castle" button is hidden and cannot be pressed.
-- A button in the bottom-left corner opens the pause menu.
-
-#### Game objects
-
-**Defense structures (towers)**
-
-- Stats: damage, attack speed, attack range, explosion range, crit rate, crit damage, type (physic, magic).
-- Damage dealt to monsters can crit. Base crit rate is 5%, base crit damage is 175%.
-- Output damage: `damage * (1 + damage buff / 100) * (1 - (enemy def of the tower's type * 2 - def reduction buff of the tower's type) / 100)`, and when the hit crits, `* (crit damage + crit damage buff) / 100`.
-- If the computed damage is below 0 it counts as 1.
-- A tower with both physic and magic types computes the damage twice and uses the higher result.
-- There are 3 tower types: crossbow (physic), crystal (magic), catapult (physic and magic). The maximum level is 3.
-- Crossbow and crystal have the same base attack range.
-- Crossbow has a base attack speed (1 attack per second) 4 times that of the catapult (1 attack every 4 seconds), but its explosion range is always fixed.
-- Crystal has a medium attack speed (1 attack every 2 seconds), a base explosion range twice that of the crossbow, and the range can grow through technology or hero buffs.
-- Catapult has a base attack range twice that of the other towers and an explosion range 4 times that of the crossbow, which can grow like the crystal's.
-- Each level doubles the stats of the previous level, except attack range which only grows 1.2 times.
-- Every tower parameter, asset paths included, is stored in `tower.json`.
-
-**Monsters**
-
-- A monster that touches the castle wall dies and damages the wall.
-- Stats: damage, hp, physic def, magic def, move speed.
-- Output damage: `damage * (1 - (wall def of the monster's type) / 100)`.
-- There are 4 monster types:
-  - 3 types that each have one higher stat (one of damage, hp, move speed);
-  - 1 type with higher damage and hp but lower move speed.
-- Physic def and magic def range from 1 to 80.
-- Monsters attack in waves defined in `enemy.json`, which holds the wave parameters (monster count, monster stats, ...).
-- The number of monsters grows after every wave; monster stats grow a little after every 3 waves.
-
-**Castle wall**
-
-- Stats: hp, physic def, magic def. Both def values are capped at 70 and start at 0.
-- When hp reaches 0 the game is over.
-
-**Base**
-
-- Cannot be destroyed or moved, exists from the start and always sits in the middle of the map.
-- Produces an amount of "gold" after every wave, depending on its level.
-- Output: `production of the level * (1 + gold production buff / 100)`.
-- Tapping it gives 3 options: upgrade, info, recruit.
-- Info shows the resources needed for the upgrade and also a section listing the buffs currently given by heroes.
-- Upgrade opens a popup stating how many resources the upgrade costs, with two buttons: confirm and cancel.
-- Recruit opens the "hero recruitment" scene with two scroll lists side by side: heroes owned and heroes not owned yet.
-- Inside those lists each hero is shown as a card (hero picture on the left, the hero's buffs listed vertically in the rest of the card):
+The game has **one scene**. A single `Main` component boots the game and switches between
+screens and popups. Every screen, popup and list item is a **prefab**; the game logic is plain
+TypeScript classes.
 
 ```
---------------------------------
-| -------  |  buff 1           |
-| |     |  |  buff 2           |
-| | pic |  |  buff 3           |
-| |     |  |  buff 4 (if any)  |
-| -------  |  buff 5 (if any)  |
-| stars    |                   |
---------------------------------
+assets/
+  scenes/Main.scene           the only scene; Main (under Canvas) boots the game
+  scripts/
+    Main.ts                   boot, loading, screens, popups, save / load, audio
+    core/
+      ConfigMgr.ts            loads and validates the JSON configs
+      Assets.ts               textures, combat atlas, asset bundles, prefabs
+      ResourceMgr.ts          game state (resources, buildings, towers, wall, heroes, research)
+      services/               game rules: Building, Tower, Wall, Research, Hero, Buff
+      state/                  SaveCodec (save data + validation), Placement (free placement geometry)
+    combat/
+      CombatManager.ts        targeting, damage pipeline, effects, object pools
+      Enemy.ts, TowerUnit.ts, Projectile.ts, WaveMgr.ts, HpBar.ts, CombatText.ts, SpriteAnim.ts
+    views/                    screen controllers: MainMenu, InCastle, OutCastle, HeroRecruit, Loading, Overlays
+      screens/ popups/ items/ view components of the prefabs (references to their nodes)
+      common/                 PrefabUi, Popups (confirm, message, toast, info), TopBar, DefTab, UIKit
+  prefabs/                    asset bundle "prefabs": screens/, popups/, items/
+  bundles/heroes/             asset bundle "heroes": hero card sheets, loaded only when shown
+  resources/
+    config/                   all balancing data (.json)
+    sprites/                  sprite sheets; sprites/atlas/combat packs every enemy and tower sheet
+    audio/                    optional clips (bgm, click, shoot, hit, explode, coin, win, lose)
 ```
 
-**Farm**
+### Main ideas
 
-- Produces an amount of "food" after every wave, depending on its level.
-- Output: `production of the level * (1 + food production buff / 100)`.
-- Tapping it gives 4 options: upgrade, move, destroy, info.
-- Upgrade opens the same popup as the Base.
-- Info shows the current values (how many resource units it produces per wave) and the resources needed for the upgrade.
+- **Data-driven.** Everything that affects balance is in `assets/resources/config`, so the game
+  can be tuned without touching code:
+  - `building.json`: buildings, Base limits, wall, start resources, recruit cost
+  - `tower.json`: towers, levels, battlefield layout, target modes
+  - `enemy.json`: enemies, resistances, abilities
+  - `waves.json`: wave size, HP curve, bosses, milestones, special waves, defense growth
+  - `heroes.json` and `herobuff.json`: hero pool, star weights, buff ranges
+  - `research.json`: technologies, costs, requirements
+  - `effects.json`: status effects and tower special effects
 
-**Material production**
-
-- Produces an amount of "raw material" after every wave, depending on its level.
-- Output: `production of the level * (1 + raw material production buff / 100)`.
-- Tapping it gives 4 options: upgrade, move, destroy, info.
-- Upgrade opens the same popup as the Base.
-- Info shows the current values (how many resource units it produces per wave) and the resources needed for the upgrade.
-
-**Research building**
-
-- Research options (value per level in brackets):
-  - damage buff (5)
-  - attack speed buff (5)
-  - attack range buff (5)
-  - explosion range buff (10) - the crossbow does not benefit from it
-  - food production buff for buildings (30 ~ 50)
-  - raw material production buff for buildings (30 ~ 50)
-  - gold production buff for buildings (30 ~ 50)
-  - buff to gold gained from defeated monsters (10 ~ 20)
-  - wall hp buff (5)
-  - wall physic and magic def buff
-  - monster physic def reduction (5), at most 10 times
-  - monster magic def reduction (5), at most 10 times
-  - monster damage reduction (5), at most 10 times
-  - monster hp reduction (5), at most 10 times
-  - crit rate buff (3)
-  - crit damage buff (5)
-- Every buff is applied to the buffed stat as: `base stat * (1 + buff / 100)`.
-- The research options are loaded from `research.json`.
-- Upgrade opens the same popup as the Base.
-
-**Hero**
-
-- Every hero has its own id so heroes are easy to manage.
-- Hero data: id, name, number of stars, image path; read from `heroes.json`.
-- Every hero gets 3 to 5 random buff types, matching its 3 to 5 stars, each rolled inside a predefined range:
-  - attack speed buff (5 ~ 10)
-  - damage buff (5 ~ 10)
-  - attack range buff (5 ~ 15)
-  - explosion range buff (10 ~ 20)
-  - food production buff for buildings (30 ~ 50)
-  - raw material production buff for buildings (30 ~ 50)
-  - gold production buff for buildings (30 ~ 50)
-  - buff to gold gained from defeated monsters (10 ~ 20)
-  - reduction of the resources needed for research (5 ~ 7)
-  - monster physic def reduction (5 ~ 15)
-  - monster magic def reduction (5 ~ 15)
-  - monster damage reduction (5 ~ 7)
-  - monster attack speed reduction (5 ~ 7)
-  - monster hp reduction (5 ~ 7)
-  - crit rate buff (1 ~ 3)
-  - crit damage buff (15 ~ 30)
-- These buffs are stored in `herobuff.json` and loaded when the game runs.
-
-#### UI
-
-Pixel style, but with a high level of detail.
-
-- Idle tycoon games can be used as a reference for the UI and the building assets.
-- Where no asset has been found yet, a text label with the name of the missing asset can be used for now.
-
-#### Code
-
-TypeScript, because the game is made with the Cocos Creator 3.8.8 2D template. Comments are written in English.
-
-Class `Main`:
-
-- Initializes the game at start-up and is reachable as a singleton.
-- Adapts the game size for mobile when needed (on Windows the default is 1024x576).
-- Manages saving and loading of save files.
-- Manages the audio options of the game.
-
-Class `ResourceMgr`:
-
-- A singleton reachable from any other class.
-- Manages and stores the resource data during play.
-- Stores the buildings that were built: position and level, both inside and outside the castle.
-- Stores the highest monster wave being played.
-- Stores the heroes owned.
-- Stores the technologies researched.
-- The data stored in this class is what gets written to the player's save file.
-- When the player loads a save file, its data is initialized into this class.
-
-### Part 2 - Additional requirements and game design specifications
-
-		
-#### ADDITIONAL REQUIREMENTS & GAME DESIGN SPECIFICATIONS
-
-##### 0. IMPORTANT INSTRUCTIONS
-
-This document is an extension of the original game requirement document.
-
-The original requirement document remains the primary source of truth.
-
-The following rules must be respected:
-
-- Preserve all original gameplay mechanics, scenes, classes, systems, formulas, and technical requirements.
-- Do not remove or rewrite existing requirements unless explicitly instructed in this additional specification.
-- New specifications must extend and clarify the original requirements.
-- If a conflict exists between the original requirements and this document, follow the explicitly stated modifications in this document.
-- Do not start implementing the game or generating source code unless explicitly requested.
-- The current task is to finalize the game design, gameplay specifications, initial balancing values, and technical requirements.
-- All proposed statistics must be configurable through JSON files rather than hardcoded in TypeScript.
-- Keep the architecture extensible for future gameplay features.
+  Configs are validated when the game starts: errors stop the loading screen and are listed,
+  warnings are shown on the main menu.
+- **UI in prefabs, logic in code.** Each prefab has a small view component (for example
+  `PauseView`) whose properties point at its nodes. The controller only fills in texts and
+  connects buttons, so layouts are edited in the editor. HUD elements use Widgets to stay on
+  the screen edges.
+- **Services.** `ResourceMgr` is a small facade over one service per game system. Screens
+  listen to its change event instead of polling.
+- **Performance.**
+  - **Pooling:** enemies, projectiles, effects and damage numbers are reused instead of being
+    created and destroyed. About 660 nodes are created during wave 100, against more than
+    50,000 before pooling.
+  - **Fewer draw calls:** all combat sprites share one packed atlas texture. HP bars are sprites
+    on the same texture. Damage numbers use the CHAR label cache.
+  - **Loading on demand:** the 27 large hero card sheets are in a separate bundle. A card only
+    keeps its texture while it is visible on screen.
+- **Free placement.** Buildings and towers are placed at any position inside their area,
+  with overlap and spacing checks, and their exact position is saved.
+- **Saves.** Saves are JSON in local storage, with a version number and validation, so a
+  broken or outdated save never crashes the game.
 
 ---
 
-#### 1. ADDITIONAL GAMEPLAY RULES
+## Tools
 
-##### 1.1. Wave State and Building Management
-
-The game must have two main states:
-
-- Preparation State: The player can manage the castle, construct buildings, move buildings, upgrade buildings, recruit heroes, research technologies, and prepare defenses.
-- Combat State: Enemies are attacking the castle.
-
-Rules:
-
-1. The player cannot upgrade any building or tower while a wave is in progress.
-2. The player cannot construct, move, or destroy buildings during combat.
-3. The player cannot enter the castle management scene while combat is in progress.
-4. The player can only start the next wave after all enemies from the current wave have been eliminated or have reached the castle wall.
-5. When a wave is completed, reward resources are calculated and distributed.
-6. The player can freely manage buildings and towers between waves.
-
-The game must clearly distinguish between Preparation State and Combat State.
-
-##### 1.2. Tower Placement
-
-The outside castle scene must contain three main areas:
-
-1. Castle interior.
-2. Castle wall.
-3. Defense construction area located behind the castle wall.
-
-The defense construction area is a designated region where players can freely place defensive towers.
-
-Rules:
-
-- Players can place towers at any valid position inside the defense construction area.
-- Towers cannot be placed outside the designated construction boundaries.
-- Towers cannot overlap with other towers.
-- Towers cannot overlap with the castle wall.
-- Towers must remain inside the construction area.
-- Players can move towers freely during Preparation State.
-- Tower placement must be validated before confirming construction.
-- Tower positions must be saved and restored when loading a save game.
-- The camera must support horizontal scrolling to inspect the entire defense area and enemy approach area.
-
-The construction area should be configurable so its dimensions can be adjusted without modifying gameplay code.
-
-##### 1.3. Projectile Explosion
-
-All projectiles with explosion effects must follow these rules:
-
-- Explosion Range represents the radius of the explosion.
-- Every enemy whose center position is within the explosion radius receives 100% of the calculated damage.
-- Damage does not decrease based on distance from the explosion center.
-- Enemies outside the explosion radius receive no damage.
-- Damage must be calculated independently for each enemy.
-- Critical hits must also be calculated independently for each enemy.
-- Each enemy can only receive damage once from a single explosion.
-- An explosion must not damage the same enemy multiple times due to collision callbacks or overlapping frames.
-
-The explosion radius must be configurable for each tower and upgrade level.
+The `tools/` folder is outside the game assets.
+- `tools/atlas/pack_atlas.py`: packs every enemy and tower sheet into
+  `sprites/atlas/combat`. Run it again after changing a sheet. Needs Python + Pillow.
+- `tools/prefab/`: the generator that made the first version of the prefabs, and the UI
+  sprite-frame metas. Running it again overwrites changes made in the editor.
 
 ---
 
-#### 2. COMBAT SYSTEM SPECIFICATIONS
+## Credits
 
-##### 2.1. Damage Calculation
-
-Preserve the original damage calculation system.
-
-Tower damage:
-
-Damage = BaseDamage * (1 + DamageBuff / 100) * (1 - (EnemyDefense * 2 - DefenseReductionBuff) / 100)
-
-For towers with both Physical and Magic damage types:
-
-1. Calculate Physical damage independently.
-2. Calculate Magic damage independently.
-3. Select the higher damage value as the final damage.
-
-Do not add Physical and Magic damage together.
-
-##### 2.2. Defense Reduction Rules
-
-Defense reduction must support negative effective defense.
-
-Define:
-
-EffectiveDefense = EnemyDefense * 2 - DefenseReductionBuff
-
-DamageMultiplier = 1 - EffectiveDefense / 100
-
-Important rules:
-
-- DefenseReductionBuff represents the amount of defense removed.
-- DefenseReductionBuff can exceed the enemy's original defense value multiplied by two.
-- EffectiveDefense is allowed to become negative.
-- Do not clamp EffectiveDefense to zero.
-- Negative EffectiveDefense means the enemy receives additional damage.
-- DamageMultiplier can therefore be greater than 1.
-- Do not clamp DamageMultiplier to 1.
-- The final damage must always be at least 1.
-- All defense and defense reduction calculations must support decimal values internally.
-
-Example:
-
-Enemy Magic Defense = 15
-
-DefenseReductionBuff = 40
-
-EffectiveDefense = 15 * 2 - 40 = -10
-
-DamageMultiplier = 1 - (-10 / 100) = 1.1
-
-The enemy receives 110% of the damage before other multipliers.
-
-##### 2.3. Critical Hit
-
-Default values:
-
-- Base Crit Rate: 5%.
-- Base Crit Damage: 175%.
-
-Rules:
-
-- Crit Rate cannot exceed 100%.
-- Crit Rate cannot be lower than 0%.
-- Crit Damage is a damage multiplier expressed as a percentage.
-- A critical hit multiplies the calculated damage by Crit Damage / 100.
-- Critical hit calculation is performed independently for each enemy hit by an AoE explosion.
-- Crit buffs from research and heroes are additive percentage points.
-
-CritRate = Clamp(BaseCritRate + CritRateBuff, 0, 100)
-
-CritDamage = BaseCritDamage + CritDamageBuff
-
-FinalDamage = NormalDamage * CritDamage / 100
-
-If a critical hit does not occur, use NormalDamage.
-
-##### 2.4. Damage Processing Order
-
-The combat system must use a consistent damage calculation pipeline:
-
-1. Read base tower damage.
-2. Apply tower damage buffs.
-3. Calculate effective enemy defense.
-4. Calculate damage multiplier.
-5. Calculate normal damage.
-6. Roll critical hit.
-7. Apply critical damage if successful.
-8. Round the result down to an integer.
-9. Apply minimum damage of 1.
-10. Apply final damage to enemy HP.
-11. Check whether the enemy is dead.
-12. Trigger death rewards and effects when applicable.
-
-This pipeline must be centralized in CombatManager to prevent different tower types from implementing inconsistent damage calculations.
-
----
-
-#### 3. TOWER STATISTICS AND BALANCING
-
-Implement three defensive tower types, each with three upgrade levels.
-
-The following statistics are initial balancing values and must be stored in tower.json.
-
-All ranges are measured in pixels.
-
-Attack Speed represents attacks per second.
-
-##### 3.1. Crossbow Tower
-
-Role: High single-target DPS.
-
-Damage Type: Physical.
-
-Characteristics:
-- Highest attack speed.
-- Small explosion radius.
-- Effective against fast-moving enemies.
-- Effective against enemies with low Physical Defense.
-- Explosion Range remains fixed at every upgrade level.
-- Explosion Range cannot be increased by research or hero buffs.
-
-| Attribute | Level 1 | Level 2 | Level 3 |
-|---|---:|---:|---:|
-| Damage | 30 | 60 | 120 |
-| Attack Speed | 1 | 2 | 4 |
-| Attack Range | 320 | 384 | 461 |
-| Explosion Range | 20 | 20 | 20 |
-| Crit Rate | 5% | 15% | 25% |
-| Crit Damage | 175% | 200% | 250% |
-
-Suggested special effects:
-
-- Piercing Bolt: Has a configurable chance to pierce through the first enemy and continue toward another enemy.
-- Bleeding Bolt: Has a configurable chance to inflict Bleed, dealing damage over time.
-- Hunter's Mark: Marked enemies receive additional damage from Crossbow towers.
-
-These effects must be configurable and should not be active by default unless explicitly enabled.
-
-##### 3.2. Crystal Tower
-
-Role: Magic damage and AoE control.
-
-Damage Type: Magic.
-
-Characteristics:
-- Medium attack speed.
-- Larger explosion radius than Crossbow.
-- Effective against enemies with high Physical Defense.
-- Explosion Range can be increased by research and hero buffs.
-- Suitable for controlling groups of enemies.
-
-| Attribute | Level 1 | Level 2 | Level 3 |
-|---|---:|---:|---:|
-| Damage | 45 | 90 | 180 |
-| Attack Speed | 0.5 | 1 | 2 |
-| Attack Range | 320 | 384 | 461 |
-| Explosion Range | 40 | 80 | 160 |
-| Crit Rate | 5% | 15% | 25% |
-| Crit Damage | 175% | 200% | 225% |
-
-Suggested special effects:
-
-- Frost Explosion: Has a configurable chance to slow enemies hit by the explosion.
-- Chain Lightning: Has a configurable chance to chain lightning to additional enemies.
-- Arcane Vulnerability: Enemies hit by Crystal attacks temporarily receive additional Magic damage.
-
-##### 3.3. Catapult Tower
-
-Role: Long-range heavy AoE damage.
-
-Damage Type: Physical + Magic.
-
-Characteristics:
-- Lowest attack speed at Level 1.
-- Highest attack range.
-- Largest explosion radius.
-- Deals damage based on the higher result between Physical and Magic calculations.
-- Effective against large groups and high-HP enemies.
-- Explosion Range can be increased by research and hero buffs.
-
-| Attribute | Level 1 | Level 2 | Level 3 |
-|---|---:|---:|---:|
-| Damage | 100 | 200 | 400 |
-| Attack Speed | 0.25 | 0.5 | 1 |
-| Attack Range | 640 | 768 | 922 |
-| Explosion Range | 80 | 160 | 320 |
-| Crit Rate | 10% | 20% | 40% |
-| Crit Damage | 200% | 250% | 300% |
-
-Suggested special effects:
-
-- Shockwave: Enemies hit by the explosion have a chance to be stunned briefly.
-- Heavy Impact: Enemies receive additional damage based on their maximum HP, with a configurable damage cap.
-- Armor Break: Enemies hit by the explosion temporarily lose a percentage of their Physical and Magic Defense.
-
-##### 3.4. Tower Upgrade Rules
-
-Preserve the original upgrade progression:
-
-- Damage doubles with every level.
-- Attack Speed doubles with every level.
-- Attack Range increases by 1.2 times the previous level.
-- Explosion Range doubles with every level, except Crossbow.
-- Crossbow Explosion Range is always fixed.
-- Crit Rate and Crit Damage use the default values unless modified by buffs.
-
-All tower statistics must be configurable through tower.json.
-
-Each tower must have:
-- Unique ID.
-- Tower name.
-- Description.
-- Damage type.
-- Upgrade level.
-- Base statistics.
-- Projectile configuration.
-- Explosion configuration.
-- Special effects.
-- Asset paths.
-- Upgrade costs.
-
----
-
-#### 4. ENEMY TYPES AND STATISTICS
-
-Implement four enemy types with different tactical roles.
-
-The following values represent Wave 1 base statistics.
-
-| Attribute | Tank | Berserker | Runner | Juggernaut |
-|---|---:|---:|---:|---:|
-| HP | 320 | 130 | 80 | 280 |
-| Damage | 25 | 55 | 15 | 50 |
-| Physical Defense | 60 | 15 | 10 | 45 |
-| Magic Defense | 15 | 25 | 10 | 45 |
-| Move Speed | 25 | 40 | 85 | 20 |
-| Gold Reward | 12 | 10 | 8 | 25 |
-
-##### 4.1. Additional Enemy Attributes
-
-In addition to the original statistics, every enemy must support:
-
-- id: Unique enemy identifier.
-- name: Enemy name.
-- description: Enemy description.
-- spritePath: Sprite asset path.
-- animationPaths: Animation asset paths.
-- goldReward: Gold received when defeated.
-- spawnWeight: Relative probability of appearing in a wave.
-- scale: Visual scale.
-- statusEffectResistance: Resistance to negative status effects.
-- specialAbilities: Optional special abilities.
-
-These attributes must be configurable through enemy.json.
-
-##### 4.2. Enemy Behavior
-
-- Enemies move from right to left toward the castle wall.
-- Enemies must follow their configured movement speed.
-- When an enemy reaches the castle wall, it dies and damages the wall once.
-- Enemies must not repeatedly damage the wall through collision callbacks.
-- Enemy HP cannot become negative.
-- Death rewards must only be distributed once.
-- Enemies must support status effects from towers and hero abilities.
-- Status effects must be removable when their duration expires or the enemy dies.
-
-##### 4.3. Enemy Special Abilities
-
-The following abilities are proposed for future tactical variety:
-
-Tank:
-- Iron Skin: Temporarily reduces incoming Physical damage.
-- Heavy Armor: Has configurable resistance to stun effects.
-
-Berserker:
-- Rage: Increases movement speed when HP falls below a configured threshold.
-- Last Stand: Temporarily increases damage when HP is critically low.
-
-Runner:
-- Evasion: Has a small chance to dodge an incoming projectile.
-- Sprint: Temporarily increases movement speed.
-
-Juggernaut:
-- Fortified Body: Reduces incoming AoE damage by a configurable percentage.
-- Destructive Impact: Deals additional damage to the castle wall.
-
-All special abilities must be configurable. They should not automatically be enabled unless specified in enemy.json.
-
----
-
-#### 5. WAVE PROGRESSION AND DIFFICULTY
-
-The wave system must support configurable enemy compositions.
-
-##### 5.1. Enemy Quantity
-
-Initial quantity formula:
-
-EnemyCount(Wave) = EnemyCount(1) + 2 * (Wave - 1)
-
-The formula is a default balancing proposal. Individual wave configurations can override the calculated quantity.
-
-##### 5.2. Enemy Stat Growth
-
-Every three waves:
-
-- HP increases by 8%.
-- Damage increases by 8%.
-- Movement Speed increases by 3%.
-- Defense does not automatically increase.
-
-Formula:
-
-GrowthStep = Floor((Wave - 1) / 3)
-
-HP = BaseHP * (1.08 ^ GrowthStep)
-
-Damage = BaseDamage * (1.08 ^ GrowthStep)
-
-MoveSpeed = BaseMoveSpeed * (1.03 ^ GrowthStep)
-
-All calculations must use consistent rounding rules.
-
-##### 5.3. Enemy Composition
-
-Suggested wave progression:
-
-- Wave 1-3: Mostly Berserker and Runner.
-- Wave 4-6: Introduce Tank.
-- Wave 7-9: Introduce Juggernaut.
-- Wave 10 onward: Combine all enemy types with different spawn weights.
-
-Enemy spawn intervals and composition must be configurable in enemy.json.
-
-The system must support:
-- Fixed enemy counts.
-- Spawn intervals.
-- Spawn groups.
-- Mixed enemy formations.
-- Special waves.
-- Boss waves.
-
----
-
-#### 6. STATUS EFFECT SYSTEM
-
-Implement a reusable status effect system to support tactical interactions between towers, enemies, and heroes.
-
-Status effects must be data-driven and configurable.
-
-Each status effect must support:
-
-- Unique ID.
-- Name.
-- Description.
-- Duration.
-- Effect value.
-- Application probability.
-- Target restrictions.
-- Stacking rules.
-- Visual effect.
-- Source entity.
-
-##### 6.1. Initial Status Effects
-
-###### Slow
-
-- Reduces enemy movement speed by a configurable percentage.
-- Duration is configurable.
-- Movement speed cannot become negative.
-- Multiple Slow effects must follow a defined stacking rule.
-
-###### Stun
-
-- Prevents enemies from moving for a configurable duration.
-- Stunned enemies must not continue moving toward the wall.
-- Multiple Stun effects must not extend duration indefinitely.
-
-###### Bleed
-
-- Deals Physical damage over time.
-- Damage is calculated based on a configurable value.
-- Supports configurable duration and tick interval.
-
-###### Burn
-
-- Deals Magic damage over time.
-- Supports configurable duration and tick interval.
-
-###### Armor Break
-
-- Temporarily reduces Physical and/or Magic Defense.
-- Effective Defense is allowed to become negative after defense reduction.
-
-###### Mark
-
-- Marks an enemy for a configurable duration.
-- Enemies with Mark receive additional damage from specified tower types.
-
-##### 6.2. Status Effect Stacking
-
-Define explicit stacking policies:
-
-- RefreshDuration: Reapply the effect and refresh its duration.
-- StackValue: Increase the effect value up to a configurable maximum.
-- IndependentInstances: Allow multiple independent instances.
-- ReplaceStronger: Replace an existing effect only if the new effect is stronger.
-
-Avoid unlimited stacking that could cause unexpected damage or movement calculations.
-
----
-
-#### 7. TOWER SPECIAL EFFECT SYSTEM
-
-Tower special effects must be independent from the core tower damage calculation.
-
-Each effect must have:
-- Unique ID.
-- Trigger condition.
-- Activation probability.
-- Effect duration.
-- Effect value.
-- Target type.
-- Maximum targets.
-- Cooldown.
-- Status effect reference, if applicable.
-
-The three towers must have distinct gameplay identities:
-
-Crossbow:
-- Focuses on single-target damage.
-- Can pierce, bleed, or mark enemies.
-- Should be effective against fast and weak enemies.
-
-Crystal:
-- Focuses on Magic damage and crowd control.
-- Can slow, chain lightning, or increase Magic damage taken.
-- Should be effective against heavily armored Physical enemies.
-
-Catapult:
-- Focuses on long-range AoE and heavy impact.
-- Can stun, break armor, or deal additional damage to high-HP enemies.
-- Should be effective against large groups and durable enemies.
-
-Special effects must be balanced so that no tower becomes universally superior.
-
-All special effect values and probabilities must be configurable through tower.json or a dedicated effects.json file.
-
----
-
-#### 8. RESEARCH SYSTEM MODIFICATIONS
-
-Preserve the original research system and its existing upgrade categories.
-
-Apply the following modification:
-
-Remove the research upgrade:
-- Buff enemy attack speed.
-
-The enemy system does not currently use an attack speed attribute, so this research category is unnecessary.
-
-Add the following optional research technologies:
-
-- Increase Slow duration.
-- Increase Stun duration.
-- Increase Bleed damage.
-- Increase Burn damage.
-- Increase tower special effect activation probability.
-- Increase tower projectile speed.
-
-Research effects must be configurable through research.json.
-
-All research effects must use a consistent calculation system and must not modify original base configuration values.
-
----
-
-#### 9. HERO BUFF SYSTEM MODIFICATIONS
-
-Preserve the original hero recruitment, rarity, star, and random buff systems.
-
-Apply the following modification:
-
-Remove the hero buff:
-- Reduce enemy attack speed.
-
-Replace it with an optional buff:
-- Reduce enemy movement speed.
-
-Additional optional hero buffs:
-
-- Increase Slow effectiveness.
-- Increase Stun duration.
-- Increase Bleed damage.
-- Increase Burn damage.
-- Increase tower special effect activation probability.
-- Increase tower projectile speed.
-
-Heroes may also have unique passive abilities.
-
-Examples:
-
-Crossbow Specialist:
-- Increases Crossbow critical rate.
-- Increases Crossbow projectile speed.
-
-Crystal Guardian:
-- Increases Crystal explosion radius.
-- Increases Slow effectiveness.
-
-Siege Commander:
-- Increases Catapult damage.
-- Increases Catapult special effect probability.
-
-Treasurer:
-- Increases gold earned from defeated enemies.
-- Increases gold production after each wave.
-
-Hero-specific abilities must be configurable and must not be hardcoded into individual tower classes.
-
----
-
-#### 10. TOWER TARGETING SYSTEM
-
-All towers must support configurable target selection.
-
-Initial targeting modes:
-
-- First: Enemy closest to the castle wall.
-- LowestHP: Enemy with the lowest current HP.
-- HighestHP: Enemy with the highest current HP.
-- Nearest: Enemy closest to the tower.
-
-Default targeting mode: First.
-
-Target selection must consider:
-- Attack range.
-- Enemy alive state.
-- Enemy visibility and validity.
-- Current target priority.
-
-If the current target leaves attack range or dies, the tower must automatically select another valid target.
-
-Targeting logic should be centralized or shared rather than independently implemented in each tower type.
-
----
-
-#### 11. BUILDING AND ECONOMY ADDITIONS
-
-Preserve all original building types and resource production systems.
-
-Additional rules:
-
-- Resource production occurs after a wave is successfully completed.
-- Tower construction and upgrades consume configured resources.
-- Building upgrade costs must be configurable.
-- Destroying a building refunds 50% of its original construction cost.
-- Upgrade costs are not refunded.
-- Resource production and rewards must not be distributed multiple times for the same wave.
-- All resource calculations must use a centralized resource management system.
-
-The system must prevent resource values from becoming negative.
-
-All construction, upgrade, destruction, and movement operations must be validated before applying changes.
-
----
-
-#### 12. SAVE AND LOAD ADDITIONS
-
-Preserve the original Main and ResourceMgr responsibilities.
-
-Additional save data:
-
-- Current game state.
-- Current and highest completed wave.
-- Castle wall HP.
-- Resource quantities.
-- Building positions and levels.
-- Tower positions and levels.
-- Tower targeting priorities.
-- Owned heroes.
-- Hero buffs.
-- Researched technologies.
-- Audio settings.
-- Game configuration version.
-
-Save rules:
-
-- Automatically save after a successfully completed wave.
-- Save when the player exits the game.
-- Support multiple save slots.
-- Include a saveVersion field.
-- Validate save data before loading.
-- Handle missing or outdated fields safely.
-- Do not overwrite existing save data if loading fails.
-
----
-
-#### 13. DATA CONFIGURATION
-
-All gameplay data must be configurable through JSON.
-
-Recommended files:
-
-- building.json
-- tower.json
-- enemy.json
-- heroes.json
-- herobuff.json
-- research.json
-- effects.json
-- waves.json
-
-Use unique IDs for every configurable object.
-
-Do not duplicate data between JSON files unnecessarily.
-
-Use references by ID when one configuration depends on another.
-
-Validate JSON data when loading:
-- Missing required fields.
-- Invalid data types.
-- Duplicate IDs.
-- Invalid level values.
-- Negative values where not allowed.
-- Invalid asset paths.
-- Invalid effect references.
-
-If configuration loading fails, report meaningful error messages.
-
----
-
-#### 14. VISUAL AND AUDIO FEEDBACK
-
-All combat actions must provide clear visual feedback.
-
-Required effects:
-
-- Tower attack animation.
-- Projectile travel animation.
-- Projectile impact animation.
-- AoE explosion animation.
-- Critical hit visual effect.
-- Enemy damage feedback.
-- Enemy death animation.
-- Gold reward visual effect.
-- Slow visual effect.
-- Stun visual effect.
-- Bleed visual effect.
-- Burn visual effect.
-- Armor Break visual effect.
-
-The visual style must remain consistent with the original requirement: detailed pixel art.
-
-Use placeholder labels when assets are unavailable.
-
-Combat feedback must remain readable even when many enemies appear simultaneously.
-
----
-
-#### 15. BALANCING PRINCIPLES
-
-The initial statistics in this document are starting values for testing, not final values.
-
-Balancing goals:
-
-1. Every tower must have a distinct tactical role.
-2. Every enemy type must create a different tactical challenge.
-3. No tower should be effective against every enemy type.
-4. AoE towers must have advantages against groups but should not completely replace single-target towers.
-5. Fast enemies must create pressure on targeting and projectile travel time.
-6. Durable enemies must require sustained damage or suitable damage types.
-7. Special effects must create meaningful strategic choices.
-8. Hero combinations must create different defensive strategies.
-9. Research must provide long-term progression without making early waves trivial.
-10. Difficulty must increase progressively without relying exclusively on enemy HP inflation.
-
-The game must be designed so that tower placement, tower composition, hero selection, and research decisions all have meaningful strategic impact.
-
----
+- Tower sprites: *Spire Tower Pack 1 & 2* by Baldur / Foozle (CC0).
+- Other art (monsters, buildings, maps, heroes, UI): supplied by the project author.

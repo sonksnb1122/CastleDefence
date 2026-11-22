@@ -1,7 +1,7 @@
-import { Node } from 'cc';
+import { Node, Sprite, UITransform } from 'cc';
 import { Assets } from '../core/Assets';
 import { ShotInfo } from '../core/GameTypes';
-import { sprite } from '../ui/UIKit';
+import { sprite } from '../views/common/UIKit';
 import { Enemy } from './Enemy';
 import { SpriteAnim } from './SpriteAnim';
 
@@ -10,33 +10,50 @@ const RAD2DEG = 180 / Math.PI;
 /**
  * A projectile that homes on its target (or on the target's last position
  * when it dies first). Catapult shots add a visual arc on top of the path.
+ * Projectiles are pooled: launch() reuses the node of a finished one.
  */
 export class Projectile {
     node: Node;
     done = false;
+    shot: ShotInfo = null as any;
+    cfg: any = null;
+    target: Enemy | null = null;
     /** Ground position (the arc is only visual). */
-    x: number;
-    y: number;
-    tx: number;
-    ty: number;
+    x = 0;
+    y = 0;
+    tx = 0;
+    ty = 0;
     private anim: SpriteAnim;
-    private startDist: number;
-    private reach: number;
+    private sp: Sprite;
+    private startDist = 1;
+    private reach = 4;
+    private speed = 0;
 
-    constructor(parent: Node, public shot: ShotInfo, public cfg: any, public target: Enemy | null,
-                x: number, y: number, angleDeg: number, private speed: number, scale = 1) {
+    constructor(parent: Node) {
+        this.sp = sprite(parent, null, 1, 1);
+        this.node = this.sp.node;
+        this.anim = new SpriteAnim(this.sp);
+        this.node.active = false;
+    }
+
+    launch(shot: ShotInfo, cfg: any, target: Enemy | null, x: number, y: number, angleDeg: number, speed: number, scale = 1) {
+        this.shot = shot; this.cfg = cfg; this.target = target; this.speed = speed;
+        this.done = false;
         this.x = x; this.y = y;
         this.tx = target ? target.x : x;
         this.ty = target ? target.y : y;
-        const sp = sprite(parent, null, cfg.cellW, cfg.cellH, x, y);
-        this.node = sp.node;
+        this.node.getComponent(UITransform)!.setContentSize(cfg.cellW, cfg.cellH);
+        this.node.setPosition(x, y, 0);
         this.node.setScale(scale, scale, 1);
         this.reach = (cfg.tip || 0) * scale + 4;
         this.node.angle = angleDeg - cfg.faceOffset;
-        this.anim = new SpriteAnim(sp);
         this.anim.play(Assets.frames(cfg.path, cfg.cellW, cfg.cellH), cfg.frameTime, true);
         this.startDist = Math.max(1, Math.hypot(this.tx - x, this.ty - y));
+        this.node.active = true;
     }
+
+    /** Hide the node so the projectile can wait in the pool. */
+    release() { this.node.active = false; this.target = null; }
 
     /** Returns true on the frame the projectile reaches its destination. */
     update(dt: number): boolean {

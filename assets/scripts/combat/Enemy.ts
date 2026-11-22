@@ -1,7 +1,8 @@
-import { Node, Sprite, Graphics, Label, Color } from 'cc';
+import { Node, Sprite, Graphics, Label, Color, UITransform } from 'cc';
 import { Assets } from '../core/Assets';
 import { DamageType } from '../core/GameTypes';
-import { Bar, hex, mk, sprite, text } from '../ui/UIKit';
+import { hex, mk, sprite, text } from '../views/common/UIKit';
+import { HpBar } from './HpBar';
 import { SpriteAnim } from './SpriteAnim';
 
 /** One active status effect on an enemy. */
@@ -23,22 +24,27 @@ export interface IEnemyHost {
 
 export interface EnemyStats { hp: number; damage: number; moveSpeed: number; goldReward: number; scale: number; boss: boolean; physicDef: number; magicDef: number; }
 
-/** A monster walking from right to left toward the castle wall. */
+/**
+ * A monster walking from right to left toward the castle wall.
+ * Enemies are pooled: the CombatManager keeps finished ones (node hidden) and
+ * calls spawn() again instead of creating new nodes for every monster.
+ */
 export class Enemy {
     node: Node;
-    x: number;
-    y: number;
-    hp: number;
-    maxHp: number;
-    damage: number;
-    baseSpeed: number;
-    goldReward: number;
-    radius: number;
-    physicDef: number;
-    magicDef: number;
+    def: any = null;
+    x = 0;
+    y = 0;
+    hp = 0;
+    maxHp = 1;
+    damage = 0;
+    baseSpeed = 0;
+    goldReward = 0;
+    radius = 22;
+    physicDef = 0;
+    magicDef = 0;
     /** False as soon as the enemy is killed or has hit the wall. */
     alive = true;
-    /** True when the death animation is over and the node can be destroyed. */
+    /** True when the death animation is over and the enemy can go back to the pool. */
     removed = false;
     reachedWall = false;
     rewarded = false;
@@ -48,14 +54,27 @@ export class Enemy {
 
     private anim: SpriteAnim;
     private spriteComp: Sprite;
-    private hpBar: Bar;
-    private statusLabel: Label;
+    private hpBar: HpBar;
+    /** Created on the first status effect only (labels are expensive to draw). */
+    private statusLabel: Label | null = null;
+    private placeholder: Node | null = null;
     private flash = 0;
     private sprintTimer = 0;
     private sprintLeft = 0;
-    private abilities: any[];
+    private abilities: any[] = [];
 
-    constructor(parent: Node, public def: any, stats: EnemyStats, x: number, y: number) {
+    /** Build the reusable node tree (hidden until spawn()). */
+    constructor(parent: Node) {
+        this.node = mk('Enemy', parent);
+        this.spriteComp = sprite(this.node, null, 1, 1);
+        this.anim = new SpriteAnim(this.spriteComp);
+        this.hpBar = new HpBar(this.node, 36, 4);
+        this.node.active = false;
+    }
+
+    /** (Re)start this enemy with a definition and its wave stats. */
+    spawn(def: any, stats: EnemyStats, x: number, y: number) {
+        this.def = def;
         this.x = x; this.y = y;
         this.maxHp = this.hp = stats.hp;
         this.damage = stats.damage;
@@ -63,28 +82,51 @@ export class Enemy {
         this.goldReward = stats.goldReward;
         this.physicDef = stats.physicDef;
         this.magicDef = stats.magicDef;
+        this.alive = true; this.removed = false; this.reachedWall = false; this.rewarded = false;
+        this.statuses.length = 0;
+        this.pendingDamage = 0;
+        this.flash = 0; this.sprintTimer = 0; this.sprintLeft = 0;
         const scale = (def.scale || 1) * stats.scale;
         this.radius = (def.radius || 22) * scale;
         this.abilities = (def.specialAbilities || []).filter((a: any) => a.enabled);
 
-        this.node = mk('Enemy_' + def.id, parent, x, y);
+        this.node.name = 'Enemy_' + def.id;
+        this.node.setPosition(x, y, 0);
         const mv = def.animationPaths.move;
         const frames = Assets.frames(mv.path, mv.cellW, mv.cellH).slice(0, mv.frames);
-        this.spriteComp = sprite(this.node, null, mv.cellW, mv.cellH);
+        const ui = this.spriteComp.node.getComponent(UITransform)!;
+        ui.setContentSize(mv.cellW, mv.cellH);
         this.spriteComp.node.setScale(scale, scale, 1);
-        this.anim = new SpriteAnim(this.spriteComp);
-        if (frames.length > 0) {
-            this.anim.play(frames, mv.frameTime, true);
-        } else {
-            // Placeholder when the sprite sheet is missing.
-            const g = this.node.addComponent(Graphics);
-            g.fillColor = hex('#a8443a');
-            g.circle(0, 0, this.radius);
-            g.fill();
-            text(this.node, def.name, 11, 0, 0);
+        this.spriteComp.color = Color.WHITE;
+        this.spriteComp.node.active = frames.length > 0;
+        if (frames.length > 0) this.anim.play(frames, mv.frameTime, true);
+        else this.showPlaceholder(def);
+        if (this.placeholder) this.placeholder.active = frames.length === 0;
+        this.hpBar.node.active = true;
+        this.hpBar.resize(stats.boss ? 70 : 36, stats.boss ? 6 : 4);
+        this.hpBar.node.setPosition(0, this.radius + 12, 0);
+        this.hpBar.set(1, '#6ad66a');
+        if (this.statusLabel) { this.statusLabel.string = ''; this.statusLabel.node.setPosition(0, this.radius + 24, 0); }
+        this.node.active = true;
+    }
+
+    /** Hide the node so the enemy can wait in the pool. */
+    release() { this.node.active = false; }
+
+    /** Circle + name, only used when the sprite sheet of this enemy is missing. */
+    private showPlaceholder(def: any) {
+        if (!this.placeholder) {
+            this.placeholder = mk('Placeholder', this.node);
+            this.placeholder.setSiblingIndex(0);
+            this.placeholder.addComponent(Graphics);
+            text(this.placeholder, '', 11, 0, 0);
         }
-        this.hpBar = new Bar(this.node, 0, this.radius + 12, stats.boss ? 70 : 36, stats.boss ? 6 : 4, '#6ad66a');
-        this.statusLabel = text(this.node, '', 10, 0, this.radius + 24, { bold: true });
+        const g = this.placeholder.getComponent(Graphics)!;
+        g.clear();
+        g.fillColor = hex('#a8443a');
+        g.circle(0, 0, this.radius);
+        g.fill();
+        this.placeholder.children[0].getComponent(Label)!.string = def.name;
     }
 
     // ------------------------------------------------------------------ abilities
@@ -188,8 +230,15 @@ export class Enemy {
             const l = (s.def.visual && s.def.visual.label) || s.def.name;
             if (labels.indexOf(l) < 0) { labels.push(l); color = (s.def.visual && s.def.visual.color) || color; }
         }
-        this.statusLabel.string = labels.join(' ');
-        this.statusLabel.color = hex(color);
+        if (labels.length > 0 && !this.statusLabel) {
+            // Created on demand; CHAR cache shares one glyph texture between every status label.
+            this.statusLabel = text(this.node, '', 10, 0, this.radius + 24);
+            this.statusLabel.cacheMode = Label.CacheMode.CHAR;
+        }
+        if (this.statusLabel) {
+            this.statusLabel.string = labels.join(' ');
+            this.statusLabel.color = hex(color);
+        }
         // Tint the sprite with the most recent effect color so effects stay readable in a crowd.
         if (this.flash <= 0) this.spriteComp.color = labels.length > 0 ? this.tint(color) : Color.WHITE;
     }
@@ -216,7 +265,7 @@ export class Enemy {
         if (!this.alive) return;
         this.alive = false;
         this.statuses.length = 0;
-        this.statusLabel.string = '';
+        if (this.statusLabel) this.statusLabel.string = '';
         this.hpBar.node.active = false;
         this.spriteComp.color = Color.WHITE;
         const d = this.def.animationPaths.dead;
