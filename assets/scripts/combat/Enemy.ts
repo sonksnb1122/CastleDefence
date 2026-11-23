@@ -22,7 +22,9 @@ export interface IEnemyHost {
     applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string): void;
 }
 
-export interface EnemyStats { hp: number; damage: number; moveSpeed: number; goldReward: number; scale: number; boss: boolean; physicDef: number; magicDef: number; }
+export interface EnemyStats { hp: number; damage: number; moveSpeed: number; goldReward: number; scale: number; boss: boolean; physicDef: number; magicDef: number;
+    /** Extra resistance (%) to the listed status types (late waves, see WaveMgr.statusResist). */
+    statusResist?: { types: string[]; value: number }; }
 
 /**
  * A monster walking from right to left toward the castle wall.
@@ -49,8 +51,14 @@ export class Enemy {
     reachedWall = false;
     rewarded = false;
     statuses: StatusInstance[] = [];
-    /** Expected damage of the projectiles already flying at this enemy (Smart targeting avoids overkill). */
+    /** Expected damage of the projectiles already flying at this enemy (used to avoid overkill). */
     pendingDamage = 0;
+    /** Extra status resistance of this wave (see EnemyStats). */
+    private waveResist: { types: string[]; value: number } = { types: [], value: 0 };
+    /** Seconds left during which a status type cannot be applied again (status "immunityAfter"). */
+    private immune: { [type: string]: number } = {};
+    /** Number given at each spawn: tells a pooled enemy apart from its previous life. */
+    serial = 0;
 
     private anim: SpriteAnim;
     private spriteComp: Sprite;
@@ -85,6 +93,8 @@ export class Enemy {
         this.alive = true; this.removed = false; this.reachedWall = false; this.rewarded = false;
         this.statuses.length = 0;
         this.pendingDamage = 0;
+        this.waveResist = stats.statusResist || { types: [], value: 0 };
+        this.immune = {};
         this.flash = 0; this.sprintTimer = 0; this.sprintLeft = 0;
         const scale = (def.scale || 1) * stats.scale;
         this.radius = (def.radius || 22) * scale;
@@ -154,12 +164,17 @@ export class Enemy {
     /**
      * Apply a status effect following its stacking policy. `durationMul` and
      * `valueMul` carry research / hero bonuses. Returns false when resisted.
+     * Call isImmune() first: an immune enemy simply ignores the effect (no "RESIST" text).
      */
     applyStatus(def: any, sourceUid: number, durationMul = 1, valueMul = 1): boolean {
         if (!this.alive) return false;
-        const resist = (this.def.statusEffectResistance && this.def.statusEffectResistance[def.type]) || 0;
-        if (Math.random() * 100 < resist) return false;
+        let resist = (this.def.statusEffectResistance && this.def.statusEffectResistance[def.type]) || 0;
+        if (this.waveResist.types.indexOf(def.type) >= 0) resist += this.waveResist.value;
+        if (Math.random() * 100 < Math.min(95, resist)) return false;
         const duration = def.duration * durationMul;
+        // Short immunity (e.g. Stun): the effect cannot be applied again while it lasts and for
+        // "immunityAfter" seconds after it ends, so enemies are never stunned without a break.
+        if (def.immunityAfter > 0) this.immune[def.type] = duration + def.immunityAfter;
         let value = def.value * valueMul;
         if (def.type === 'slow') value = Math.min(90, value);
         const same = this.statuses.filter(s => s.def.id === def.id);
@@ -194,6 +209,9 @@ export class Enemy {
         this.refreshStatusLabel();
         return true;
     }
+
+    /** True while the enemy cannot get this status type again (see "immunityAfter"). */
+    isImmune(type: string): boolean { return (this.immune[type] || 0) > 0; }
 
     private slowPercent(): number {
         let v = 0;
@@ -231,9 +249,13 @@ export class Enemy {
             if (labels.indexOf(l) < 0) { labels.push(l); color = (s.def.visual && s.def.visual.color) || color; }
         }
         if (labels.length > 0 && !this.statusLabel) {
-            // Created on demand; CHAR cache shares one glyph texture between every status label.
-            this.statusLabel = text(this.node, '', 10, 0, this.radius + 24);
-            this.statusLabel.cacheMode = Label.CacheMode.CHAR;
+            // Created on demand. Bold with a dark outline so it reads on sand, grass and other enemies.
+            // BITMAP cache: the outline needs it, and the text only changes when a status starts or ends.
+            this.statusLabel = text(this.node, '', 12, 0, this.radius + 24, { bold: true });
+            this.statusLabel.cacheMode = Label.CacheMode.BITMAP;
+            this.statusLabel.enableOutline = true;
+            this.statusLabel.outlineColor = new Color(20, 14, 28, 255);
+            this.statusLabel.outlineWidth = 2;
         }
         if (this.statusLabel) {
             this.statusLabel.string = labels.join(' ');
@@ -286,6 +308,7 @@ export class Enemy {
         }
 
         // Status effects: damage over time and expiry.
+        for (const k in this.immune) if (this.immune[k] > 0) this.immune[k] -= dt;
         let changed = false;
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             const s = this.statuses[i];

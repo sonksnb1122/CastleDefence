@@ -55,6 +55,17 @@ export class WaveMgr {
         return 0;
     }
 
+    /**
+     * Extra status resistance (%) of the enemies of a wave (waves.json "statusResistance"):
+     * grows by perWave from startWave up to max; bosses get bossBonus more. Only for the listed status types.
+     */
+    static statusResist(wave: number, boss: boolean): { types: string[]; value: number } {
+        const r = ConfigMgr.waves.statusResistance;
+        if (!r || wave < r.startWave) return { types: [], value: 0 };
+        const v = Math.min(r.max || 100, (wave - r.startWave + 1) * (r.perWave || 0)) + (boss ? r.bossBonus || 0 : 0);
+        return { types: r.types || [], value: Math.min(95, v) };
+    }
+
     static defCaps(): { normal: number; boss: number } {
         const g = ConfigMgr.waves.defenseGrowth || {};
         return { normal: g.max || 70, boss: g.bossMax || g.max || 90 };

@@ -68,12 +68,21 @@ export class SaveLoadOverlay implements IOverlay {
     private rebuild() {
         const rows = this.view.rows!;
         rows.destroyAllChildren();
+        const tests = this.mode === 'load' ? G.main.testSaves : [];
+        // Load Game also lists the bot test saves, so the slots go into a scroll list.
+        let host = rows, top = 115 + 34, list: ScrollList | null = null;
+        if (tests.length > 0) {
+            list = new ScrollList(rows, 0, 0, 540, 296, false);
+            host = list.content; top = 0;
+        }
         const first = this.mode === 'load' ? 0 : 1;
+        let y = top - (this.mode === 'save' ? 30 : 0);
         for (let slot = first; slot <= 3; slot++) {
-            const y = 115 - (slot - first) * 68 - (this.mode === 'save' ? 30 : 0);
+            y -= 34;
             const info = G.main.slotInfo(slot);
-            const r = PrefabUi.view('items/SaveSlot', rows, SaveSlotView);
+            const r = PrefabUi.view('items/SaveSlot', host, SaveSlotView);
             r.node.setPosition(0, y, 0);
+            y -= 34;
             const name = slot === 0 ? 'Autosave' : 'Slot ' + slot;
             let desc = 'Empty';
             if (info.exists) desc = info.valid ? `Wave ${info.wave}  -  ${new Date(info.savedAt).toLocaleString()}` : 'Corrupted save';
@@ -91,6 +100,27 @@ export class SaveLoadOverlay implements IOverlay {
             const del = new PrefabButton(r.deleteButton, () => confirm(this.root, 'Delete Save', `Delete ${name}?`, () => { G.main.deleteSlot(slot); this.rebuild(); }));
             del.setVisible(slot > 0 && info.exists);
         }
+        if (!list) return;
+        // Test saves: read-only (no delete button).
+        y -= 22;
+        text(host, 'Test saves (bot)', 16, -250, y, { ax: 0, color: COLORS.textDim });
+        y -= 16;
+        tests.forEach((t, i) => {
+            y -= 34;
+            const r = PrefabUi.view('items/SaveSlot', host, SaveSlotView);
+            r.node.setPosition(0, y, 0);
+            y -= 34;
+            r.slotName!.string = `Test - Wave ${t.wave}`;
+            r.desc!.string = `Bot progress up to wave ${t.wave}  -  read only`;
+            new PrefabButton(r.actionButton, () => this.loadTest(i)).setText('Load');
+            new PrefabButton(r.deleteButton).setVisible(false);
+        });
+        list.setContentHeight(-y + 4);
+    }
+
+    private loadTest(index: number) {
+        const err = G.main.loadTestSave(index);
+        if (err) toast(this.root, err);
     }
 
     private load(slot: number) {

@@ -39,6 +39,12 @@ const PREFABS = [
 ];
 const SAVE_KEY = 'castle_defense_save_';
 const SETTINGS_KEY = 'castle_defense_settings';
+/**
+ * Test saves (assets/resources/presets/wave_<n>.json) made by the progression bot
+ * (tools/harness/prog.js, "heroes" variant). They are listed in Load Game and cannot be deleted.
+ * Temporary, for testing: set to [] to hide them.
+ */
+const TEST_SAVES = [30, 50, 70, 100, 130, 150];
 
 interface IScreen { root: Node; update(dt: number): void; destroy(): void; }
 
@@ -158,7 +164,7 @@ export class Main extends Component implements IMain {
             Assets.loadAtlas('sprites/atlas/combat', () => Assets.loadPrefabs(PREFABS, () => Assets.loadTextures(paths, () => {
                 ConfigMgr.checkAssets();
                 loading.set(0.9, 'Loading audio...');
-                this.loadAudio(() => {
+                this.loadTestSaves(() => this.loadAudio(() => {
                     loading.set(1, 'Ready');
                     // Leave the full bar visible for a moment, then open the main menu.
                     this.after(0.15, () => {
@@ -166,7 +172,7 @@ export class Main extends Component implements IMain {
                         this.loading = null;
                         this.goto('menu');
                     });
-                });
+                }));
             }, (loaded, total) => loading.set(0.1 + 0.8 * loaded / total, `Loading sprites... ${loaded}/${total}`))));
         });
     }
@@ -263,6 +269,36 @@ export class Main extends Component implements IMain {
         const parsed = ResourceMgr.parse(r.raw);
         if (!parsed.data) return { exists: true, wave: 0, savedAt: 0, valid: false };
         return { exists: true, wave: parsed.data.currentWave, savedAt: parsed.data.savedAt, valid: true };
+    }
+
+    testSaves: Array<{ wave: number; data: any }> = [];
+
+    /** Read the bot test saves; a missing file is skipped. */
+    private loadTestSaves(done: () => void) {
+        let left = TEST_SAVES.length;
+        if (left === 0) { done(); return; }
+        const found: Array<{ wave: number; data: any }> = [];
+        for (const wave of TEST_SAVES) {
+            Assets.loadJson('presets/wave_' + wave, (err, data) => {
+                if (err) console.warn('[Main] test save missing: ' + err);
+                else found.push({ wave, data });
+                if (--left === 0) {
+                    this.testSaves = found.sort((a, b) => a.wave - b.wave);
+                    done();
+                }
+            });
+        }
+    }
+
+    /** Start from a test save. The file itself is never changed. */
+    loadTestSave(index: number): string | null {
+        const t = this.testSaves[index];
+        if (!t) return 'Test save not found';
+        const parsed = ResourceMgr.parse(JSON.parse(JSON.stringify(t.data)));
+        if (parsed.error || !parsed.data) return parsed.error || 'Invalid save file';
+        ResourceMgr.inst.apply(parsed.data);
+        this.goto('inCastle');
+        return null;
     }
 
     deleteSlot(slot: number) {

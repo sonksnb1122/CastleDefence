@@ -13,6 +13,11 @@ import { FillBar, PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, costRow, hex, mk, text, toLocal } from './common/UIKit';
 import { BattlefieldGround } from './BattlefieldGround';
 
+
+/** Game speeds of the speed button. */
+const SPEEDS = [1, 2, 3, 5, 10];
+/** Longest simulation step at x5 / x10 (seconds). */
+const MAX_STEP = 1 / 60;
 /**
  * Outside the castle: the defense construction area, the wall and the field
  * where waves of enemies arrive from the right. The view scrolls horizontally.
@@ -312,7 +317,8 @@ export class OutCastleScreen implements CombatEvents {
     }
 
     private cycleSpeed() {
-        this.speed = this.speed >= 3 ? 1 : this.speed + 1;
+        const i = SPEEDS.indexOf(this.speed);
+        this.speed = SPEEDS[(i + 1) % SPEEDS.length];
         this.speedBtn.setText('x' + this.speed);
     }
 
@@ -369,9 +375,17 @@ export class OutCastleScreen implements CombatEvents {
 
     update(dt: number) {
         if (this.finished) return;
-        const step = Math.min(dt, 0.05);
-        // Higher game speeds run several fixed steps so fast projectiles stay accurate.
-        for (let i = 0; i < this.speed; i++) {
+        const frame = Math.min(dt, 0.05);
+        // Higher game speeds run several steps per frame so fast projectiles stay accurate.
+        // x2 / x3: one step per speed level. x5 / x10: steps of up to MAX_STEP, so x10 costs
+        // about 5 steps per frame at 60 fps instead of 10 (never more than 10).
+        let steps = this.speed, step = frame;
+        if (this.speed > 3) {
+            const total = frame * this.speed;
+            steps = Math.min(10, Math.ceil(total / MAX_STEP - 1e-6));
+            step = total / steps;
+        }
+        for (let i = 0; i < steps; i++) {
             this.combat.update(step);
             if (this.finished) break;
         }

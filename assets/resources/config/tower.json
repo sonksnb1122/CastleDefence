@@ -76,6 +76,7 @@
         "physic"
       ],
       "explosionBuffable": false,
+      "avoidOverkill": true,
       "base": {
         "path": "sprites/towers/base_t1",
         "cellW": 64,
@@ -324,6 +325,7 @@
         "magic"
       ],
       "explosionBuffable": true,
+      "avoidOverkill": true,
       "base": {
         "path": "sprites/towers/base_t2",
         "cellW": 64,

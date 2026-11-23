@@ -16,6 +16,8 @@ function wrap180(a: number): number { return ((((a + 180) % 360) + 360) % 360) -
 export interface ITowerHost {
     selectTarget(tower: TowerUnit): Enemy | null;
     isValidTarget(tower: TowerUnit, e: Enemy | null): boolean;
+    /** The shots in flight already kill this enemy (single-target towers then pick another one). */
+    isOverkill(tower: TowerUnit, e: Enemy | null): boolean;
     spawnProjectile(tower: TowerUnit, shot: ShotInfo, target: Enemy, fromX: number, fromY: number, angleDeg: number): void;
     /** Smart targeting: true when a clearly better target than the current one exists. */
     shouldRetarget(tower: TowerUnit): boolean;
@@ -170,7 +172,7 @@ export class TowerUnit {
 
         let aligned = false;
         if (host) {
-            if (!host.isValidTarget(this, this.target) || host.shouldRetarget(this)) this.target = host.selectTarget(this);
+            if (!host.isValidTarget(this, this.target) || host.isOverkill(this, this.target) || host.shouldRetarget(this)) this.target = host.selectTarget(this);
             if (this.target) {
                 // Turn the weapon toward the target, limited by the rotate speed.
                 const cfg = ConfigMgr.tower.defaults;
@@ -191,7 +193,9 @@ export class TowerUnit {
                 const interval = this.stats().interval;
                 this.firing = true;
                 this.spawned = false;
-                this.cooldown = interval;
+                // Keep the time left over in this step, so the fire rate does not depend on the
+                // step length (game speed / frame rate).
+                this.cooldown = interval + Math.max(this.cooldown, -dt);
                 // Fast towers compress the attack animation so it fits in the attack interval.
                 const count = Math.max(1, this.attackFrames.length);
                 this.anim.play(this.attackFrames, Math.min(w.attackFrameTime, (interval * 0.9) / count), false);
@@ -210,7 +214,10 @@ export class TowerUnit {
 
     private fire(host: ITowerHost | null) {
         this.spawned = true;
-        if (!host || !this.target || !this.target.alive) return;
+        if (!host) return;
+        // Other shots may have doomed the target during the attack animation: shoot another enemy.
+        if (!host.isValidTarget(this, this.target) || host.isOverkill(this, this.target)) this.target = host.selectTarget(this);
+        if (!this.target) return;
         const sp = this.lv.sprite;
         const facing = (this.weaponNode.angle + sp.weapon.faceOffset) * DEG2RAD;
         const mx = this.cx + Math.cos(facing) * sp.projectile.muzzle * this.scale;

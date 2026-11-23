@@ -22,6 +22,16 @@ export interface CombatEvents {
 }
 
 const MAX_FLOAT_TEXTS = 70;
+/** Damage texts on one enemy are stacked in rows above its head (newest at the bottom). */
+const TEXT_ROWS = 3;
+const TEXT_ROW_H = 17;
+/** A shot whose enemy died on the way flies on to a living enemy this close to it. */
+const REDIRECT_RANGE = 80;
+/** Area shots also reserve their damage on the enemies this close to the target (part of the explosion radius). */
+const SPLASH_RESERVE = 0.7;
+
+/** Damage a flying shot has reserved on one enemy (see reserve / unreserve). */
+interface Reservation { e: Enemy; serial: number; amount: number; }
 
 /**
  * Runs one battle: spawning, targeting, projectiles, explosions and the single
@@ -41,6 +51,9 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     private elapsed = 0;
     private fx: Fx[] = [];
     private floats: CombatText[] = [];
+    /** Texts stacked on each enemy (see enemyFloat). */
+    private stacks = new Map<Enemy, CombatText[]>();
+    private serialSeq = 0;
     // Pools: finished objects keep their (hidden) nodes and are reused instead of being destroyed.
     private enemyPool: Enemy[] = [];
     private projectilePool: Projectile[] = [];
@@ -95,10 +108,12 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             boss: entry.boss,
             physicDef: Math.min(defMax, def.physicDef + entry.defAdd),
             magicDef: Math.min(defMax, def.magicDef + entry.defAdd),
+            statusResist: this.demo ? undefined : WaveMgr.statusResist(this.wave, entry.boss),
         };
         const y = bf.enemyLaneY[0] + Math.random() * (bf.enemyLaneY[1] - bf.enemyLaneY[0]);
         const e = this.enemyPool.pop() || new Enemy(this.enemyLayer);
         e.spawn(def, stats, bf.spawnX, y);
+        e.serial = ++this.serialSeq;
         this.enemies.push(e);
         if (entry.boss && !this.demo) G.main.playSfx('boss');
     }
@@ -111,7 +126,10 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             if (!this.updateFx(f, dt)) { this.fx.splice(i, 1); f.node.active = false; this.fxPool[f.kind].push(f); }
         }
         for (let i = this.floats.length - 1; i >= 0; i--) {
-            if (!this.floats[i].update(dt)) this.textPool.push(this.floats.splice(i, 1)[0]);
+            const t = this.floats[i];
+            if (t.update(dt)) continue;
+            if (t.stack) { const k = t.stack.indexOf(t); if (k >= 0) t.stack.splice(k, 1); t.stack = null; }
+            this.textPool.push(this.floats.splice(i, 1)[0]);
         }
 
         const host = this.active ? this : null;
@@ -126,8 +144,9 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
+            if (p.target && !p.target.alive) this.redirect(p);
             if (p.update(dt)) {
-                if (p.target) p.target.pendingDamage = Math.max(0, p.target.pendingDamage - ((p.shot as any).pending || 0));
+                this.unreserve(p.shot);
                 this.explode(p.shot, p.tx, p.ty, p.target, p.cfg);
                 p.release();
                 this.projectilePool.push(p);
@@ -137,7 +156,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const e = this.enemies[i];
-            if (e.removed) { e.release(); this.enemyPool.push(e); this.enemies.splice(i, 1); }
+            if (e.removed) { this.dropTexts(e); e.release(); this.enemyPool.push(e); this.enemies.splice(i, 1); }
         }
 
         // Draw order: enemies lower on the screen are in front.
@@ -168,6 +187,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         this.enemyPool.length = 0; this.projectilePool.length = 0; this.textPool.length = 0;
         this.fxPool = { impact: [], ring: [], line: [] };
         this.queue.length = 0;
+        this.stacks.clear();
         this.active = false;
     }
 
@@ -186,7 +206,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         let best: Enemy | null = null;
         let bestScore = Infinity;
         for (const e of this.enemies) {
-            if (!this.isValidTarget(tower, e)) continue;
+            if (!this.isValidTarget(tower, e) || this.isOverkill(tower, e)) continue;
             let score: number;
             switch (mode) {
                 case 'LowestHP': score = e.hp; break;
@@ -198,6 +218,17 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         }
         return best;
     }
+
+    /**
+     * True when the shots already flying at this enemy are enough to kill it.
+     * Towers with "avoidOverkill" in tower.json (Crossbow, Crystal) then aim at another enemy
+     * instead of wasting shots; the Catapult does not, its big explosion hits the enemies around it too.
+     */
+    isOverkill(tower: TowerUnit, e: Enemy | null): boolean {
+        return !!e && !!tower.def.avoidOverkill && this.doomed(e);
+    }
+
+    private doomed(e: Enemy): boolean { return e.pendingDamage > 0 && e.hp - e.pendingDamage <= 0; }
 
     /** Smart targeting keeps a target unless another one is clearly better (saves weapon turning). */
     shouldRetarget(tower: TowerUnit): boolean {
@@ -223,7 +254,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     smartTarget(tower: TowerUnit): Enemy | null {
         let best: Enemy | null = null, bestScore = -Infinity;
         for (const e of this.enemies) {
-            if (!this.isValidTarget(tower, e)) continue;
+            if (!this.isValidTarget(tower, e) || this.isOverkill(tower, e)) continue;
             const sc = this.smartScore(tower, e);
             if (sc > bestScore) { bestScore = sc; best = e; }
         }
@@ -280,16 +311,82 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const cfg = tower.lv.sprite.projectile;
         const speed = cfg.speed * (1 + this.buff('projectileSpeed', shot.towerId) / 100);
         (shot as any).impact = tower.lv.sprite.impact;
-        // Expected damage (no crit) so Smart targeting does not overkill.
-        const t0 = shot.damageTypes;
-        let mul = -Infinity;
-        for (const t of t0) mul = Math.max(mul, this.defenseMultiplier(target, t));
-        (shot as any).pending = Math.max(1, shot.damage * (1 + this.buff('damage', shot.towerId) / 100) * mul);
-        target.pendingDamage += (shot as any).pending;
+        // Expected damage (no crit) so the next shots go to other enemies instead of overkilling this one.
+        this.reserve(shot, target);
         const p = this.projectilePool.pop() || new Projectile(this.fxLayer);
         p.launch(shot, cfg, target, fromX, fromY, angleDeg, speed, tower.scale);
         this.projectiles.push(p);
         if (!this.demo) G.main.playSfx('shoot_' + shot.towerId, 'shoot');
+    }
+
+    private avoidsOverkill(towerId: string): boolean { const d = ConfigMgr.towerDef(towerId); return !!(d && d.avoidOverkill); }
+
+    /** computeDamage without the random parts (no dodge, no crit). */
+    expectedDamage(shot: ShotInfo, e: Enemy): number {
+        const base = shot.damage * (1 + this.buff('damage', shot.towerId) / 100);
+        let normal = -Infinity;
+        for (const type of shot.damageTypes) {
+            let d = base * this.defenseMultiplier(e, type);
+            d *= 1 + e.markBonus(shot.towerId, type) / 100;
+            if (type === 'physic') d *= 1 - e.abilityValue('physicDamageReduction') / 100;
+            if (d > normal) normal = d;
+        }
+        if (shot.isAoe) normal *= 1 - e.abilityValue('aoeReduction') / 100;
+        return Math.max(1, Math.floor(normal));
+    }
+
+    /**
+     * The enemy of a shot died before the shot landed: send the shot to the nearest living enemy
+     * (within REDIRECT_RANGE) that is not already doomed, so the shot is not wasted.
+     */
+    private redirect(p: Projectile) {
+        // When every enemy around is already doomed, the shot still goes to the nearest one: the reserved shots
+        // may miss or be dodged, and an area shot still hits the enemies around it.
+        let best: Enemy | null = null, bestD = REDIRECT_RANGE * REDIRECT_RANGE;
+        let fallback: Enemy | null = null, fallbackD = REDIRECT_RANGE * REDIRECT_RANGE;
+        for (const e of this.enemies) {
+            if (!e.alive || e.x > ConfigMgr.tower.battlefield.worldWidth) continue;
+            const dx = e.x - p.tx, dy = e.y - p.ty, d = dx * dx + dy * dy;
+            if (this.doomed(e)) { if (d < fallbackD) { fallbackD = d; fallback = e; } continue; }
+            if (d < bestD) { bestD = d; best = e; }
+        }
+        best = best || fallback;
+        if (!best) return;
+        p.target = best;
+        this.unreserve(p.shot);
+        this.reserve(p.shot, best);
+    }
+
+    /**
+     * Reserve the expected damage of a flying shot: on its target and, for an area shot, on the
+     * enemies close around it (they are very likely inside the explosion when it lands).
+     * Other towers then skip the enemies these reservations already kill.
+     */
+    private reserve(shot: ShotInfo, target: Enemy) {
+        const list: Reservation[] = [];
+        const add = (e: Enemy) => {
+            const amount = this.expectedDamage(shot, e);
+            e.pendingDamage += amount;
+            list.push({ e, serial: e.serial, amount });
+        };
+        add(target);
+        if (shot.isAoe && shot.explosionRange > 0) {
+            const r = shot.explosionRange * SPLASH_RESERVE, r2 = r * r;
+            for (const o of this.enemies) {
+                if (o === target || !o.alive) continue;
+                const dx = o.x - target.x, dy = o.y - target.y;
+                if (dx * dx + dy * dy <= r2) add(o);
+            }
+        }
+        (shot as any).reserved = list;
+    }
+
+    /** Give back the reservations of a shot (it landed or changed target). */
+    private unreserve(shot: ShotInfo) {
+        const list: Reservation[] | undefined = (shot as any).reserved;
+        if (!list) return;
+        for (const r of list) if (r.e.serial === r.serial) r.e.pendingDamage = Math.max(0, r.e.pendingDamage - r.amount);
+        (shot as any).reserved = null;
     }
 
     // ------------------------------------------------------------------ damage pipeline
@@ -332,10 +429,10 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     /** Steps 10-12: apply to HP, check death, pay the reward once. */
     private applyDamage(e: Enemy, res: DamageResult) {
         if (!e.alive) return;
-        if (res.dodged) { this.float('MISS', e.x, e.y + e.radius + 14, '#cccccc', 13); return; }
+        if (res.dodged) { this.enemyFloat(e, 'MISS', '#cccccc', 13); return; }
         const died = e.takeDamage(res.amount);
-        if (res.crit) this.float(res.amount + '!', e.x, e.y + e.radius + 18, '#ffd23f', 20);
-        else this.float(String(res.amount), e.x, e.y + e.radius + 14, '#ffffff', 14);
+        if (res.crit) this.enemyFloat(e, res.amount + '!', '#ffd23f', 17);
+        else this.enemyFloat(e, String(res.amount), '#ffffff', 15);
         if (died) this.onEnemyKilled(e);
     }
 
@@ -357,7 +454,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const buff = this.buff(statusType === 'bleed' ? 'bleedDamage' : 'burnDamage');
         const amount = Math.max(1, Math.floor(rawDamage * (1 + buff / 100) * this.defenseMultiplier(e, type)));
         const died = e.takeDamage(amount);
-        this.float(String(amount), e.x + 10, e.y + e.radius + 8, statusType === 'bleed' ? '#ff7a7a' : '#ffa64d', 12);
+        this.enemyFloat(e, String(amount), statusType === 'bleed' ? '#ff7a7a' : '#ffa64d', 13);
         if (died) this.onEnemyKilled(e);
     }
 
@@ -443,12 +540,12 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     /** `hitDamage`: damage of the shot before defense; statuses with "percentOfHit" scale their value with it. */
     private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number, hitDamage = 0) {
         const def = ConfigMgr.statusDef(statusId);
-        if (!def) return;
+        if (!def || e.isImmune(def.type)) return;
         let durationMul = 1, valueMul = 1;
         if (def.percentOfHit) valueMul = Math.max(0.01, hitDamage / 100);
         if (def.type === 'slow') { durationMul += this.buff('slowDuration') / 100; valueMul += this.buff('slowEffect') / 100; }
         if (def.type === 'stun') durationMul += this.buff('stunDuration') / 100;
-        if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) this.float('RESIST', e.x, e.y + e.radius + 26, '#aaaaaa', 11);
+        if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) this.enemyFloat(e, 'RESIST', '#aaaaaa', 12);
     }
 
     private towerByUid(uid: number): TowerUnit | null {
@@ -485,6 +582,31 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         this.floats.push(t);
     }
 
+    /**
+     * Text on an enemy: stacked in rows above the status label, at most TEXT_ROWS rows
+     * (a new text pushes the others up; the oldest one disappears).
+     */
+    enemyFloat(e: Enemy, str: string, color: string, size: number) {
+        if (this.floats.length >= MAX_FLOAT_TEXTS) return;
+        let st = this.stacks.get(e);
+        if (!st) { st = []; this.stacks.set(e, st); }
+        if (st.length >= TEXT_ROWS) { const old = st.shift()!; old.row = TEXT_ROWS; old.stack = null; old.expire(); }
+        const t = this.textPool.pop() || new CombatText(this.textLayer);
+        t.showOn(e, 0, e.radius + 36, TEXT_ROW_H, str, color, size, 0.8);
+        t.stack = st;
+        st.push(t);
+        for (let i = 0; i < st.length; i++) st[i].row = st.length - 1 - i;
+        this.floats.push(t);
+    }
+
+    /** The enemy is going back to the pool: its texts stop following it. */
+    private dropTexts(e: Enemy) {
+        const st = this.stacks.get(e);
+        if (!st) return;
+        for (const t of st) t.detach();
+        this.stacks.delete(e);
+    }
+
     /** A pooled effect node of one kind (created the first time). */
     private takeFx(kind: 'impact' | 'ring' | 'line'): Fx {
         const f = this.fxPool[kind].pop();
@@ -517,10 +639,11 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             const g = f.g!;
             const c = shot.damageTypes.length > 1 ? '#c8ff7a' : shot.damageTypes[0] === 'magic' ? '#9fe8ff' : '#ffffff';
             g.clear();
-            g.fillColor = hex(c, 50);
+            // Almost no fill: many explosions at once must not hide the enemies behind them.
+            g.fillColor = hex(c, 8);
             g.circle(0, 0, shot.explosionRange);
             g.fill();
-            g.lineWidth = 2;
+            g.lineWidth = 1.5;
             g.strokeColor = hex(c, 220);
             g.circle(0, 0, shot.explosionRange);
             g.stroke();

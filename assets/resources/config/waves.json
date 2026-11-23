@@ -162,5 +162,12 @@
   "countScaleRef": {
     "base": 8,
     "perWave": 2
+  },
+  "statusResistance": {
+    "startWave": 80,
+    "perWave": 0.5,
+    "max": 40,
+    "bossBonus": 20,
+    "types": ["stun"]
   }
 }
