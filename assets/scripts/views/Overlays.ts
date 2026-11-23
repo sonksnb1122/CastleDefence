@@ -168,7 +168,7 @@ export class ResearchOverlay implements IOverlay {
     private research(id: string) {
         const err = ResourceMgr.inst.doResearch(id);
         if (err) toast(this.root, err);
-        else toast(this.root, 'Research complete', true);
+        else { toast(this.root, 'Research complete', true); G.main.playSfx('upgrade'); }
     }
     destroy() { this.unsubscribe(); this.root.destroy(); }
 }

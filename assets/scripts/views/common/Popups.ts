@@ -32,6 +32,7 @@ export function message(parent: Node, title: string, body: string, onClose?: () 
 
 /** Short message that fades away near the top of the screen (prefabs/items/Toast). */
 export function toast(parent: Node, msg: string, good = false) {
+    if (!good) G.main.playSfx('denied');   // errors ("Not enough gold"...) get a short buzz
     const old = parent.getChildByName('Toast');
     if (old) old.destroy();
     const n = PrefabUi.create('items/Toast', parent);

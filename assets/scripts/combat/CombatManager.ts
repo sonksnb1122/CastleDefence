@@ -100,6 +100,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const e = this.enemyPool.pop() || new Enemy(this.enemyLayer);
         e.spawn(def, stats, bf.spawnX, y);
         this.enemies.push(e);
+        if (entry.boss && !this.demo) G.main.playSfx('boss');
     }
 
     // ------------------------------------------------------------------ update
@@ -288,7 +289,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const p = this.projectilePool.pop() || new Projectile(this.fxLayer);
         p.launch(shot, cfg, target, fromX, fromY, angleDeg, speed, tower.scale);
         this.projectiles.push(p);
-        if (!this.demo) G.main.playSfx('shoot');
+        if (!this.demo) G.main.playSfx('shoot_' + shot.towerId, 'shoot');
     }
 
     // ------------------------------------------------------------------ damage pipeline
@@ -346,6 +347,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (this.demo) return;
         this.goldFromKills += gold;
         this.rm.add({ gold });
+        G.main.playSfx('die_' + e.def.id);
         G.main.playSfx('coin');
     }
 
@@ -394,6 +396,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
                 if ((statusCount[ef.id] || 0) >= (ef.maxTargets || 1)) continue;
                 if (Math.random() * 100 >= chance(ef)) continue;
                 this.applyStatusFromTower(e, ef.statusId, shot.towerUid, shot.damage * (1 + this.buff('damage', shot.towerId) / 100));
+                if (!statusCount[ef.id] && !this.demo) this.effectSfx(ef.statusId);
                 statusCount[ef.id] = (statusCount[ef.id] || 0) + 1;
             }
         }
@@ -404,6 +407,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             if (ef.kind !== 'chain' || !ready(ef) || hit.length === 0) continue;
             if (Math.random() * 100 >= chance(ef)) continue;
             used(ef);
+            if (!this.demo) G.main.playSfx(shot.damageTypes[0] === 'magic' ? 'fx_lightning' : 'hit_' + shot.towerId);
             let fromX = x, fromY = y;
             for (let n = 0; n < (ef.maxTargets || 1); n++) {
                 let next: Enemy | null = null;
@@ -420,7 +424,20 @@ export class CombatManager implements IEnemyHost, ITowerHost {
                 this.applyDamage(next, this.computeDamage(shot, next, ef.value / 100));
             }
         }
-        if (!this.demo) G.main.playSfx(shot.isAoe ? 'explode' : 'hit');
+        if (!this.demo) {
+            // Catapult stones crash down (explode), the other towers have their own hit sound.
+            if (shot.towerId === 'catapult') G.main.playSfx('explode');
+            else G.main.playSfx('hit_' + shot.towerId, shot.isAoe ? 'explode' : 'hit');
+        }
+    }
+
+    /** Sound of a status effect landing (Frost slow, Bleed, Shockwave stun). */
+    private effectSfx(statusId: string) {
+        const def = ConfigMgr.statusDef(statusId);
+        if (!def) return;
+        if (def.type === 'slow') G.main.playSfx('fx_frost');
+        else if (def.type === 'bleed') G.main.playSfx('fx_bleed');
+        else if (def.type === 'stun') G.main.playSfx('wall_hit');
     }
 
     /** `hitDamage`: damage of the shot before defense; statuses with "percentOfHit" scale their value with it. */
@@ -451,7 +468,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const amount = Math.max(0, Math.floor(e.wallDamage() * (1 - this.rm.wallDef(type) / 100)));
         const destroyed = this.rm.damageWall(amount);
         this.float('-' + amount, this.wallRightX - 20, e.y + 20, '#ff6b6b', 18, true);
-        G.main.playSfx('hit');
+        G.main.playSfx('wall_hit', 'hit');
         this.events.onWallChanged();
         if (destroyed && !this.gameOver) {
             this.gameOver = true;

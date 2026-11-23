@@ -18,7 +18,10 @@ export interface IMain {
     musicVolume: number;
     sfxVolume: number;
     setVolumes(music: number, sfx: number): void;
-    playSfx(name: string): void;
+    /** Sound effect by name (random variant, rate limited); `fallback` is used when `name` has no clip. */
+    playSfx(name: string, fallback?: string): void;
+    /** Background music track (bgm_castle / bgm_battle / bgm_boss). */
+    playMusic(key: string): void;
     after(seconds: number, fn: () => void): void;
 }
 

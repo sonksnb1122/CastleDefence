@@ -252,6 +252,7 @@ export class InCastleScreen {
         const p = this.placing!;
         const err = p.uid ? this.rm.moveBuilding(p.uid, x, y) : this.rm.buildBuilding(p.id, x, y);
         if (err) { toast(this.root, err); this.drawGhost(x, y); return; }
+        G.main.playSfx(p.uid ? 'click' : 'upgrade');
         this.stopPlacing();
     }
 
@@ -267,6 +268,7 @@ export class InCastleScreen {
                 confirm(this.root, `Upgrade ${def.name}`, `Upgrade to level ${b.level + 1}?`, () => {
                     const err = this.rm.upgradeBuilding(uid);
                     toast(this.root, err || `${def.name} upgraded`, !err);
+                    if (!err) G.main.playSfx('upgrade');
                 }, 'Confirm', 'Cancel', { label: 'Cost:', cost });
                 break;
             }

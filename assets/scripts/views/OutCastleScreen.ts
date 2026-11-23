@@ -163,7 +163,7 @@ export class OutCastleScreen implements CombatEvents {
         confirm(this.root, `Upgrade ${def.name}`, body, () => {
             const err = this.rm.upgradeTower(uid);
             toast(this.root, err || `${def.name} upgraded`, !err);
-            if (!err) this.rebuildTowers();
+            if (!err) { G.main.playSfx('upgrade'); this.rebuildTowers(); }
         }, 'Confirm', 'Cancel', { label: 'Cost:', cost });
     }
 
@@ -246,6 +246,7 @@ export class OutCastleScreen implements CombatEvents {
         const p = this.placing!;
         const err = p.uid ? this.rm.moveTower(p.uid, x, y) : this.rm.buildTower(p.id, x, y);
         if (err) { toast(this.root, err); this.drawGhost(x, y); return; }
+        G.main.playSfx(p.uid ? 'click' : 'upgrade');
         this.stopPlacing();
         this.rebuildTowers();
     }
@@ -306,6 +307,7 @@ export class OutCastleScreen implements CombatEvents {
         confirm(this.root, 'Repair Wall', 'Restore the wall to full HP?', () => {
             const err = this.rm.repairWall();
             toast(this.root, err || 'Wall repaired', !err);
+            if (!err) G.main.playSfx('upgrade');
         }, 'Confirm', 'Cancel', { label: 'Cost:', cost });
     }
 
@@ -330,6 +332,9 @@ export class OutCastleScreen implements CombatEvents {
         this.combat.startWave(this.rm.data.currentWave);
         this.showMenu();
         toast(this.root, this.combat.plan!.name, true);
+        G.main.playSfx('wave_start');
+        // Boss waves have their own music until the wave is over.
+        if (WaveMgr.defense(this.rm.data.currentWave).hasBoss) G.main.playMusic('bgm_boss');
     }
 
     onWallChanged() { this.refreshHud(); }
@@ -338,6 +343,7 @@ export class OutCastleScreen implements CombatEvents {
         const gained = this.rm.completeWave(wave);
         G.main.autoSave();
         G.main.playSfx('win');
+        G.main.playMusic('bgm_battle');
         this.showMenu();
         const lines: InfoLine[] = [{ label: 'Gold from kills:', cost: { gold: goldFromKills } }, ''];
         lines.push(Object.keys(gained).length > 0 ? { label: 'Production:', cost: gained } : 'Production: nothing');

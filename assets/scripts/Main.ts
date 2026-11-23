@@ -17,6 +17,18 @@ const { ccclass } = _decorator;
 
 const DESIGN_W = 1024;
 const DESIGN_H = 576;
+/** Music is mixed this much quieter than the volume slider, so it stays in the background of the sound effects. */
+const MUSIC_GAIN = 0.7;
+
+/** Shortest time (s) between two plays of the same sound: frequent combat sounds are limited the most. */
+function sfxGap(name: string): number {
+    if (name.indexOf('shoot_') === 0) return 0.07;
+    if (name.indexOf('hit_') === 0 || name === 'coin') return 0.06;
+    if (name.indexOf('die_') === 0 || name === 'explode' || name === 'wall_hit') return 0.08;
+    if (name.indexOf('fx_') === 0) return 0.12;
+    return 0.03;
+}
+
 /** Prefabs of assets/prefabs preloaded at start (every screen, popup and list item of the game). */
 const PREFABS = [
     'screens/Loading', 'screens/MainMenu', 'screens/InCastle', 'screens/OutCastle', 'screens/HeroRecruit',
@@ -51,6 +63,13 @@ export class Main extends Component implements IMain {
     private screenName = '';
     private overlays: IOverlay[] = [];
     private clips: { [name: string]: AudioClip } = {};
+    /** Variants of a sound ("explode_v1", "explode_v2"... are all played as "explode"). */
+    private variants: { [name: string]: AudioClip[] } = {};
+    /** Last time (ms) each sound was played, to limit how often it can be heard. */
+    private lastSfx: { [name: string]: number } = {};
+    private musicKey = '';
+    private sfxSeed = (Date.now() & 0x7fffffff) || 1;
+    private lastVariant: { [name: string]: number } = {};
     private music: AudioSource = null as any;
     private sfx: AudioSource = null as any;
     private loading: LoadingScreen | null = null;
@@ -164,6 +183,8 @@ export class Main extends Component implements IMain {
             case 'heroes': this.screen = new HeroRecruitScreen(this.screenLayer); break;
             default: this.screenName = 'menu'; this.screen = new MainMenuScreen(this.screenLayer);
         }
+        // Calm music in the menu and inside the castle, battle music on the battlefield.
+        this.playMusic(this.screenName === 'outCastle' ? 'bgm_battle' : 'bgm_castle');
     }
 
     openOverlay(name: string, _arg?: any) {
@@ -264,36 +285,80 @@ export class Main extends Component implements IMain {
             if (typeof s.musicVolume === 'number') this.musicVolume = Math.max(0, Math.min(1, s.musicVolume));
             if (typeof s.sfxVolume === 'number') this.sfxVolume = Math.max(0, Math.min(1, s.sfxVolume));
         } catch (e) { /* keep defaults */ }
-        this.music.volume = this.musicVolume;
+        this.music.volume = this.musicVolume * MUSIC_GAIN;
     }
 
     setVolumes(music: number, sfx: number) {
         this.musicVolume = Math.max(0, Math.min(1, music));
         this.sfxVolume = Math.max(0, Math.min(1, sfx));
-        this.music.volume = this.musicVolume;
+        this.music.volume = this.musicVolume * MUSIC_GAIN;
         try { sys.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ musicVolume: this.musicVolume, sfxVolume: this.sfxVolume })); } catch (e) { /* ignore */ }
     }
 
-    /** Loads every clip in resources/audio (optional). "bgm" becomes the looping music. */
+    /**
+     * Loads every clip in resources/audio (all optional, see tools/audio).
+     * Clips named "<name>_v1", "<name>_v2"... are variants of "<name>": one is picked at random.
+     */
     private loadAudio(done: () => void) {
         resources.loadDir('audio', AudioClip, (err: any, clips: AudioClip[]) => {
             if (!err && clips) {
-                for (const c of clips) this.clips[c.name] = c;
-                if (this.clips['bgm']) {
-                    this.music.clip = this.clips['bgm'];
-                    this.music.loop = true;
-                    this.music.volume = this.musicVolume;
-                    this.music.play();
+                for (const c of clips) {
+                    this.clips[c.name] = c;
+                    const base = c.name.replace(/_v\d+$/, '');
+                    (this.variants[base] = this.variants[base] || []).push(c);
                 }
             }
             done();
         });
     }
 
-    /** Plays a sound effect by clip name; silently ignored when the clip does not exist. */
-    playSfx(name: string) {
+    /**
+     * Background music: "bgm_castle" (main menu, castle, heroes), "bgm_battle" (battlefield),
+     * "bgm_boss" (boss waves). Falls back to "bgm" when a track is missing. Playing the
+     * track that is already on does nothing, so the music never restarts between screens.
+     */
+    playMusic(key: string) {
+        const name = this.clips[key] ? key : (key === 'bgm_boss' && this.clips['bgm_battle'] ? 'bgm_battle' : 'bgm');
+        if (name === this.musicKey) return;
         const clip = this.clips[name];
-        if (clip && this.sfxVolume > 0) this.sfx.playOneShot(clip, this.sfxVolume);
+        if (!clip) return;
+        this.musicKey = name;
+        this.music.stop();
+        this.music.clip = clip;
+        this.music.loop = true;
+        this.music.volume = this.musicVolume * MUSIC_GAIN;
+        this.music.play();
+    }
+
+    /**
+     * Plays a sound effect by name (or a random variant of it). Silently ignored when the
+     * clip does not exist. The same sound is not repeated faster than SFX_GAP, so a big
+     * battle does not stack dozens of identical sounds.
+     */
+    playSfx(name: string, fallback?: string) {
+        if (this.sfxVolume <= 0) return;
+        let list = this.variants[name];
+        if (!list && fallback) { name = fallback; list = this.variants[name]; }
+        if (!list || list.length === 0) return;
+        const now = game.totalTime;
+        const gap = sfxGap(name) * 1000;
+        if (now - (this.lastSfx[name] || -1e9) < gap) return;
+        this.lastSfx[name] = now;
+        this.sfx.playOneShot(list[this.pickVariant(name, list.length)], this.sfxVolume);
+    }
+
+    /**
+     * Random variant, never the same one twice in a row. Uses its own random generator
+     * so sounds never change the game's random numbers (battles stay reproducible).
+     */
+    private pickVariant(name: string, count: number): number {
+        if (count <= 1) return 0;
+        this.sfxSeed = (this.sfxSeed * 1103515245 + 12345) & 0x7fffffff;
+        const r = this.sfxSeed >>> 16;   // high bits: the low bits of this generator repeat quickly
+        let i = r % count;
+        if (i === this.lastVariant[name]) i = (i + 1 + (r >>> 4) % (count - 1)) % count;
+        this.lastVariant[name] = i;
+        return i;
     }
 
     onDestroy() {
