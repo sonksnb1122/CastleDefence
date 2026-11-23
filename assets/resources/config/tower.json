@@ -1,16 +1,16 @@
 {
   "version": 2,
   "battlefield": {
-    "worldWidth": 1354,
+    "worldWidth": 1494,
     "worldHeight": 576,
     "constructionArea": {
-      "x": 40,
+      "x": 180,
       "y": 96,
       "width": 314,
       "height": 330
     },
     "wall": {
-      "x": 394,
+      "x": 534,
       "y": 0,
       "width": 39,
       "height": 576,
@@ -25,7 +25,7 @@
       110,
       420
     ],
-    "spawnX": 1394,
+    "spawnX": 1534,
     "towerMinSpacing": 46,
     "towerSelectRadius": 40,
     "towerScale": 0.7,
@@ -575,6 +575,7 @@
         "magic"
       ],
       "explosionBuffable": true,
+      "smartBossBonus": 4,
       "base": {
         "path": "sprites/towers/base_t4",
         "cellW": 64,

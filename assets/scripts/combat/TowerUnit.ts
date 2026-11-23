@@ -142,6 +142,28 @@ export class TowerUnit {
         return Math.abs(x - this.save.x) <= 32 * this.scale && y >= this.save.y - 6 && y <= this.save.y + top;
     }
 
+    /**
+     * The tower's special effects for the info window: chance in % (0 = not researched yet),
+     * with the research bonus and the effect-chance buff, as in combat.
+     */
+    effectInfo(): Array<{ name: string; description: string; chance: number }> {
+        const rm = ResourceMgr.inst;
+        const out: Array<{ name: string; description: string; chance: number }> = [];
+        for (const e of (this.lv.effects || [])) {
+            const def = ConfigMgr.towerEffectDef(e.id);
+            if (!def) continue;
+            const researched = rm.buff('effect:' + e.id);
+            const mul = this.lv.effectChanceMul || 1;
+            let base = 0, max = 100;
+            if (researched > 0) { base = researched * mul; max = (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul; }
+            else if (e.enabled) { base = def.chance; max = def.maxChance || 100; }
+            // Same rule as CombatManager.explode: the effect-chance buff adds points above the cap.
+            const chance = base > 0 ? Math.min(100, Math.min(max, base) + rm.buff('effectChance', this.save.id)) : 0;
+            out.push({ name: def.name, description: def.description || '', chance: Math.min(100, Math.round(chance)) });
+        }
+        return out;
+    }
+
     /** Snapshot used by the damage pipeline. Raw level values; buffs are applied in CombatManager. */
     private makeShot(): ShotInfo {
         const s = this.stats();

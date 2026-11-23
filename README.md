@@ -90,7 +90,8 @@ The Crossbow is strong early on. The Catapult starts weak but becomes the main d
 - **First:** the enemy closest to the wall.
 - **Lowest HP**, **Highest HP**, **Nearest** (to the tower).
 - **Smart:** unlocked by research. The tower picks the target where its damage is most useful.
-  - Area towers aim at groups.
+  - Area towers aim at groups. The Catapult also goes for the boss, more and more as it gets close to the wall
+    (`"smartBossBonus"` in `tower.json`).
   - Shots never waste damage on an enemy that is already going to die.
   - Enemies near the wall get priority.
   - A Crossbow with Smart mode always hits the enemy closest to the wall.
@@ -107,6 +108,10 @@ The Crossbow is strong early on. The Catapult starts weak but becomes the main d
 Every tower has three special effects. They are unlocked and made more likely by research
 at Research Lab Lv 3: each research step adds +5% chance, up to 50%. The Crystal gets twice
 the chance at level 3, so a fully researched Crystal reaches 100%.
+*Arcane Mastery* (and hero effect-chance buffs) add their points on top, above the 50% limit:
+with +25% every researched effect reaches 75% (100% at most).
+The tower's *Info* window lists its three effects with their current chance and what they do
+(the texts are the `"description"` fields of `effects.json`).
 
 | Tower | Effect | What it does |
 |---|---|---|
@@ -116,7 +121,7 @@ the chance at level 3, so a fully researched Crystal reaches 100%.
 | Crystal | Frost Explosion | Every enemy in the explosion is slowed by 35% for 2.5 s. |
 | Crystal | Chain Lightning | Lightning jumps to 3 more enemies for 80% damage. |
 | Crystal | Arcane Vulnerability | Enemies hit take +20% magic damage for 4 s. |
-| Catapult | Shockwave | Enemies hit are stunned. |
+| Catapult | Shockwave | Enemies hit are stunned for 0.3 s. |
 | Catapult | Heavy Impact | Bonus damage equal to 6% of the target's max HP. |
 | Catapult | Armor Break | Enemies hit lose 20 defense for 4 s. |
 
@@ -229,10 +234,14 @@ The buffs of every owned hero are permanent and stack with research.
 ### Market
 
 The Base also opens the **Market** (*Market* button), a screen to trade one resource for another.
-- Pick what you give (left) and what you get (right), set the amount (-1K / -100 / +100 / +1K / +10K / Max), then *Trade*.
+- **Trade Amount** (left): pick the resource to give; its button shows the amount you trade.
+- **Receive Amount** (right): pick the resource to get (one of the three); its button shows the amount you receive.
+- Any resource can be traded for any other. Set the amount with the buttons in the middle
+  (-1K / -100 / +100 / +1K / +10K / Max), then *Trade*.
 - Gold is worth 2, material and food 1 each. The market keeps a fee: 30% / 25% / 20% at Base Lv 1 / 2 / 3.
 - Prices change every wave by up to ±20% per resource (shown on the screen), so it can pay to wait for a better wave.
   The changes come from a random seed stored in the save, so reopening the Market does not change them.
+  The rate line is green when this wave's rate is better than usual and red when it is worse.
 - Only between waves. Rates and fees are in `building.json` (`"trade"`).
 
 ---

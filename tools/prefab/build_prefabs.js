@@ -531,40 +531,37 @@ function tradeScreen() {
   w.widget(head, { top: 60 });
   sliced(w, head, 'Scroll', Object.assign({}, UI.popupHeader, { scale: 1.5 }), 0, 0, 280, 48);
   label(w, head, 'Title', 'Market', 0, 0, 20, { bold: true, color: '#5a2a1a' });
-  // Centered panel: "You give" column, amount controls in the middle, "You get" column.
+  // Centered panel: "Trade Amount" column, step buttons in the middle, "Receive Amount" column.
   const PW = 760, PH = 330;
   const area = w.node('Panel', root, { y: -14, w: PW, h: PH });
   sliced(w, area, 'Frame', UI.listBg, 0, 0, PW + 36, PH + 36);
   // Dark inner backing over the blue frame center, so white text and icons read well.
   box(w, area, 'Backing', 0, 0, PW + 4, PH + 4, hex('#1d1830', 235));
   const col = (name, x, title) => {
-    label(w, area, name + 'Title', title, x, PH / 2 - 30, 18, { bold: true, color: C.accent });
-    [['Gold', 'gold'], ['Material', 'material'], ['Food', 'food']].forEach(([n, key], i) => {
-      // Icon + amount owned, centered as one group by TradeScreen (no text: the icon says which resource).
-      const b = button(w, area, name + n, '', x, PH / 2 - 84 - i * 62, 190, 50, C.panelLight, 17, 'game');
-      w.node('Icon', b, { x: -30, w: 34, h: 34 });
-      label(w, b, 'Owned', '0', -8, 0, 18, { ax: 0, bold: true });
+    label(w, area, name + 'Title', title, x, PH / 2 - 30, 19, { bold: true, color: C.accent });
+    [['Gold', 'gold'], ['Material', 'material'], ['Food', 'food']].forEach(([n], i) => {
+      // One resource: icon + amount, centered as a group by TradeScreen (amounts owned are in the top bar).
+      const b = button(w, area, name + n, '', x, PH / 2 - 92 - i * 74, 210, 58, C.panelLight, 17, 'game');
+      w.node('Icon', b, { x: -30, w: 36, h: 36 });
+      label(w, b, 'Amount', '0', -8, 0, 22, { ax: 0, bold: true });
       refs[name.toLowerCase() + n] = b;
     });
   };
-  col('Give', -PW / 2 + 120, 'You give');
-  col('Get', PW / 2 - 120, 'You get');
-  // Middle: amount, step buttons, result and rate.
-  const mid = w.node('Middle', area, { w: 340, h: PH });
-  const amount = w.node('Amount', mid, { y: 104, w: 300, h: 40 });
-  refs.amountIcon = w.node('Icon', amount, { x: -70, w: 32, h: 32 });
-  refs.amountLabel = lab(w, label(w, amount, 'Value', '0', -46, 0, 26, { ax: 0, bold: true }));
-  [['Minus1000', '-1K', -1000], ['Minus100', '-100', -100], ['Plus100', '+100', 100], ['Plus1000', '+1K', 1000]].forEach(([n, t], i) => {
-    refs[n.charAt(0).toLowerCase() + n.slice(1) + 'Button'] = button(w, mid, n + 'Button', t, -120 + i * 80, 52, 72, 38, C.button, 15);
+  col('Give', -PW / 2 + 135, 'Trade Amount');
+  col('Get', PW / 2 - 135, 'Receive Amount');
+  // Middle: arrow, amount step buttons and the rate of this wave.
+  const mid = w.node('Middle', area, { w: 300, h: PH });
+  label(w, mid, 'Arrow', '>>>', 0, PH / 2 - 30, 26, { bold: true, color: C.accent });
+  // Two rows of three step buttons, narrow enough to leave a gap to both columns.
+  [['Minus1000', '-1K', C.button], ['Minus100', '-100', C.button], ['Plus100', '+100', C.button],
+   ['Plus1000', '+1K', C.button], ['Plus10000', '+10K', C.button], ['Max', 'Max', C.buttonAlt]].forEach(([n, t, color], i) => {
+    const field = n === 'Max' ? 'maxButton' : n.charAt(0).toLowerCase() + n.slice(1) + 'Button';
+    refs[field] = button(w, mid, n + 'Button', t, -78 + (i % 3) * 78, 84 - Math.floor(i / 3) * 46, 70, 38, color, 15);
   });
-  refs.plus10000Button = button(w, mid, 'Plus10000Button', '+10K', -60, 6, 110, 38, C.button, 15);
-  refs.maxButton = button(w, mid, 'MaxButton', 'Max', 60, 6, 110, 38, C.buttonAlt, 15);
-  label(w, mid, 'Arrow', 'You receive', 0, -38, 18, { bold: true, color: C.text });
-  const result = w.node('Result', mid, { y: -72, w: 300, h: 40 });
-  refs.resultIcon = w.node('Icon', result, { x: -70, w: 32, h: 32 });
-  refs.resultLabel = lab(w, label(w, result, 'Value', '0', -46, 0, 26, { ax: 0, bold: true, color: C.good }));
-  // Top-anchored: the rate line and the price changes of the wave (2-3 lines) grow downwards.
-  refs.rateLabel = lab(w, label(w, mid, 'Rate', '1 gold = 0.7 food', 0, -96, 14, { width: 360, ay: 1, align: 1, bold: true, color: '#d8d0e6' }));
+  // Rate of this wave (green when better than usual, red when worse), then fee and price changes.
+  refs.rateLabel = lab(w, label(w, mid, 'Rate', '1 gold = 0.7 food', 0, -16, 17, { bold: true }));
+  // Top-anchored: 2-3 lines growing downwards.
+  refs.infoLabel = lab(w, label(w, mid, 'Info', 'Market fee 20%', 0, -32, 14, { width: 290, ay: 1, align: 1, bold: true, color: '#d8d0e6' }));
   refs.backButton = button(w, root, 'BackButton', '< Back', -SCREEN_W / 2 + 70, -SCREEN_H / 2 + 30, 120, 40, C.buttonAlt, 17, 'game', { widget: { left: 10, bottom: 10 } });
   refs.tradeButton = button(w, root, 'TradeButton', 'Trade', 0, -SCREEN_H / 2 + 30, 220, 42, C.buttonOk, 18, 'game', { widget: { bottom: 9 } });
   save(w, 'screens/Trade', root, 'TradeView', 'screens', refs);

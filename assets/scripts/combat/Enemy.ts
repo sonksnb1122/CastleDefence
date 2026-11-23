@@ -57,6 +57,8 @@ export class Enemy {
     private waveResist: { types: string[]; value: number } = { types: [], value: 0 };
     /** Seconds left during which a status type cannot be applied again (status "immunityAfter"). */
     private immune: { [type: string]: number } = {};
+    /** Wave boss (bigger, tougher). */
+    boss = false;
     /** Number given at each spawn: tells a pooled enemy apart from its previous life. */
     serial = 0;
 
@@ -85,6 +87,7 @@ export class Enemy {
         this.def = def;
         this.x = x; this.y = y;
         this.maxHp = this.hp = stats.hp;
+        this.boss = !!stats.boss;
         this.damage = stats.damage;
         this.baseSpeed = stats.moveSpeed;
         this.goldReward = stats.goldReward;

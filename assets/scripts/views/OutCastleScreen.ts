@@ -198,8 +198,15 @@ export class OutCastleScreen implements CombatEvents {
             `Crit: ${r1(s.critRate)}%  x${r1(s.critDamage)}%`,
             `Target mode: ${unit.save.targetMode}`,
         ];
-        const effects = (unit.lv.effects || []).map((e: any) => `${ConfigMgr.towerEffectDef(e.id).name} ${e.enabled ? '(on)' : '(off)'}`);
-        if (effects.length) lines.push('Effects: ' + effects.join(', '));
+        // Special effects: chance (from research at Lab Lv 3) and what each one does.
+        const effects = unit.effectInfo();
+        if (effects.length) {
+            lines.push('', 'Special effects:');
+            for (const e of effects) {
+                const state = e.chance > 0 ? `${e.chance}% chance` : 'locked - research it at Research Lab Lv 3';
+                lines.push(`- ${e.name} (${state}): ${e.description}`);
+            }
+        }
         const cost = this.rm.towerUpgradeCost(unit.save);
         lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');
         infoWindow(this.root, def.name, lines);

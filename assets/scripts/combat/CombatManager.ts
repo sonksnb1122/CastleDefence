@@ -285,12 +285,18 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             // Area towers: total useful damage of the explosion centred on this enemy.
             const r2 = s.explosion * s.explosion;
             let total = 0;
+            const bossBonus = tower.def.smartBossBonus || 0;
             for (const o of this.enemies) {
                 if (!o.alive) continue;
                 const dx = o.x - e.x, dy = o.y - e.y;
                 if (dx * dx + dy * dy <= r2) {
-                    const od = 1 + 2 * Math.max(0, Math.min(1, 1 - (o.x - this.wallRightX) / fieldW));
-                    total += useful(o) * od;
+                    const c = Math.max(0, Math.min(1, 1 - (o.x - this.wallRightX) / fieldW));
+                    const od = 1 + 2 * c;
+                    if (o.boss && bossBonus > 0 && o.hp - o.pendingDamage > 0) {
+                        // A boss has so much HP that one hit is a small share of it: count a hit as a whole
+                        // enemy, weighted more and more as the boss gets close to the wall ("smartBossBonus").
+                        total += od * (1 + bossBonus * c);
+                    } else total += useful(o) * od;
                 }
             }
             return total;
@@ -472,7 +478,10 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         }
         this.impactFx(shot, x, y);
         const tower = this.towerByUid(shot.towerUid);
-        const chance = (ef: any) => Math.min(ef.maxChance || 100, ef.chance * (1 + this.buff('effectChance', shot.towerId) / 100));
+        // "effectChance" (Arcane Mastery research, heroes) adds percentage points on top of the effect's
+        // own chance and above its cap: a researched effect at 50% becomes 75% with +25%.
+        const extra = this.buff('effectChance', shot.towerId);
+        const chance = (ef: any) => ef.chance > 0 ? Math.min(100, Math.min(ef.maxChance || 100, ef.chance) + extra) : 0;
         const ready = (ef: any) => !tower || !(tower.effectCooldowns[ef.id] > 0);
         const used = (ef: any) => { if (tower && ef.cooldown > 0) tower.effectCooldowns[ef.id] = ef.cooldown; };
         const statusCount: { [id: string]: number } = {};

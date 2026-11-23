@@ -120,6 +120,7 @@
     {
       "id": "piercing_bolt",
       "name": "Piercing Bolt",
+      "description": "The bolt goes on to hit 2 more enemies nearby.",
       "trigger": "onHit",
       "kind": "chain",
       "chance": 25,
@@ -132,6 +133,7 @@
     {
       "id": "bleeding_bolt",
       "name": "Bleeding Bolt",
+      "description": "Bleed: 20% of the hit as physical damage every second for 4 s (stacks 3 times).",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "bleed",
@@ -143,6 +145,7 @@
     {
       "id": "hunters_mark",
       "name": "Hunter's Mark",
+      "description": "The target takes +50% damage from Crossbows for 5 s.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "hunter_mark",
@@ -154,6 +157,7 @@
     {
       "id": "frost_explosion",
       "name": "Frost Explosion",
+      "description": "Every enemy in the explosion is slowed by 35% for 2.5 s.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "slow",
@@ -165,6 +169,7 @@
     {
       "id": "chain_lightning",
       "name": "Chain Lightning",
+      "description": "Lightning jumps to 3 more enemies for 80% damage.",
       "trigger": "onHit",
       "kind": "chain",
       "chance": 25,
@@ -177,6 +182,7 @@
     {
       "id": "arcane_vulnerability",
       "name": "Arcane Vulnerability",
+      "description": "Enemies hit take +20% magic damage for 4 s.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "arcane_mark",
@@ -188,6 +194,7 @@
     {
       "id": "shockwave",
       "name": "Shockwave",
+      "description": "Enemies hit are stunned for 0.3 s (then immune to stun for 0.5 s).",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "stun",
@@ -199,6 +206,7 @@
     {
       "id": "heavy_impact",
       "name": "Heavy Impact",
+      "description": "Bonus damage equal to 6% of the target's max HP (at most one normal hit).",
       "trigger": "onHit",
       "kind": "bonusMaxHp",
       "chance": 100,
@@ -211,6 +219,7 @@
     {
       "id": "armor_break",
       "name": "Armor Break",
+      "description": "Enemies hit lose 20 defense for 4 s.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "armor_break",

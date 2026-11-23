@@ -2,6 +2,9 @@ import { ConfigMgr } from '../ConfigMgr';
 import { BuffEntry, SAVE_VERSION, SaveData } from '../GameTypes';
 import { Placement } from './Placement';
 
+/** Battlefield shift of save version 3 (tower.json battlefield: wall x 394 -> 534, ...). */
+const LAYOUT_SHIFT_V3 = 140;
+
 /**
  * Creating, validating and copying save data. Never touches the running game:
  * a broken save is rejected without damaging the current progress.
@@ -95,8 +98,10 @@ export class SaveCodec {
             if (!def) continue;
             const uid = Math.floor(n(t.uid, d.nextUid++));
             maxUid = Math.max(maxUid, uid);
+            // Version 3 moved the whole battlefield 140 px to the right (more castle ground on the left,
+            // so the menu of a tower at the left edge stays on screen): older towers move with it.
+            let tx = n(t.x, 0) + (raw.saveVersion < 3 ? LAYOUT_SHIFT_V3 : 0), ty = n(t.y, 0);
             // Saves made with a different defense area: the tower moves to the closest valid spot.
-            let tx = n(t.x, 0), ty = n(t.y, 0);
             if (!Placement.towerSpotOk(d.towers, tx, ty, 0)) {
                 const spot = Placement.nearestTowerSpot(d.towers, tx, ty);
                 if (!spot) continue; // no room left at all

@@ -6,7 +6,7 @@ import { TopBar } from './common/TopBar';
 import { TradeView } from './screens/TradeView';
 import { toast } from './common/Popups';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
-import { COLORS, resIcon } from './common/UIKit';
+import { COLORS, hex, resIcon } from './common/UIKit';
 
 const KEYS = ['gold', 'material', 'food'];
 const NAMES: { [k: string]: string } = { gold: 'Gold', material: 'Material', food: 'Food' };
@@ -33,10 +33,15 @@ function centerGroup(icon: Node | null, label: Label, gap = 6) {
     label.node.setPosition(-total / 2 + iw + (icon ? gap : 0), label.node.position.y, 0);
 }
 
+interface ResButton { btn: PrefabButton; icon: Node | null; amount: Label | null; }
+
 /**
- * Market of the Base (prefabs/screens/Trade), opened like the hero recruitment:
- * pick the resource to give (left) and the one to get (right), set the amount with
- * the step buttons, then Trade. Rates and fee come from building.json "trade".
+ * Market of the Base (prefabs/screens/Trade), opened like the hero recruitment.
+ * Left, "Trade Amount": pick the resource to give; it shows the amount being traded
+ * (the amounts owned are in the top bar).
+ * Right, "Receive Amount": pick the resource to get; it shows the amount received.
+ * Any resource can be traded for any other. The step buttons in the middle set the amount.
+ * Rates, fee and price changes come from building.json "trade" (see TradeService).
  */
 export class TradeScreen {
     root: Node;
@@ -46,8 +51,8 @@ export class TradeScreen {
     private give = 'gold';
     private get = 'material';
     private amount = 0;
-    private giveBtns: { [k: string]: { btn: PrefabButton; owned: Label | null; icon: Node | null } } = {};
-    private getBtns: { [k: string]: { btn: PrefabButton; owned: Label | null; icon: Node | null } } = {};
+    private giveBtns: { [k: string]: ResButton } = {};
+    private getBtns: { [k: string]: ResButton } = {};
     private tradeBtn: PrefabButton;
     private unsubscribe: () => void;
 
@@ -60,17 +65,17 @@ export class TradeScreen {
         const panel = this.root.getChildByName('Panel');
         const k = Math.min(1, (G.main.W - 24) / 796);
         if (panel) panel.setScale(k, k, 1);
-        const side = (nodes: { [k: string]: Node | null }, store: TradeScreen['giveBtns'], pick: (k: string) => void) => {
-            for (const k of KEYS) {
-                const n = nodes[k];
+        const side = (nodes: { [k: string]: Node | null }, store: { [k: string]: ResButton }, pick: (k: string) => void) => {
+            for (const key of KEYS) {
+                const n = nodes[key];
                 if (!n) continue;
                 const icon = n.getChildByName('Icon');
-                if (icon) resIcon(icon, k, 34);
-                store[k] = { btn: new PrefabButton(n, () => pick(k)), owned: PrefabUi.child(n, 'Owned', Label), icon };
+                if (icon) resIcon(icon, key, 36);
+                store[key] = { btn: new PrefabButton(n, () => pick(key)), icon, amount: PrefabUi.child(n, 'Amount', Label) };
             }
         };
-        side({ gold: v.giveGold, material: v.giveMaterial, food: v.giveFood }, this.giveBtns, k => this.pickGive(k));
-        side({ gold: v.getGold, material: v.getMaterial, food: v.getFood }, this.getBtns, k => this.pickGet(k));
+        side({ gold: v.giveGold, material: v.giveMaterial, food: v.giveFood }, this.giveBtns, key => this.pickGive(key));
+        side({ gold: v.getGold, material: v.getMaterial, food: v.getFood }, this.getBtns, key => this.pickGet(key));
         const step = (n: Node | null, d: number) => new PrefabButton(n, () => this.setAmount(this.amount + d));
         step(v.minus1000Button, -1000); step(v.minus100Button, -100);
         step(v.plus100Button, 100); step(v.plus1000Button, 1000); step(v.plus10000Button, 10000);
@@ -101,29 +106,32 @@ export class TradeScreen {
     private refresh() {
         const v = this.view, tr = this.rm.trade;
         this.amount = Math.min(this.amount, this.rm.get(this.give));
-        for (const k of KEYS) {
-            const g = this.giveBtns[k], r = this.getBtns[k];
-            for (const [b, on] of [[g, k === this.give], [r, k === this.get]] as Array<[typeof g, boolean]>) {
-                if (!b) continue;
-                b.btn.setColor(on ? COLORS.buttonOk : '#3a3350');
-                if (b.owned) { b.owned.string = fmt(this.rm.get(k)); centerGroup(b.icon, b.owned); }
-            }
-        }
-        const icon = (holder: Node | null, k: string) => { if (!holder) return; holder.destroyAllChildren(); resIcon(holder, k, 32); };
-        icon(v.amountIcon, this.give);
-        icon(v.resultIcon, this.get);
         const got = tr.quote(this.give, this.get, this.amount);
-        v.amountLabel!.string = fmt(this.amount);
-        v.resultLabel!.string = fmt(got);
-        centerGroup(v.amountIcon, v.amountLabel!, 10);
-        centerGroup(v.resultIcon, v.resultLabel!, 10);
+        // Each button: icon + amount (traded / received on the selected one, 0 on the others).
+        const show = (b: ResButton | undefined, key: string, on: boolean, value: number, prefix: string, color: string) => {
+            if (!b) return;
+            b.btn.setColor(on ? COLORS.buttonOk : '#3a3350');
+            if (b.amount) {
+                b.amount.string = on && value > 0 ? prefix + fmt(value) : '0';
+                b.amount.color = hex(on ? color : COLORS.textDim);
+                centerGroup(b.icon, b.amount);
+            }
+        };
+        for (const key of KEYS) {
+            show(this.giveBtns[key], key, key === this.give, this.amount, '-', COLORS.text);
+            show(this.getBtns[key], key, key === this.get, got, '+', COLORS.good);
+        }
         const rate = tr.rate(this.give, this.get);
+        // This wave's rate against the usual one (no price change): better -> green, worse -> red.
+        const vsUsual = tr.priceChange(this.give) / tr.priceChange(this.get) - 1;
+        const d = Math.round(vsUsual * 100);
+        v.rateLabel!.string = `1 ${NAMES[this.give]} = ${rate.toFixed(2)} ${NAMES[this.get]}` + (d !== 0 ? `  (${d > 0 ? '+' : ''}${d}%)` : '');
+        v.rateLabel!.color = hex(d > 0 ? COLORS.good : d < 0 ? '#ff6b6b' : COLORS.text);
         const fees: number[] = (ConfigMgr.building.trade && ConfigMgr.building.trade.feeByBaseLevel) || [];
-        const better = this.rm.baseLevel < fees.length ? '  -  upgrade the Base for a lower fee' : '';
-        // Price change of this wave for both resources (+/- %), shown so the player can wait for a better wave.
-        const pct = (r: string) => { const d = Math.round((tr.priceChange(r) - 1) * 100); return (d >= 0 ? '+' : '') + d + '%'; };
-        v.rateLabel!.string = `1 ${NAMES[this.give]} = ${rate.toFixed(2)} ${NAMES[this.get]}   (market fee ${tr.fee}%${better})\n` +
-            `This wave: ${NAMES[this.give]} ${pct(this.give)}, ${NAMES[this.get]} ${pct(this.get)} (prices change every wave)`;
+        const better = this.rm.baseLevel < fees.length ? '\nUpgrade the Base for a lower fee.' : '';
+        const pct = (r: string) => { const x = Math.round((tr.priceChange(r) - 1) * 100); return (x >= 0 ? '+' : '') + x + '%'; };
+        v.infoLabel!.string = `Market fee ${tr.fee}%${better}\n` +
+            `This wave: ${NAMES[this.give]} ${pct(this.give)}, ${NAMES[this.get]} ${pct(this.get)}\n(prices change every wave)`;
         this.tradeBtn.setEnabled(got > 0 && this.rm.isPreparation);
     }
 
