@@ -150,6 +150,10 @@
       {
         "fromWave": 71,
         "perWave": 1.025
+      },
+      {
+        "fromWave": 86,
+        "perWave": 1.115
       }
     ],
     "steps": [
@@ -164,10 +168,13 @@
     "perWave": 2
   },
   "statusResistance": {
-    "startWave": 80,
-    "perWave": 0.5,
-    "max": 40,
+    "startWave": 70,
+    "perWave": 1.5,
+    "max": 70,
     "bossBonus": 20,
-    "types": ["stun"]
+    "types": [
+      "stun",
+      "slow"
+    ]
   }
 }

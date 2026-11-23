@@ -59,9 +59,9 @@ Destroying a building refunds 50% of its build cost.
 
 | Building | Produces after each wave (Lv 1 / 2 / 3) | Limit | Notes |
 |---|---|---|---|
-| **Base** | 120 / 250 / 500 gold | 1 (fixed in the centre) | Raises the tower limit (10 / 20 / 30), the hero limit (3 / 7 / 12), the number of other buildings and the max tower level. Upgrade: 900 gold + 500 material + 400 food, then 4000 gold + 6000 material + 6000 food. |
-| **Farm** | 95 / 150 / 330 food | 5 per Base level | Build: 60 gold + 100 material |
-| **Lumber & Quarry** | 115 / 180 / 320 material | 5 per Base level | Build: 80 gold + 80 food |
+| **Base** | 120 / 250 / 900 gold | 1 (fixed in the centre) | Raises the tower limit (10 / 20 / 30), the hero limit (3 / 7 / 12), the number of other buildings and the max tower level. Upgrade: 900 gold + 500 material + 400 food, then 4000 gold + 6000 material + 6000 food. |
+| **Farm** | 95 / 150 / 495 food | 5 per Base level | Build: 60 gold + 100 material |
+| **Lumber & Quarry** | 115 / 180 / 480 material | 5 per Base level | Build: 80 gold + 80 food |
 | **Research Lab** | nothing | 1 | Opens research. Max technology level is 2 / 5 / 10 at Lab Lv 1 / 2 / 3. Lab Lv 3 also unlocks the tower special effects, Smart Targeting and the endless technologies. |
 
 ---
@@ -136,7 +136,8 @@ Values are for wave 1. All stats grow with the wave number.
 **How waves scale:**
 - **Enemy count:** starts at 24 and grows by 2 every wave. Spawns come faster over time.
 - **Stats:** HP follows a curve tuned by segments. Damage, speed and gold grow every 3 waves.
-  HP gets an extra ×1.2 after wave 100.
+  From wave 86, HP grows much faster (×1.115 per wave) and gets an extra ×1.2 after wave 100:
+  a player with every upgrade usually loses between wave 100 and 120.
 - **Enemy types:**
 
   | Waves | Enemies |
@@ -155,9 +156,9 @@ Values are for wave 1. All stats grow with the wave number.
   - From wave 10, enemy defense rises by 5 every 6 waves, up to 70 (bosses up to 90).
   - The *Enemy armor* tab in the top left corner shows how much Armor / Spell Piercing the next wave needs
     compared with what you have.
-- **Stun limits** (so enemies are never stunned without a break):
+- **Status limits** (so enemies are never stunned or slowed without a break):
   - After a Stun, an enemy cannot be stunned again for the stun time + 0.5 s (`"immunityAfter"` in `effects.json`).
-  - From wave 80, enemies get +0.5% stun resistance per wave, up to 40%; bosses get +20% more
+  - From wave 70, enemies get +1.5% Stun and Slow resistance per wave, up to 70% (wave 116); bosses get +20% more
     (`"statusResistance"` in `waves.json`). This adds to the enemy's own resistance (Clampbeetle, Magma Crab).
 - **Enemy abilities:** they are implemented but switched off (`"enabled": false` in `enemy.json`).
   - Iron Skin
@@ -225,6 +226,15 @@ Heroes are recruited at the Base. Each recruit is a random pick among the heroes
 
 The buffs of every owned hero are permanent and stack with research.
 
+### Market
+
+The Base also opens the **Market** (*Market* button), a screen to trade one resource for another.
+- Pick what you give (left) and what you get (right), set the amount (-1K / -100 / +100 / +1K / +10K / Max), then *Trade*.
+- Gold is worth 2, material and food 1 each. The market keeps a fee: 30% / 25% / 20% at Base Lv 1 / 2 / 3.
+- Prices change every wave by up to ±20% per resource (shown on the screen), so it can pay to wait for a better wave.
+  The changes come from a random seed stored in the save, so reopening the Market does not change them.
+- Only between waves. Rates and fees are in `building.json` (`"trade"`).
+
 ---
 
 ## Research
@@ -291,8 +301,8 @@ Creator and are not in the repository; the editor recreates them the first time 
 ### Test saves
 
 For testing, **Load Game** also lists six read-only saves under *Test saves (bot)*: the game as a bot
-played it up to wave 30, 50, 70, 100, 130 and 150 (all buildings, towers, research and recruited heroes).
-The wave 150 save also has every finite technology at max level and Smart targeting on all towers.
+played it up to wave 30, 50, 70, 90, 100 and 110. The bot builds and upgrades everything, recruits heroes,
+researches every technology (Smart targeting on all towers from about wave 95) and uses the Market.
 - They are the files `assets/resources/presets/wave_<n>.json` and cannot be deleted in the game.
 - Loading one starts a normal game from that point; the file itself is never changed.
 - To hide them, set `TEST_SAVES = []` in `Main.ts`.
@@ -334,7 +344,7 @@ assets/
 
 - **Data-driven.** Everything that affects balance is in `assets/resources/config`, so the game
   can be tuned without touching code:
-  - `building.json`: buildings, Base limits, wall, start resources, recruit cost
+  - `building.json`: buildings, Base limits, wall, start resources, recruit cost, market rates
   - `tower.json`: towers, levels, battlefield layout, target modes
   - `enemy.json`: enemies, resistances, abilities
   - `waves.json`: wave size, HP curve, bosses, milestones, special waves, defense growth

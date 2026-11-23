@@ -187,7 +187,7 @@ export class InCastleScreen {
         const b = this.rm.building(this.selectedUid);
         if (!b || this.placing) return;
         const def = ConfigMgr.buildingDef(b.id);
-        const labels: { [k: string]: string } = { upgrade: 'Upgrade', move: 'Move', destroy: 'Destroy', info: 'Info', recruit: 'Recruit', research: 'Research' };
+        const labels: { [k: string]: string } = { upgrade: 'Upgrade', move: 'Move', destroy: 'Destroy', info: 'Info', recruit: 'Recruit', trade: 'Market', research: 'Research' };
         const colors: { [k: string]: string } = { upgrade: COLORS.buttonOk, destroy: COLORS.buttonDanger };
         const items = (def.actions as string[]).map(a => ({ label: labels[a] || a, color: colors[a], onClick: () => this.doAction(a, b.uid) }));
         // The arc opens below the building, or above when there is no room on the map.
@@ -283,6 +283,7 @@ export class InCastleScreen {
             }
             case 'info': this.showInfo(b); break;
             case 'recruit': G.main.goto('heroes'); break;
+            case 'trade': G.main.goto('trade'); break;
             case 'research': G.main.openOverlay('research'); break;
         }
     }

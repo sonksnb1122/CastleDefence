@@ -29,9 +29,9 @@
         ]
       },
       "baseCost": {
-        "gold": 12000,
-        "material": 3500,
-        "food": 3500
+        "gold": 4800,
+        "material": 1750,
+        "food": 1750
       },
       "costGrowth": 1.08
     },
@@ -161,9 +161,9 @@
         ]
       },
       "baseCost": {
-        "gold": 9000,
-        "material": 3500,
-        "food": 3500
+        "gold": 3600,
+        "material": 1750,
+        "food": 1750
       },
       "costGrowth": 1.08
     },
@@ -360,9 +360,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 500,
-        "material": 250,
-        "food": 250
+        "gold": 225,
+        "material": 115,
+        "food": 115
       },
       "costGrowth": 1.42
     },
@@ -377,9 +377,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 500,
-        "material": 250,
-        "food": 250
+        "gold": 225,
+        "material": 115,
+        "food": 115
       },
       "costGrowth": 1.42
     },
@@ -394,9 +394,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 500,
-        "material": 250,
-        "food": 250
+        "gold": 225,
+        "material": 115,
+        "food": 115
       },
       "costGrowth": 1.42
     },
@@ -411,9 +411,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 2250,
-        "material": 1125,
-        "food": 1125
+        "gold": 1000,
+        "material": 500,
+        "food": 500
       },
       "costGrowth": 1.42
     },
@@ -428,9 +428,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 1250,
-        "material": 625,
-        "food": 625
+        "gold": 560,
+        "material": 280,
+        "food": 280
       },
       "costGrowth": 1.42
     },
@@ -445,9 +445,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 1250,
-        "material": 625,
-        "food": 625
+        "gold": 560,
+        "material": 280,
+        "food": 280
       },
       "costGrowth": 1.42
     },
@@ -462,9 +462,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 3250,
-        "material": 1500,
-        "food": 1500
+        "gold": 1450,
+        "material": 675,
+        "food": 675
       },
       "costGrowth": 1.42
     },
@@ -479,9 +479,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 1250,
-        "material": 625,
-        "food": 625
+        "gold": 560,
+        "material": 280,
+        "food": 280
       },
       "costGrowth": 1.42
     },
@@ -496,9 +496,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 2250,
-        "material": 1125,
-        "food": 1125
+        "gold": 1000,
+        "material": 500,
+        "food": 500
       },
       "costGrowth": 1.42
     },
@@ -513,9 +513,9 @@
         "labLevel": 3
       },
       "baseCost": {
-        "gold": 100000,
-        "material": 40000,
-        "food": 40000
+        "gold": 50000,
+        "material": 20000,
+        "food": 20000
       },
       "costGrowth": 1
     }

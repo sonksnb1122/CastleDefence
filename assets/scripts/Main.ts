@@ -7,6 +7,7 @@ import { ConfigMgr } from './core/ConfigMgr';
 import { G, IMain } from './core/Globals';
 import { ResourceMgr } from './core/ResourceMgr';
 import { HeroRecruitScreen } from './views/HeroRecruitScreen';
+import { TradeScreen } from './views/TradeScreen';
 import { InCastleScreen } from './views/InCastleScreen';
 import { LoadingScreen } from './views/LoadingScreen';
 import { MainMenuScreen } from './views/MainMenuScreen';
@@ -31,7 +32,7 @@ function sfxGap(name: string): number {
 
 /** Prefabs of assets/prefabs preloaded at start (every screen, popup and list item of the game). */
 const PREFABS = [
-    'screens/Loading', 'screens/MainMenu', 'screens/InCastle', 'screens/OutCastle', 'screens/HeroRecruit',
+    'screens/Loading', 'screens/MainMenu', 'screens/InCastle', 'screens/OutCastle', 'screens/HeroRecruit', 'screens/Trade',
     'popups/Pause', 'popups/Settings', 'popups/SaveLoad', 'popups/Research', 'popups/Confirm', 'popups/Message',
     'popups/Info', 'popups/Build', 'popups/NewHero',
     'items/TopBar', 'items/DefTab', 'items/SaveSlot', 'items/ResearchRow', 'items/BuildRow', 'items/HeroCard',
@@ -41,10 +42,10 @@ const SAVE_KEY = 'castle_defense_save_';
 const SETTINGS_KEY = 'castle_defense_settings';
 /**
  * Test saves (assets/resources/presets/wave_<n>.json) made by the progression bot
- * (tools/harness/prog.js, "heroes" variant). They are listed in Load Game and cannot be deleted.
+ * (tools/harness/prog.js, "full" variant: all research, heroes and Market trades). They are listed in Load Game and cannot be deleted.
  * Temporary, for testing: set to [] to hide them.
  */
-const TEST_SAVES = [30, 50, 70, 100, 130, 150];
+const TEST_SAVES = [30, 50, 70, 90, 100, 110];
 
 interface IScreen { root: Node; update(dt: number): void; destroy(): void; }
 
@@ -187,6 +188,7 @@ export class Main extends Component implements IMain {
             case 'inCastle': this.screen = new InCastleScreen(this.screenLayer); break;
             case 'outCastle': this.screen = new OutCastleScreen(this.screenLayer); break;
             case 'heroes': this.screen = new HeroRecruitScreen(this.screenLayer); break;
+            case 'trade': this.screen = new TradeScreen(this.screenLayer); break;
             default: this.screenName = 'menu'; this.screen = new MainMenuScreen(this.screenLayer);
         }
         // Calm music in the menu and inside the castle, battle music on the battlefield.

@@ -52,7 +52,8 @@
       "actions": [
         "upgrade",
         "info",
-        "recruit"
+        "recruit",
+        "trade"
       ],
       "levels": [
         {
@@ -99,7 +100,7 @@
             "food": 6000
           },
           "production": {
-            "gold": 500
+            "gold": 900
           },
           "towerLimit": 30,
           "sprite": {
@@ -171,7 +172,7 @@
             "material": 2000
           },
           "production": {
-            "food": 330
+            "food": 495
           },
           "sprite": {
             "path": "sprites/buildings/farm_l3_anim",
@@ -241,7 +242,7 @@
             "food": 2200
           },
           "production": {
-            "material": 320
+            "material": 480
           },
           "sprite": {
             "path": "sprites/buildings/lumber_quarry_l3_anim",
@@ -383,5 +384,18 @@
     "gold": 400,
     "material": 400,
     "food": 400
+  },
+  "trade": {
+    "values": {
+      "gold": 2,
+      "material": 1,
+      "food": 1
+    },
+    "feeByBaseLevel": [
+      30,
+      25,
+      20
+    ],
+    "fluctuation": 20
   }
 }

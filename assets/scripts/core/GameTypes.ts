@@ -32,6 +32,8 @@ export interface SaveData {
     heroes: string[];
     heroRolls: { [heroId: string]: BuffEntry[] };
     research: { [techId: string]: number };
+    /** Seed of the Market price changes (one random number per game). */
+    marketSeed?: number;
 }
 
 /** Result of one damage calculation (see CombatManager). */

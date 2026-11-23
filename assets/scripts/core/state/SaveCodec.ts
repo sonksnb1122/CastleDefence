@@ -27,6 +27,7 @@ export class SaveCodec {
             heroes: [],
             heroRolls,
             research: {},
+            marketSeed: Math.floor(Math.random() * 1e9),
         };
     }
 
@@ -65,6 +66,7 @@ export class SaveCodec {
             heroes: [],
             heroRolls: {},
             research: {},
+            marketSeed: Math.floor(n(raw.marketSeed, Math.floor(Math.random() * 1e9))),
         };
         let maxUid = 1;
         const center = Placement.castleCenter();

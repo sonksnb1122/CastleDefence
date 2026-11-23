@@ -45,5 +45,7 @@
   "prefab:screens/OutCastle": "eda65d7a-4304-437e-9331-0ef756e5c902",
   "script:HeroRecruitView": "a6a00b81-8c54-4162-8019-98876da8c9bd",
   "prefab:screens/HeroRecruit": "0d605196-dc47-4ca9-9a86-a3fe23c7c3bb",
-  "script:PopupView": "98f4e7eb-7a74-4816-8759-b61afddb9503"
+  "script:PopupView": "98f4e7eb-7a74-4816-8759-b61afddb9503",
+  "script:TradeView": "bc8a25c7-c95e-4b88-8f39-891dcf4e96ce",
+  "prefab:screens/Trade": "b5cc9166-c0cb-45cc-a0e0-4ec158102820"
 }

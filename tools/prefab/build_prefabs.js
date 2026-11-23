@@ -520,11 +520,61 @@ function heroRecruitScreen() {
   save(w, 'screens/HeroRecruit', root, 'HeroRecruitView', 'screens', refs);
 }
 
+function tradeScreen() {
+  // Market of the Base: trade one resource for another (rates and fee: building.json "trade").
+  const w = new PrefabWriter('Trade');
+  const root = screen(w, 'Trade');
+  const refs = {};
+  box(w, root, 'Background', 0, 0, 4096, 4096, hex('#241d33'));
+  refs.topBarSlot = holder(w, root, 'TopBarSlot');
+  const head = w.node('Header', root, { y: SCREEN_H / 2 - 84, w: 280, h: 48 });
+  w.widget(head, { top: 60 });
+  sliced(w, head, 'Scroll', Object.assign({}, UI.popupHeader, { scale: 1.5 }), 0, 0, 280, 48);
+  label(w, head, 'Title', 'Market', 0, 0, 20, { bold: true, color: '#5a2a1a' });
+  // Centered panel: "You give" column, amount controls in the middle, "You get" column.
+  const PW = 760, PH = 330;
+  const area = w.node('Panel', root, { y: -14, w: PW, h: PH });
+  sliced(w, area, 'Frame', UI.listBg, 0, 0, PW + 36, PH + 36);
+  // Dark inner backing over the blue frame center, so white text and icons read well.
+  box(w, area, 'Backing', 0, 0, PW + 4, PH + 4, hex('#1d1830', 235));
+  const col = (name, x, title) => {
+    label(w, area, name + 'Title', title, x, PH / 2 - 30, 18, { bold: true, color: C.accent });
+    [['Gold', 'gold'], ['Material', 'material'], ['Food', 'food']].forEach(([n, key], i) => {
+      // Icon + amount owned, centered as one group by TradeScreen (no text: the icon says which resource).
+      const b = button(w, area, name + n, '', x, PH / 2 - 84 - i * 62, 190, 50, C.panelLight, 17, 'game');
+      w.node('Icon', b, { x: -30, w: 34, h: 34 });
+      label(w, b, 'Owned', '0', -8, 0, 18, { ax: 0, bold: true });
+      refs[name.toLowerCase() + n] = b;
+    });
+  };
+  col('Give', -PW / 2 + 120, 'You give');
+  col('Get', PW / 2 - 120, 'You get');
+  // Middle: amount, step buttons, result and rate.
+  const mid = w.node('Middle', area, { w: 340, h: PH });
+  const amount = w.node('Amount', mid, { y: 104, w: 300, h: 40 });
+  refs.amountIcon = w.node('Icon', amount, { x: -70, w: 32, h: 32 });
+  refs.amountLabel = lab(w, label(w, amount, 'Value', '0', -46, 0, 26, { ax: 0, bold: true }));
+  [['Minus1000', '-1K', -1000], ['Minus100', '-100', -100], ['Plus100', '+100', 100], ['Plus1000', '+1K', 1000]].forEach(([n, t], i) => {
+    refs[n.charAt(0).toLowerCase() + n.slice(1) + 'Button'] = button(w, mid, n + 'Button', t, -120 + i * 80, 52, 72, 38, C.button, 15);
+  });
+  refs.plus10000Button = button(w, mid, 'Plus10000Button', '+10K', -60, 6, 110, 38, C.button, 15);
+  refs.maxButton = button(w, mid, 'MaxButton', 'Max', 60, 6, 110, 38, C.buttonAlt, 15);
+  label(w, mid, 'Arrow', 'You receive', 0, -38, 18, { bold: true, color: C.text });
+  const result = w.node('Result', mid, { y: -72, w: 300, h: 40 });
+  refs.resultIcon = w.node('Icon', result, { x: -70, w: 32, h: 32 });
+  refs.resultLabel = lab(w, label(w, result, 'Value', '0', -46, 0, 26, { ax: 0, bold: true, color: C.good }));
+  // Top-anchored: the rate line and the price changes of the wave (2-3 lines) grow downwards.
+  refs.rateLabel = lab(w, label(w, mid, 'Rate', '1 gold = 0.7 food', 0, -96, 14, { width: 360, ay: 1, align: 1, bold: true, color: '#d8d0e6' }));
+  refs.backButton = button(w, root, 'BackButton', '< Back', -SCREEN_W / 2 + 70, -SCREEN_H / 2 + 30, 120, 40, C.buttonAlt, 17, 'game', { widget: { left: 10, bottom: 10 } });
+  refs.tradeButton = button(w, root, 'TradeButton', 'Trade', 0, -SCREEN_H / 2 + 30, 220, 42, C.buttonOk, 18, 'game', { widget: { bottom: 9 } });
+  save(w, 'screens/Trade', root, 'TradeView', 'screens', refs);
+}
+
 // ------------------------------------------------------------------ run
 
 [pausePopup, settingsPopup, saveLoadPopup, researchPopup, confirmPopup, messagePopup, infoPopup, buildPopup, newHeroPopup,
   topBarItem, defTabItem, saveSlotItem, researchRowItem, buildRowItem, heroCardItem, levelTagItem, arcButtonItem, towerButtonItem, toastItem,
-  loadingScreen, mainMenuScreen, inCastleScreen, outCastleScreen, heroRecruitScreen].forEach(f => f());
+  loadingScreen, mainMenuScreen, inCastleScreen, outCastleScreen, heroRecruitScreen, tradeScreen].forEach(f => f());
 viewScript('PopupView', 'popups');
 for (const cls in VIEW_DIRS) write(`assets/scripts/views/${VIEW_DIRS[cls]}/${cls}.ts.meta`, scriptMeta(uuid('script:' + cls)));
 write('assets/prefabs.meta', bundleFolderMeta(uuid('folder:prefabs'), 'prefabs', 6));
