@@ -190,6 +190,8 @@ export class ResourceMgr {
     techLock(id: string) { return this.research.lock(id); }
     techCost(id: string) { return this.research.cost(id); }
     techBlock(id: string) { return this.research.block(id); }
+    /** Highest level of a technology the current Research Lab allows. */
+    techCap(id: string): number { return this.research.capOfId(id); }
     doResearch(id: string) { return this.research.research(id); }
 
     // heroes

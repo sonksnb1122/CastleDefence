@@ -24,7 +24,7 @@ export interface CombatEvents {
 const MAX_FLOAT_TEXTS = 70;
 /** Damage texts on one enemy are stacked in rows above its head (newest at the bottom). */
 const TEXT_ROWS = 3;
-const TEXT_ROW_H = 17;
+const TEXT_ROW_H = 19;
 /** A shot whose enemy died on the way flies on to a living enemy this close to it. */
 const REDIRECT_RANGE = 80;
 /** Area shots also reserve their damage on the enemies this close to the target (part of the explosion radius). */
@@ -185,7 +185,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     clear() {
         const all: Node[] = [];
         for (const e of this.enemies.concat(this.enemyPool)) all.push(e.node);
-        for (const p of this.projectiles.concat(this.projectilePool)) all.push(p.node);
+        for (const p of this.projectiles.concat(this.projectilePool)) all.push(...p.nodes);
         for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ground, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
         for (const t of this.floats.concat(this.textPool)) all.push(t.node);
         for (const n of all) if (isValid(n)) n.destroy();
@@ -223,24 +223,6 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             if (score < bestScore) { bestScore = score; best = e; }
         }
         return best;
-    }
-
-    /**
-     * Extra projectile of a multi-projectile attack: an enemy in range near the main target, but far enough
-     * that the two explosions do not cover the same enemies (prefers 1-3 explosion radii away). Falls back
-     * to any other valid enemy, then to the main target.
-     */
-    extraTarget(tower: TowerUnit, main: Enemy): Enemy {
-        const r = Math.max(20, tower.stats().explosion);
-        let best: Enemy | null = null, bestScore = Infinity;
-        for (const e of this.enemies) {
-            if (e === main || !this.isValidTarget(tower, e)) continue;
-            const d = Math.sqrt((e.x - main.x) ** 2 + (e.y - main.y) ** 2);
-            // Best around 2 radii away; doomed enemies only as a last choice.
-            const score = Math.abs(d - 2 * r) + (this.doomed(e) ? 10000 : 0);
-            if (score < bestScore) { bestScore = score; best = e; }
-        }
-        return best || main;
     }
 
     /**
@@ -461,7 +443,8 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (!e.alive) return;
         if (res.dodged) { this.enemyFloat(e, 'MISS', '#cccccc', 13); return; }
         const died = e.takeDamage(res.amount);
-        if (res.crit) this.enemyFloat(e, res.amount + '!', '#ffd23f', 17);
+        // Crits: red, bigger, with a thick outline so they look bold.
+        if (res.crit) this.enemyFloat(e, res.amount + '!', '#ff3030', 19, 3);
         else this.enemyFloat(e, String(res.amount), '#ffffff', 15);
         if (died) this.onEnemyKilled(e);
     }
@@ -619,13 +602,13 @@ export class CombatManager implements IEnemyHost, ITowerHost {
      * Text on an enemy: stacked in rows above the status label, at most TEXT_ROWS rows
      * (a new text pushes the others up; the oldest one disappears).
      */
-    enemyFloat(e: Enemy, str: string, color: string, size: number) {
+    enemyFloat(e: Enemy, str: string, color: string, size: number, outline = 2) {
         if (this.floats.length >= MAX_FLOAT_TEXTS) return;
         let st = this.stacks.get(e);
         if (!st) { st = []; this.stacks.set(e, st); }
         if (st.length >= TEXT_ROWS) { const old = st.shift()!; old.row = TEXT_ROWS; old.stack = null; old.expire(); }
         const t = this.textPool.pop() || new CombatText(this.textLayer);
-        t.showOn(e, 0, e.radius + 36, TEXT_ROW_H, str, color, size, 0.8);
+        t.showOn(e, 0, e.radius + 36, TEXT_ROW_H, str, color, size, 0.8, outline);
         t.stack = st;
         st.push(t);
         for (let i = 0; i < st.length; i++) st[i].row = st.length - 1 - i;

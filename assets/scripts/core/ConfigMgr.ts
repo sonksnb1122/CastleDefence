@@ -94,6 +94,7 @@ export class ConfigMgr {
         const icons = ConfigMgr.building.uiIcons || {};
         for (const k in icons) if (typeof icons[k] === 'string') out.push(icons[k]);
         for (const p of ConfigMgr.uiStylePaths()) out.push(p);
+        for (const s of ConfigMgr.effects.statusEffects) if (s.visual && s.visual.icon) out.push(s.visual.icon);
         return out;
     }
 

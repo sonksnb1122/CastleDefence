@@ -5,6 +5,9 @@ import { hex, mk, sprite, text } from '../views/common/UIKit';
 import { HpBar } from './HpBar';
 import { SpriteAnim } from './SpriteAnim';
 
+/** Size (px) of the status icons above an enemy (sprites/status, drawn 1:1). */
+const STATUS_ICON = 16;
+
 /** One active status effect on an enemy. */
 export interface StatusInstance {
     def: any;
@@ -67,6 +70,9 @@ export class Enemy {
     private hpBar: HpBar;
     /** Created on the first status effect only (labels are expensive to draw). */
     private statusLabel: Label | null = null;
+    /** Row of status icons above the HP bar (effects.json visual.icon); created on demand. */
+    private statusIcons: Node | null = null;
+    private iconSprites: Sprite[] = [];
     private placeholder: Node | null = null;
     private flash = 0;
     private sprintTimer = 0;
@@ -120,6 +126,7 @@ export class Enemy {
         this.hpBar.node.setPosition(0, this.radius + 12, 0);
         this.hpBar.set(1, '#6ad66a');
         if (this.statusLabel) { this.statusLabel.string = ''; this.statusLabel.node.setPosition(0, this.radius + 24, 0); }
+        if (this.statusIcons) { this.statusIcons.active = false; this.statusIcons.setPosition(0, this.radius + 21, 0); }
         this.node.active = true;
     }
 
@@ -245,12 +252,20 @@ export class Enemy {
     }
 
     private refreshStatusLabel() {
+        // One icon per status type (effects.json "visual.icon"); statuses without an icon (Burn) are shown as text.
+        const icons: string[] = [];
         const labels: string[] = [];
         let color = '#ffffff';
         for (const s of this.statuses) {
-            const l = (s.def.visual && s.def.visual.label) || s.def.name;
-            if (labels.indexOf(l) < 0) { labels.push(l); color = (s.def.visual && s.def.visual.color) || color; }
+            const v = s.def.visual || {};
+            if (v.icon) { if (icons.indexOf(v.icon) < 0) icons.push(v.icon); }
+            else {
+                const l = v.label || s.def.name;
+                if (labels.indexOf(l) < 0) labels.push(l);
+            }
+            color = v.color || color;
         }
+        this.showStatusIcons(icons);
         if (labels.length > 0 && !this.statusLabel) {
             // Created on demand. Bold with a dark outline so it reads on sand, grass and other enemies.
             // BITMAP cache: the outline needs it, and the text only changes when a status starts or ends.
@@ -263,9 +278,31 @@ export class Enemy {
         if (this.statusLabel) {
             this.statusLabel.string = labels.join(' ');
             this.statusLabel.color = hex(color);
+            // Text goes above the icons when both are shown.
+            this.statusLabel.node.setPosition(0, this.radius + (icons.length > 0 ? 36 : 24), 0);
         }
         // Tint the sprite with the most recent effect color so effects stay readable in a crowd.
-        if (this.flash <= 0) this.spriteComp.color = labels.length > 0 ? this.tint(color) : Color.WHITE;
+        const any = icons.length + labels.length > 0;
+        if (this.flash <= 0) this.spriteComp.color = any ? this.tint(color) : Color.WHITE;
+    }
+
+    /** Status icons in a centered row (pictures come from the combat atlas). */
+    private showStatusIcons(paths: string[]) {
+        if (paths.length === 0) { if (this.statusIcons) this.statusIcons.active = false; return; }
+        if (!this.statusIcons) {
+            this.statusIcons = mk('StatusIcons', this.node, 0, this.radius + 21);
+        }
+        this.statusIcons.active = true;
+        const step = STATUS_ICON + 2, x0 = -((paths.length - 1) * step) / 2;
+        for (let i = 0; i < paths.length; i++) {
+            let sp = this.iconSprites[i];
+            if (!sp) { sp = sprite(this.statusIcons, null, STATUS_ICON, STATUS_ICON); this.iconSprites.push(sp); }
+            const frames = Assets.frames(paths[i], STATUS_ICON, STATUS_ICON);
+            sp.spriteFrame = frames.length > 0 ? frames[0] : null;
+            sp.node.active = true;
+            sp.node.setPosition(x0 + i * step, 0, 0);
+        }
+        for (let i = paths.length; i < this.iconSprites.length; i++) this.iconSprites[i].node.active = false;
     }
 
     private tint(c: string): Color {
@@ -291,6 +328,7 @@ export class Enemy {
         this.alive = false;
         this.statuses.length = 0;
         if (this.statusLabel) this.statusLabel.string = '';
+        if (this.statusIcons) this.statusIcons.active = false;
         this.hpBar.node.active = false;
         this.spriteComp.color = Color.WHITE;
         const d = this.def.animationPaths.dead;

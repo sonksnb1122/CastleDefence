@@ -184,7 +184,7 @@ export class ResearchOverlay implements IOverlay {
             const lv = rm.techLevel(r.id);
             const endless = ResourceMgr.isEndless(t);
             const bonus = `(+${t.valuePerLevel * lv}${ConfigMgr.buffInfo(t.buffKey).unit})`;
-            r.level.string = endless ? `Lv ${lv} (endless)   ${bonus}` : `Lv ${lv}/${Math.min(t.maxLevel, cap)}   ${bonus}`;
+            r.level.string = endless ? `Lv ${lv} (endless)   ${bonus}` : `Lv ${lv}/${rm.techCap(r.id)}   ${bonus}`;
             r.cost.destroyAllChildren();
             const lock = rm.techLock(r.id);
             if (lock) { text(r.cost, lock, 13, 0, 0, { ax: 0, color: COLORS.textDim }); r.btn.setEnabled(false); continue; }

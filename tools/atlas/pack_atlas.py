@@ -1,5 +1,5 @@
 """
-Pack the combat sprite sheets (enemies, towers, projectiles, impacts) into one
+Pack the combat sprite sheets (enemies, towers, projectiles, impacts, status icons) into one
 texture so the battle can be drawn in a few draw calls instead of one per sheet.
 
 Usage (from the project root):
@@ -13,7 +13,7 @@ in the manifest. Run it again after changing any of those sheets.
 import json, os, sys
 from PIL import Image
 
-FOLDERS = ['sprites/enemies', 'sprites/towers']
+FOLDERS = ['sprites/enemies', 'sprites/towers', 'sprites/status']
 PAD = 2              # empty pixels between sheets (no bleeding with pixel art filtering)
 MAX_W = 4096
 WHITE = 8            # solid white block used for health bars

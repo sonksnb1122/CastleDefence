@@ -15,8 +15,6 @@ function wrap180(a: number): number { return ((((a + 180) % 360) + 360) % 360) -
 /** What a tower needs from the battle (implemented by CombatManager). */
 export interface ITowerHost {
     selectTarget(tower: TowerUnit): Enemy | null;
-    /** Target of an extra projectile of the same attack ("projectiles" > 1): another enemy near the main one. */
-    extraTarget(tower: TowerUnit, main: Enemy): Enemy;
     isValidTarget(tower: TowerUnit, e: Enemy | null): boolean;
     /** The shots in flight already kill this enemy (single-target towers then pick another one). */
     isOverkill(tower: TowerUnit, e: Enemy | null): boolean;
@@ -246,15 +244,6 @@ export class TowerUnit {
         const facing = (this.weaponNode.angle + sp.weapon.faceOffset) * DEG2RAD;
         const mx = this.cx + Math.cos(facing) * sp.projectile.muzzle * this.scale;
         const my = this.cy + Math.sin(facing) * sp.projectile.muzzle * this.scale;
-        // "projectiles" (Catapult Lv 2-3: 2 stones): the level damage is shared between them; the extra
-        // stones go to other enemies next to the main target, from a muzzle point a little to the side.
-        const count = Math.max(1, this.lv.projectiles || 1);
-        for (let k = 0; k < count; k++) {
-            const shot = this.makeShot();
-            shot.damage = this.lv.damage / count;
-            const target = k === 0 ? this.target : host.extraTarget(this, this.target);
-            const side = (k - (count - 1) / 2) * 8 * this.scale;
-            host.spawnProjectile(this, shot, target, mx - Math.sin(facing) * side, my + Math.cos(facing) * side, facing * RAD2DEG);
-        }
+        host.spawnProjectile(this, this.makeShot(), this.target, mx, my, facing * RAD2DEG);
     }
 }

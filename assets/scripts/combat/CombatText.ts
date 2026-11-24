@@ -45,6 +45,7 @@ export class CombatText {
         this.label.fontSize = size;
         this.label.lineHeight = Math.round(size * 1.25);
         this.label.color = hex(color);
+        this.label.outlineWidth = 2;
         this.node.setPosition(x, y, 0);
         this.ax = x; this.ay = y;
         this.owner = null; this.stack = null; this.row = 0; this.rowY = 0; this.rowH = 0;
@@ -66,8 +67,10 @@ export class CombatText {
     /**
      * Show the text in row 0 of an enemy's stack. (dx, dy) is the offset from the enemy center.
      */
-    showOn(owner: { x: number; y: number; alive: boolean }, dx: number, dy: number, rowH: number, str: string, color: string, size: number, life: number) {
+    showOn(owner: { x: number; y: number; alive: boolean }, dx: number, dy: number, rowH: number, str: string, color: string, size: number, life: number, outline = 2) {
         this.show(str, owner.x + dx, owner.y + dy, color, size, life);
+        // A thicker outline makes the text look bolder (the CHAR cache cannot draw bold glyphs).
+        this.label.outlineWidth = outline;
         this.owner = owner;
         this.rowH = rowH;
         this.ax = dx; this.ay = dy;

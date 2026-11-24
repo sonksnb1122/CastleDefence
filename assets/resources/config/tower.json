@@ -666,7 +666,6 @@
         {
           "level": 2,
           "damage": 150,
-          "projectiles": 2,
           "attackSpeed": 0.5,
           "attackRange": 750,
           "explosionRange": 95,
@@ -722,7 +721,9 @@
               "muzzle": 20,
               "tip": 4,
               "faceOffset": 0,
-              "arc": 70
+              "arc": 70,
+              "stones": 2,
+              "stoneGap": 5
             },
             "impact": {
               "path": "sprites/towers/t4_l2_impact",
@@ -744,7 +745,6 @@
         {
           "level": 3,
           "damage": 550,
-          "projectiles": 2,
           "attackSpeed": 1.0,
           "attackRange": 900,
           "explosionRange": 120,
@@ -800,7 +800,9 @@
               "muzzle": 20,
               "tip": 4,
               "faceOffset": 0,
-              "arc": 70
+              "arc": 70,
+              "stones": 2,
+              "stoneGap": 5
             },
             "impact": {
               "path": "sprites/towers/t4_l3_impact",

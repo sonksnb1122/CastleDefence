@@ -58,6 +58,13 @@ export class ResearchService {
         return out;
     }
 
+    /**
+     * Highest level the Research Lab allows for this technology: the Lab limit, times "labCapMul"
+     * for technologies with more levels than the Lab limit (e.g. Aerodynamics: 20 levels, x2).
+     */
+    capOf(t: any): number { return Math.min(t.maxLevel, this.maxTechLevel * (t.labCapMul || 1)); }
+    capOfId(id: string): number { const t = ConfigMgr.techDef(id); return t ? this.capOf(t) : 0; }
+
     /** Why the next level of a technology cannot be researched (cost aside), or null. */
     block(id: string): string | null {
         const t = ConfigMgr.techDef(id);
@@ -67,7 +74,7 @@ export class ResearchService {
         const lv = this.level(id);
         if (ResearchService.isEndless(t)) return null;
         if (lv >= t.maxLevel) return 'Already at max level';
-        if (lv >= this.maxTechLevel) return this.maxTechLevel === 0 ? 'Build a Research Lab first' : 'Upgrade the Research Lab first';
+        if (lv >= this.capOf(t)) return this.maxTechLevel === 0 ? 'Build a Research Lab first' : 'Upgrade the Research Lab first';
         return null;
     }
 

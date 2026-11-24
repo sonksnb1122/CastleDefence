@@ -49,6 +49,48 @@
    512,
    64
   ],
+  "sprites/status/status_armor": [
+   949,
+   724,
+   16,
+   16
+  ],
+  "sprites/status/status_bleed": [
+   967,
+   724,
+   16,
+   16
+  ],
+  "sprites/status/status_burn": [
+   985,
+   724,
+   16,
+   16
+  ],
+  "sprites/status/status_mark": [
+   1003,
+   724,
+   16,
+   16
+  ],
+  "sprites/status/status_slow": [
+   1021,
+   724,
+   16,
+   16
+  ],
+  "sprites/status/status_stun": [
+   1039,
+   724,
+   16,
+   16
+  ],
+  "sprites/status/status_vuln": [
+   1057,
+   724,
+   16,
+   16
+  ],
   "sprites/towers/base_t1": [
    1090,
    454,
@@ -170,7 +212,7 @@
    64
   ],
   "sprites/towers/t4_l1_proj": [
-   1123,
+   1249,
    724,
    48,
    8
@@ -188,7 +230,7 @@
    64
   ],
   "sprites/towers/t4_l2_proj": [
-   949,
+   1075,
    724,
    90,
    12
@@ -206,7 +248,7 @@
    64
   ],
   "sprites/towers/t4_l3_proj": [
-   1041,
+   1167,
    724,
    80,
    10
@@ -218,7 +260,7 @@
    128
   ],
   "white": [
-   1173,
+   1299,
    724,
    8,
    8

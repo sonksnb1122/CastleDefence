@@ -341,13 +341,14 @@
       "description": "+5% projectile speed per level",
       "buffKey": "projectileSpeed",
       "valuePerLevel": 5,
-      "maxLevel": 5,
+      "maxLevel": 20,
+      "labCapMul": 2,
       "baseCost": {
         "gold": 52,
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.12
     },
     {
       "id": "r_fx_piercing_bolt",

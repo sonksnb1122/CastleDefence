@@ -12,7 +12,8 @@
       "maxStacks": 1,
       "visual": {
         "label": "SLOW",
-        "color": "#7fd4ff"
+        "color": "#7fd4ff",
+        "icon": "sprites/status/status_slow"
       }
     },
     {
@@ -27,7 +28,8 @@
       "maxStacks": 1,
       "visual": {
         "label": "STUN",
-        "color": "#ffe066"
+        "color": "#ffe066",
+        "icon": "sprites/status/status_stun"
       }
     },
     {
@@ -43,7 +45,8 @@
       "maxStacks": 3,
       "visual": {
         "label": "BLEED",
-        "color": "#ff5a5a"
+        "color": "#ff5a5a",
+        "icon": "sprites/status/status_bleed"
       },
       "percentOfHit": true
     },
@@ -60,7 +63,8 @@
       "maxStacks": 1,
       "visual": {
         "label": "BURN",
-        "color": "#ff9a3c"
+        "color": "#ff9a3c",
+        "icon": "sprites/status/status_burn"
       }
     },
     {
@@ -78,7 +82,8 @@
       "maxStacks": 1,
       "visual": {
         "label": "BREAK",
-        "color": "#c9a0ff"
+        "color": "#c9a0ff",
+        "icon": "sprites/status/status_armor"
       }
     },
     {
@@ -95,7 +100,8 @@
       "maxStacks": 1,
       "visual": {
         "label": "MARK",
-        "color": "#ffffff"
+        "color": "#ffffff",
+        "icon": "sprites/status/status_mark"
       }
     },
     {
@@ -112,7 +118,8 @@
       "maxStacks": 1,
       "visual": {
         "label": "VULN",
-        "color": "#b48cff"
+        "color": "#b48cff",
+        "icon": "sprites/status/status_vuln"
       }
     }
   ],
