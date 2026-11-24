@@ -69,6 +69,7 @@ export class PrefabButton {
     enabled = true;
     private fill: Sprite | null;
     private frame: Sprite | null;
+    private icon: Sprite | null;
     private color: Color;
     private button: Button | null;
 
@@ -79,6 +80,7 @@ export class PrefabButton {
         this.label = PrefabUi.child(node, 'Label', Label);
         this.fill = PrefabUi.child(node, 'Fill', Sprite);
         this.frame = PrefabUi.child(node, 'Frame', Sprite);
+        this.icon = PrefabUi.child(node, 'Icon', Sprite);
         const c = this.fill ? this.fill.color : hex(COLORS.button);
         this.color = color ? hex(color) : new Color(c.r, c.g, c.b, c.a);
         PrefabUi.blockTaps(node);
@@ -101,6 +103,7 @@ export class PrefabButton {
         if (this.fill) this.fill.color = v ? this.color : hex(COLORS.disabled);
         if (this.frame) this.frame.color = v ? Color.WHITE : new Color(160, 160, 170, 255);
         if (this.label) this.label.color = hex(v ? COLORS.text : COLORS.textDim);
+        if (this.icon) this.icon.color = v ? Color.WHITE : new Color(110, 110, 120, 170);
     }
 
     setColor(c: string) { this.color = hex(c); this.setEnabled(this.enabled); }

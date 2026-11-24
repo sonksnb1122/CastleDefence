@@ -398,8 +398,13 @@ function levelTagItem() {
 }
 
 function arcButtonItem() {
+  // Round action button of the building / tower menus: a see-through light blue bubble ("Fill") with
+  // the action icon on top. Both pictures are set by arcMenu (building.json "uiIcons").
   const w = new PrefabWriter('ArcButton');
-  const root = button(w, null, 'ArcButton', 'Action', 0, 0, 74, 28, C.buttonAlt, 13);
+  const root = w.node('ArcButton', null, { w: 40, h: 40 });
+  w.button(root, { zoomScale: 0.9 });
+  w.sprite(w.node('Fill', root, { w: 40, h: 40 }), null);
+  w.sprite(w.node('Icon', root, { w: 28, h: 28 }), null);
   save(w, 'items/ArcButton', root);
 }
 

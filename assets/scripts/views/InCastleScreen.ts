@@ -189,11 +189,11 @@ export class InCastleScreen {
         const def = ConfigMgr.buildingDef(b.id);
         const labels: { [k: string]: string } = { upgrade: 'Upgrade', move: 'Move', destroy: 'Destroy', info: 'Info', recruit: 'Recruit', trade: 'Market', research: 'Research' };
         const colors: { [k: string]: string } = { upgrade: COLORS.buttonOk, destroy: COLORS.buttonDanger };
-        const items = (def.actions as string[]).map(a => ({ label: labels[a] || a, color: colors[a], onClick: () => this.doAction(a, b.uid) }));
+        const items = (def.actions as string[]).map(a => ({ label: labels[a] || a, icon: a, color: colors[a], onClick: () => this.doAction(a, b.uid) }));
         // The arc opens below the building, or above when there is no room on the map.
         const half = ResourceMgr.buildingSize(b.id) / 2;
         const below = b.y - half - 110 / this.zoom > 0;
-        const menu = arcMenu(this.menuLayer, b.x, below ? b.y - half + 14 : b.y + half - 14, items, below, 84);
+        const menu = arcMenu(this.menuLayer, b.x, below ? b.y - half + 14 : b.y + half - 14, items, below, 66);
         menu.setScale(1 / this.zoom, 1 / this.zoom, 1); // buttons keep their on-screen size
     }
 

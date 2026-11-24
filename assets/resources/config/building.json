@@ -333,7 +333,16 @@
   "uiIcons": {
     "size": 96,
     "pause": "sprites/ui/btn_pause",
-    "play": "sprites/ui/btn_play"
+    "play": "sprites/ui/btn_play",
+    "bubble": "sprites/ui/arc_bubble",
+    "act_upgrade": "sprites/ui/icon_act_upgrade",
+    "act_info": "sprites/ui/icon_act_info",
+    "act_move": "sprites/ui/icon_act_move",
+    "act_target": "sprites/ui/icon_act_target",
+    "act_recruit": "sprites/ui/icon_act_recruit",
+    "act_trade": "sprites/ui/icon_act_trade",
+    "act_destroy": "sprites/ui/icon_act_destroy",
+    "act_research": "sprites/ui/icon_act_research"
   },
   "uiStyle": {
     "buttons": {

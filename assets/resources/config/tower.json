@@ -1,16 +1,16 @@
 {
   "version": 2,
   "battlefield": {
-    "worldWidth": 1494,
+    "worldWidth": 1429,
     "worldHeight": 576,
     "constructionArea": {
-      "x": 180,
+      "x": 115,
       "y": 96,
       "width": 314,
       "height": 330
     },
     "wall": {
-      "x": 534,
+      "x": 469,
       "y": 0,
       "width": 39,
       "height": 576,
@@ -25,7 +25,7 @@
       110,
       420
     ],
-    "spawnX": 1534,
+    "spawnX": 1469,
     "towerMinSpacing": 46,
     "towerSelectRadius": 40,
     "towerScale": 0.7,
@@ -89,8 +89,8 @@
       "levels": [
         {
           "level": 1,
-          "damage": 45,
-          "attackSpeed": 1.5,
+          "damage": 90,
+          "attackSpeed": 0.75,
           "attackRange": 384,
           "explosionRange": 20,
           "critRate": 5,
@@ -164,8 +164,8 @@
         },
         {
           "level": 2,
-          "damage": 85,
-          "attackSpeed": 3.0,
+          "damage": 170,
+          "attackSpeed": 1.5,
           "attackRange": 461,
           "explosionRange": 20,
           "critRate": 15,
@@ -240,8 +240,8 @@
         },
         {
           "level": 3,
-          "damage": 120,
-          "attackSpeed": 6.0,
+          "damage": 240,
+          "attackSpeed": 3.0,
           "attackRange": 553,
           "explosionRange": 20,
           "critRate": 25,
@@ -338,8 +338,8 @@
       "levels": [
         {
           "level": 1,
-          "damage": 45,
-          "attackSpeed": 0.75,
+          "damage": 90,
+          "attackSpeed": 0.375,
           "attackRange": 384,
           "explosionRange": 40,
           "critRate": 5,
@@ -412,8 +412,8 @@
         },
         {
           "level": 2,
-          "damage": 90,
-          "attackSpeed": 1.5,
+          "damage": 180,
+          "attackSpeed": 0.75,
           "attackRange": 461,
           "explosionRange": 60,
           "critRate": 15,
@@ -488,8 +488,8 @@
         },
         {
           "level": 3,
-          "damage": 180,
-          "attackSpeed": 3.0,
+          "damage": 360,
+          "attackSpeed": 1.5,
           "attackRange": 553,
           "explosionRange": 80,
           "critRate": 25,
@@ -658,13 +658,15 @@
                 4,
                 5,
                 6
-              ]
+              ],
+              "scaleToExplosion": true
             }
           }
         },
         {
           "level": 2,
           "damage": 150,
+          "projectiles": 2,
           "attackSpeed": 0.5,
           "attackRange": 750,
           "explosionRange": 95,
@@ -729,19 +731,20 @@
               "frameTime": 0.07,
               "anchorY": 0.52,
               "frames": [
-                0,
                 2,
                 3,
                 4,
                 5,
                 6
-              ]
+              ],
+              "scaleToExplosion": true
             }
           }
         },
         {
           "level": 3,
           "damage": 550,
+          "projectiles": 2,
           "attackSpeed": 1.0,
           "attackRange": 900,
           "explosionRange": 120,
@@ -812,7 +815,8 @@
                 4,
                 5,
                 6
-              ]
+              ],
+              "scaleToExplosion": true
             }
           }
         }

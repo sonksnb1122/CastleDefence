@@ -5,7 +5,7 @@ export type DamageType = 'physic' | 'magic';
 export type GameState = 'Preparation' | 'Combat';
 
 export const RESOURCE_KEYS = ['food', 'material', 'gold'];
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export interface BuffEntry { key: string; value: number; towerId?: string; }
 

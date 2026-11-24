@@ -78,12 +78,13 @@ There are three towers, and each has 3 levels.
 | Role | Fast single target | Magic area damage | Slow long-range siege |
 | Damage type | Physical | Magic | Physical or magic, whichever hurts more |
 | Build cost | 100 gold, 40 material | 140 gold, 60 material | 240 gold, 120 material |
-| Damage (Lv 1 / 2 / 3) | 45 / 85 / 120 | 45 / 90 / 180 | 70 / 150 / 550 |
-| Attacks per second | 1.5 / 3 / 6 | 0.75 / 1.5 / 3 | 0.25 / 0.5 / 1 |
+| Damage (Lv 1 / 2 / 3) | 90 / 170 / 240 | 90 / 180 / 360 | 70 / 150 / 550 (Lv 2-3: shared by 2 stones) |
+| Attacks per second | 0.75 / 1.5 / 3 | 0.375 / 0.75 / 1.5 | 0.25 / 0.5 / 1 |
 | Range (px) | 384 / 461 / 553 | 384 / 461 / 553 | 600 / 750 / 900 |
 | Explosion radius (px) | 20 (fixed) | 40 / 60 / 80 | 70 / 95 / 120 |
 | Crit rate / crit damage | 5–25% / 175–250% | 5–25% / 175–225% | 10–40% / 200–300% |
 
+From Lv 2 the Catapult throws 2 stones per attack: the second one lands on another enemy close to the first target.
 The Crossbow is strong early on. The Catapult starts weak but becomes the main damage dealer late in the game.
 
 **Target modes** (switch with the *Target* button of a selected tower):
@@ -274,6 +275,9 @@ level limits how high a technology can go (2 / 5 / 10).
   - decorated buttons
   - resource icons
   - a decorated top bar
+  - round see-through light blue action buttons with icons around a selected building or tower
+    (upgrade, info, move, target, recruit, market, research, destroy)
+- **Catapult explosions:** the blast art grows with the explosion radius (a third of the explosion circle) and is drawn under the enemies.
 - **Live main menu:** the menu plays an endless battle in the background behind a dark veil.
 
 ### Sound

@@ -1,9 +1,11 @@
-import { Node, Label } from 'cc';
+import { Node, Label, Sprite, SpriteFrame } from 'cc';
+import { Assets } from '../../core/Assets';
+import { ConfigMgr } from '../../core/ConfigMgr';
 import { G } from '../../core/Globals';
 import { ResourceMgr } from '../../core/ResourceMgr';
 import { TopBarView } from '../items/TopBarView';
 import { PrefabButton, PrefabUi } from './PrefabUi';
-import { COLORS, hex, mk } from './UIKit';
+import { COLORS, hex, mk, text } from './UIKit';
 
 /** Resource bar shown at the top of the castle and battlefield screens (prefabs/items/TopBar). */
 export class TopBar {
@@ -67,17 +69,44 @@ export class TopBar {
  * Small action buttons (prefabs/items/ArcButton) laid out on an arc below
  * (or above) a selected building or tower.
  */
-export function arcMenu(parent: Node, cx: number, cy: number, items: Array<{ label: string; color?: string; onClick: () => void; enabled?: boolean }>, below = true, radius = 78): Node {
+/** Tint of the action bubbles (the picture is white and see-through). */
+const BUBBLE_COLOR = '#a8dcff';
+/** The arc is wider than high: x = cos * radius * ARC_X. */
+export const ARC_X = 1.4;
+
+export interface ArcItem { label: string; icon?: string; color?: string; onClick: () => void; enabled?: boolean; }
+
+/**
+ * Round action buttons in an arc around a building / tower (prefabs/items/ArcButton): a see-through
+ * light blue bubble and the action icon (building.json "uiIcons": "act_<icon>").
+ * `label` is used when there is no icon art.
+ */
+export function arcMenu(parent: Node, cx: number, cy: number, items: ArcItem[], below = true, radius = 78): Node {
     const root = mk('ArcMenu', parent, cx, cy);
     const n = items.length;
     const from = below ? 200 : 160, to = below ? 340 : 20;
+    const bubble = iconFrame('bubble');
     for (let i = 0; i < n; i++) {
         const a = (n === 1 ? (from + to) / 2 : from + (to - from) * i / (n - 1)) * Math.PI / 180;
         const node = PrefabUi.create('items/ArcButton', root);
-        node.setPosition(Math.cos(a) * radius * 1.8, Math.sin(a) * radius, 0);
-        const b = new PrefabButton(node, items[i].onClick, items[i].color || COLORS.buttonAlt);
-        b.setText(items[i].label);
+        node.name = 'Arc ' + items[i].label;
+        node.setPosition(Math.cos(a) * radius * ARC_X, Math.sin(a) * radius, 0);
+        const fill = PrefabUi.child(node, 'Fill', Sprite);
+        if (fill) fill.spriteFrame = bubble;
+        const icon = PrefabUi.child(node, 'Icon', Sprite);
+        const art = items[i].icon ? iconFrame('act_' + items[i].icon) : null;
+        if (icon) icon.spriteFrame = art;
+        if (!art) text(node, items[i].label, 12, 0, 0, { bold: true });
+        // Every bubble is the same see-through light blue, so the icons stand out on any background.
+        const b = new PrefabButton(node, items[i].onClick, BUBBLE_COLOR);
         b.setEnabled(items[i].enabled !== false);
     }
     return root;
+}
+
+/** First frame of a "uiIcons" picture, or null when the art is missing. */
+function iconFrame(name: string): SpriteFrame | null {
+    const cfg = ConfigMgr.uiIcon(name);
+    const frames = cfg ? Assets.frames(cfg.path, cfg.size, cfg.size) : [];
+    return frames.length > 0 ? frames[0] : null;
 }

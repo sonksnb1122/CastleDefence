@@ -14,6 +14,13 @@ import { COLORS, costRow, hex, mk, text, toLocal } from './common/UIKit';
 import { BattlefieldGround } from './BattlefieldGround';
 
 
+
+/**
+ * Radius of the tower menu. The castle ground left of the defense area (tower.json constructionArea.x)
+ * is just wide enough for the left-most button of a tower at the left edge:
+ * radius * ARC_X * cos(20 deg) + half a button (20) + a small margin.
+ */
+const TOWER_MENU_RADIUS = 66;
 /** Game speeds of the speed button. */
 const SPEEDS = [1, 2, 3, 5, 10];
 /** Longest simulation step at x5 / x10 (seconds). */
@@ -141,19 +148,15 @@ export class OutCastleScreen implements CombatEvents {
         const uid = unit.uid;
         const prep = this.rm.isPreparation;
         const items = [
-            { label: 'Upgrade', color: COLORS.buttonOk, onClick: () => this.upgradeTower(uid), enabled: prep },
-            { label: 'Move', onClick: () => this.startPlacing(unit.save.id, uid), enabled: prep },
-            { label: 'Target', color: COLORS.button, onClick: () => { const m = this.rm.cycleTargetMode(uid); toast(this.root, 'Target mode: ' + m, true); unit.target = null; } },
-            { label: 'Info', onClick: () => this.towerInfoWindow(unit) },
-            { label: 'Destroy', color: COLORS.buttonDanger, onClick: () => this.destroyTower(uid), enabled: prep },
+            { label: 'Upgrade', icon: 'upgrade', color: COLORS.buttonOk, onClick: () => this.upgradeTower(uid), enabled: prep },
+            { label: 'Move', icon: 'move', onClick: () => this.startPlacing(unit.save.id, uid), enabled: prep },
+            { label: 'Target', icon: 'target', color: COLORS.button, onClick: () => { const m = this.rm.cycleTargetMode(uid); toast(this.root, 'Target mode: ' + m, true); unit.target = null; } },
+            { label: 'Info', icon: 'info', onClick: () => this.towerInfoWindow(unit) },
+            { label: 'Destroy', icon: 'destroy', color: COLORS.buttonDanger, onClick: () => this.destroyTower(uid), enabled: prep },
         ];
-        // Level label (prefabs/items/LevelTag, like the buildings in the castle) on the menu layer, so other towers never cover it.
-        const tag = PrefabUi.create('items/LevelTag', this.menuLayer);
-        tag.setPosition(unit.save.x, unit.save.y - 21, 0);
-        const tl = PrefabUi.child(tag, 'Label', Label);
-        if (tl) tl.string = 'Lv ' + unit.save.level;
+        // No level label: the tower art already shows its level.
         const below = unit.save.y > 170;
-        arcMenu(this.menuLayer, unit.save.x, below ? unit.save.y + 6 : unit.cy + 30, items, below, 86);
+        arcMenu(this.menuLayer, unit.save.x, below ? unit.save.y + 6 : unit.cy + 30, items, below, TOWER_MENU_RADIUS);
     }
 
     private upgradeTower(uid: number) {

@@ -1,4 +1,4 @@
-import { Node, Graphics, UIOpacity, UITransform, isValid } from 'cc';
+import { Node, Graphics, UIOpacity, UITransform, isValid, Color } from 'cc';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { DamageResult, DamageType, ShotInfo } from '../core/GameTypes';
@@ -13,7 +13,7 @@ import { ITowerHost, TowerUnit } from './TowerUnit';
 import { SpawnEntry, WaveMgr, WavePlan } from './WaveMgr';
 
 /** A short visual effect. `kind` says which pool it goes back to. */
-interface Fx { kind: 'impact' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; }
+interface Fx { kind: 'impact' | 'ground' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; }
 
 export interface CombatEvents {
     onWallChanged(): void;
@@ -57,7 +57,9 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     // Pools: finished objects keep their (hidden) nodes and are reused instead of being destroyed.
     private enemyPool: Enemy[] = [];
     private projectilePool: Projectile[] = [];
-    private fxPool: { impact: Fx[]; ring: Fx[]; line: Fx[] } = { impact: [], ring: [], line: [] };
+    private fxPool: { impact: Fx[]; ground: Fx[]; ring: Fx[]; line: Fx[] } = { impact: [], ground: [], ring: [], line: [] };
+    /** Effects drawn under the enemies (big explosions, see impactFx). */
+    private groundFxLayer: Node;
     private textPool: CombatText[] = [];
     private sortTimer = 0;
     private gameOver = false;
@@ -74,6 +76,10 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     constructor(private enemyLayer: Node, private fxLayer: Node, private textLayer: Node, private events: CombatEvents) {
         const wall = ConfigMgr.tower.battlefield.wall;
         this.wallRightX = wall.x + wall.width;
+        // Layer just below the enemies, for impacts that must not hide them.
+        const parent = enemyLayer.parent;
+        this.groundFxLayer = mk('GroundFx', parent || fxLayer);
+        if (parent) this.groundFxLayer.setSiblingIndex(parent.children.indexOf(enemyLayer));
     }
 
     get enemiesLeft(): number { return this.queue.length + this.enemies.filter(e => e.alive).length; }
@@ -180,12 +186,12 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const all: Node[] = [];
         for (const e of this.enemies.concat(this.enemyPool)) all.push(e.node);
         for (const p of this.projectiles.concat(this.projectilePool)) all.push(p.node);
-        for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
+        for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ground, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
         for (const t of this.floats.concat(this.textPool)) all.push(t.node);
         for (const n of all) if (isValid(n)) n.destroy();
         this.enemies.length = 0; this.projectiles.length = 0; this.fx.length = 0; this.floats.length = 0;
         this.enemyPool.length = 0; this.projectilePool.length = 0; this.textPool.length = 0;
-        this.fxPool = { impact: [], ring: [], line: [] };
+        this.fxPool = { impact: [], ground: [], ring: [], line: [] };
         this.queue.length = 0;
         this.stacks.clear();
         this.active = false;
@@ -217,6 +223,24 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             if (score < bestScore) { bestScore = score; best = e; }
         }
         return best;
+    }
+
+    /**
+     * Extra projectile of a multi-projectile attack: an enemy in range near the main target, but far enough
+     * that the two explosions do not cover the same enemies (prefers 1-3 explosion radii away). Falls back
+     * to any other valid enemy, then to the main target.
+     */
+    extraTarget(tower: TowerUnit, main: Enemy): Enemy {
+        const r = Math.max(20, tower.stats().explosion);
+        let best: Enemy | null = null, bestScore = Infinity;
+        for (const e of this.enemies) {
+            if (e === main || !this.isValidTarget(tower, e)) continue;
+            const d = Math.sqrt((e.x - main.x) ** 2 + (e.y - main.y) ** 2);
+            // Best around 2 radii away; doomed enemies only as a last choice.
+            const score = Math.abs(d - 2 * r) + (this.doomed(e) ? 10000 : 0);
+            if (score < bestScore) { bestScore = score; best = e; }
+        }
+        return best || main;
     }
 
     /**
@@ -617,11 +641,12 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     }
 
     /** A pooled effect node of one kind (created the first time). */
-    private takeFx(kind: 'impact' | 'ring' | 'line'): Fx {
+    private takeFx(kind: 'impact' | 'ground' | 'ring' | 'line'): Fx {
         const f = this.fxPool[kind].pop();
         if (f) { f.node.active = true; return f; }
-        if (kind === 'impact') {
-            const sp = sprite(this.fxLayer, null, 1, 1);
+        if (kind === 'impact' || kind === 'ground') {
+            const sp = sprite(kind === 'ground' ? this.groundFxLayer : this.fxLayer, null, 1, 1);
+            if (kind === 'ground') sp.color = new Color(255, 255, 255, 200);   // a bit see-through on the ground
             return { kind, node: sp.node, anim: new SpriteAnim(sp), life: 0, total: 1 };
         }
         const n = mk(kind === 'ring' ? 'Ring' : 'Line', this.fxLayer);
@@ -633,9 +658,13 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (im) {
             const frames = Assets.pick(im.path, im.cellW, im.cellH, im.frames);
             if (frames.length > 0) {
-                const f = this.takeFx('impact');
+                // "scaleToExplosion" (Catapult): the blast grows with the explosion (its width is a third of the
+                // explosion circle, see the ring) and is drawn under the enemies, so it never hides them.
+                const big = !!im.scaleToExplosion && shot.explosionRange > 0;
+                const k = big ? Math.max(1, (shot.explosionRange * 2 / 3) / im.cellW) : 1;
+                const f = this.takeFx(big ? 'ground' : 'impact');
                 const ui = f.node.getComponent(UITransform)!;
-                ui.setContentSize(im.cellW, im.cellH);
+                ui.setContentSize(im.cellW * k, im.cellH * k);
                 ui.setAnchorPoint(0.5, im.anchorY === undefined ? 0.5 : im.anchorY);
                 f.node.setPosition(x, y, 0);
                 f.anim!.play(frames, im.frameTime, false);

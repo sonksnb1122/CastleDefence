@@ -2,8 +2,12 @@ import { ConfigMgr } from '../ConfigMgr';
 import { BuffEntry, SAVE_VERSION, SaveData } from '../GameTypes';
 import { Placement } from './Placement';
 
-/** Battlefield shift of save version 3 (tower.json battlefield: wall x 394 -> 534, ...). */
-const LAYOUT_SHIFT_V3 = 140;
+/**
+ * Left edge of the defense area (tower.json constructionArea.x) used by older save versions.
+ * The battlefield has been moved (more castle ground on the left for the tower menus), so towers of
+ * an older save move by the same amount as the area. Versions not listed used the current layout.
+ */
+const AREA_X_OF_VERSION: { [version: number]: number } = { 1: 40, 2: 40, 3: 180 };
 
 /**
  * Creating, validating and copying save data. Never touches the running game:
@@ -98,9 +102,9 @@ export class SaveCodec {
             if (!def) continue;
             const uid = Math.floor(n(t.uid, d.nextUid++));
             maxUid = Math.max(maxUid, uid);
-            // Version 3 moved the whole battlefield 140 px to the right (more castle ground on the left,
-            // so the menu of a tower at the left edge stays on screen): older towers move with it.
-            let tx = n(t.x, 0) + (raw.saveVersion < 3 ? LAYOUT_SHIFT_V3 : 0), ty = n(t.y, 0);
+            const oldX = AREA_X_OF_VERSION[raw.saveVersion];
+            const shift = oldX === undefined ? 0 : ConfigMgr.tower.battlefield.constructionArea.x - oldX;
+            let tx = n(t.x, 0) + shift, ty = n(t.y, 0);
             // Saves made with a different defense area: the tower moves to the closest valid spot.
             if (!Placement.towerSpotOk(d.towers, tx, ty, 0)) {
                 const spot = Placement.nearestTowerSpot(d.towers, tx, ty);
