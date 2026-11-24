@@ -303,7 +303,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         const hit = (en: Enemy) => {
             let m = -Infinity;
             for (const t of types) m = Math.max(m, this.defenseMultiplier(en, t) * (1 + en.markBonus(tower.save.id, t) / 100));
-            return Math.max(0.01, m) * tower.lv.damage * (1 + this.buff('damage', tower.save.id) / 100);
+            return Math.max(0.01, m) * tower.baseDamage() * (1 + this.buff('damage', tower.save.id) / 100);
         };
         // Length of the field between the spawn and the wall (used for the "close to the wall" weights).
         const fieldW = ConfigMgr.tower.battlefield.worldWidth - this.wallRightX;
@@ -591,7 +591,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         // "effectChance" (Arcane Mastery research, heroes) adds percentage points on top of the effect's
         // own chance and above its cap: a researched effect at 50% becomes 75% with +25%.
         const extra = this.buff('effectChance', shot.towerId);
-        const chance = (ef: any) => ef.chance > 0 ? Math.min(100, Math.min(ef.maxChance || 100, ef.chance) + extra) : 0;
+        const chance = (ef: any) => ef.unlocked || ef.chance > 0 ? Math.min(100, Math.min(ef.maxChance || 100, ef.chance) + extra) : 0;
         const ready = (ef: any) => !tower || !(tower.effectCooldowns[ef.id] > 0);
         const used = (ef: any) => { if (tower && ef.cooldown > 0) tower.effectCooldowns[ef.id] = ef.cooldown; };
         const statusCount: { [id: string]: number } = {};

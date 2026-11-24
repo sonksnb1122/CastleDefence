@@ -28,15 +28,34 @@ export class ResearchService {
     /** Endless technologies have maxLevel 0. */
     static isEndless(t: any): boolean { return !t.maxLevel; }
 
-    /** Why a technology cannot be researched at all yet (missing lab level / prerequisites), or null. */
+    /** Research Lab level a technology tier needs (research.json "tiers"; tier N = Lab Lv N by default). */
+    static tierLab(t: any): number {
+        const tiers: any[] = (ConfigMgr.research && ConfigMgr.research.tiers) || [];
+        const d = tiers.find(x => x.tier === t.tier);
+        return d ? d.labLevel : (t.tier || 1);
+    }
+
+    /** True when a technology is at its max level (endless ones never are). */
+    isMaxed(id: string): boolean {
+        const t = ConfigMgr.techDef(id);
+        return !!t && !ResearchService.isEndless(t) && this.level(id) >= t.maxLevel;
+    }
+
+    /**
+     * Why a technology cannot be researched at all yet, or null. Research tree rules:
+     *  - a tier needs its Research Lab level (tier 1 = Lv 1, tier 2 = Lv 2, tier 3 = Lv 3);
+     *  - a node needs its parent node (previous node of the same branch) at max level.
+     */
     lock(id: string): string | null {
         const t = ConfigMgr.techDef(id);
-        const req = t && t.requires;
-        if (!req) return null;
-        if (req.labLevel && this.labLevel < req.labLevel) return `Needs Research Lab Lv ${req.labLevel}`;
-        for (const rid of (req.techsMaxed || [])) {
-            const r = ConfigMgr.techDef(rid);
-            if (r && this.level(rid) < r.maxLevel) return `Needs ${r.name} at max level`;
+        if (!t) return 'Unknown technology';
+        const lab = this.labLevel;
+        if (lab === 0) return 'Build a Research Lab first';
+        const need = ResearchService.tierLab(t);
+        if (lab < need) return `Needs Research Lab Lv ${need}`;
+        if (t.parent && !this.isMaxed(t.parent)) {
+            const p = ConfigMgr.techDef(t.parent);
+            return `Needs ${p ? p.name : t.parent} at max level`;
         }
         return null;
     }
@@ -60,10 +79,19 @@ export class ResearchService {
     }
 
     /**
-     * Highest level the Research Lab allows for this technology: the Lab limit, times "labCapMul"
-     * for technologies with more levels than the Lab limit (e.g. Aerodynamics: 20 levels, x2).
+     * Highest level the Research Lab allows for this technology:
+     *  - "labCaps": one limit per Lab level (e.g. Armor Piercing 2 / 5 / 10);
+     *  - "halfCap": half the levels until the Research Lab reaches Lv 3;
+     *  - otherwise every level as soon as the tier is open.
      */
-    capOf(t: any): number { return Math.min(t.maxLevel, this.maxTechLevel * (t.labCapMul || 1)); }
+    capOf(t: any): number {
+        const lab = this.labLevel;
+        if (lab < ResearchService.tierLab(t)) return 0;
+        const max = ResearchService.isEndless(t) ? Infinity : t.maxLevel;
+        if (Array.isArray(t.labCaps) && t.labCaps.length) return Math.min(max, t.labCaps[Math.min(lab, t.labCaps.length) - 1]);
+        if (t.halfCap && lab < 3) return Math.ceil(max / 2);
+        return max;
+    }
     capOfId(id: string): number { const t = ConfigMgr.techDef(id); return t ? this.capOf(t) : 0; }
 
     /** Why the next level of a technology cannot be researched (cost aside), or null. */
@@ -75,7 +103,7 @@ export class ResearchService {
         const lv = this.level(id);
         if (ResearchService.isEndless(t)) return null;
         if (lv >= t.maxLevel) return 'Already at max level';
-        if (lv >= this.capOf(t)) return this.maxTechLevel === 0 ? 'Build a Research Lab first' : 'Upgrade the Research Lab first';
+        if (lv >= this.capOf(t)) return t.halfCap ? 'Research Lab Lv 3 unlocks the other levels' : 'Upgrade the Research Lab first';
         return null;
     }
 

@@ -93,9 +93,8 @@ export class DefTab {
         v.smallLabel!.string = `Armor W${wave}   Phy ${have[0]}/${need[0]}   Mag ${have[1]}/${need[1]}`;
         v.smallLabel!.color = hex(worst);
         const next = WaveMgr.nextDefenseWave(wave);
-        const cap = rm.maxTechLevel;
-        const techMax = (ConfigMgr.techDef('r_pdef') || { maxLevel: 0 }).maxLevel;
-        if (short && cap < techMax && rm.techLevel('r_pdef') >= cap && rm.techLevel('r_mdef') >= cap) v.footer!.string = 'Research Lab limit reached: upgrade the Lab';
+        const capped = (id: string) => { const t = ConfigMgr.techDef(id); return !!t && rm.techCap(id) < t.maxLevel && rm.techLevel(id) >= rm.techCap(id); };
+        if (short && capped('r_pdef') && capped('r_mdef')) v.footer!.string = 'Research Lab limit reached: upgrade the Lab';
         else if (short) v.footer!.string = 'Research Armor / Spell Piercing!';
         else v.footer!.string = next ? `Enemy DEF rises at wave ${next}` : 'Enemy DEF is at its maximum';
     }

@@ -113,7 +113,7 @@ export class ResourceMgr {
     beginCombat() { this.data.state = 'Combat'; this.notify(); }
 
     /** Gold for one defeated enemy, kill-gold buff included. */
-    killGold(base: number): number { return Math.floor(base * (1 + this.buff('killGold') / 100)); }
+    killGold(base: number): number { return Math.floor((base + this.buff('killGoldFlat')) * (1 + this.buff('killGold') / 100)); }
 
     /**
      * Finish a wave: pay building production exactly once, advance the wave
@@ -127,6 +127,7 @@ export class ResourceMgr {
                 const p = this.production(b);
                 for (const r in p) gained[r] = (gained[r] || 0) + p[r];
             }
+            this.wall.regenAfterWave();
         }
         this.data.highestWave = Math.max(this.data.highestWave, wave);
         this.data.currentWave = wave + 1;

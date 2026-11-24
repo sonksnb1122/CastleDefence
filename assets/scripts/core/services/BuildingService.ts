@@ -36,7 +36,7 @@ export class BuildingService {
         const lv = ConfigMgr.buildingLevel(b.id, b.level);
         const out: Cost = {};
         if (lv && lv.production) {
-            for (const r in lv.production) out[r] = Math.floor(lv.production[r] * (1 + this.rm.buff(r + 'Production') / 100));
+            for (const r in lv.production) out[r] = Math.floor((lv.production[r] + this.rm.buff(r + 'ProductionFlat')) * (1 + this.rm.buff(r + 'Production') / 100));
         }
         return out;
     }

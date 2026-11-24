@@ -41,7 +41,7 @@ export class HeroSkillService {
         const mine = this.learned(heroId);
         const hasActive = mine.some(id => !HeroSkillService.isPassive(id));
         const hasPassive = mine.some(id => HeroSkillService.isPassive(id));
-        if ((hero.stars || 0) >= 5) {
+        if (this.rm.heroes.stars(heroId) >= 5) {
             const out: Array<'active' | 'passive'> = [];
             if (!hasActive) out.push('active');
             if (!hasPassive) out.push('passive');
@@ -49,6 +49,9 @@ export class HeroSkillService {
         }
         return mine.length === 0 ? ['active', 'passive'] : [];
     }
+
+    /** Research "Hero Scholarship" (tier 2) lets heroes learn skills. */
+    get learnUnlocked(): boolean { return this.rm.buff('heroSkillUnlock') > 0; }
 
     canLearnMore(heroId: string): boolean { return this.rm.ownsHero(heroId) && this.freeSlots(heroId).length > 0; }
 
@@ -66,6 +69,7 @@ export class HeroSkillService {
         const rm = this.rm;
         if (!rm.isPreparation) return 'Cannot learn skills during combat';
         if (!rm.ownsHero(heroId)) return 'Hero not recruited';
+        if (!this.learnUnlocked) return 'Research "Hero Scholarship" first (Research Lab Lv 2)';
         if (this.bookCount(skillId) <= 0) return 'No skill book';
         if (this.learnableBooks(heroId).indexOf(skillId) < 0) return 'This hero cannot learn that skill';
         if (!rm.spend(this.learnCost)) return 'Not enough Energy Cores';

@@ -1,17 +1,14 @@
 import { Node, Label } from 'cc';
-import { ConfigMgr } from '../core/ConfigMgr';
 import { Display, DisplayKey } from '../core/Display';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
-import { ResearchRowView } from './items/ResearchRowView';
 import { SaveSlotView } from './items/SaveSlotView';
 import { PauseView } from './popups/PauseView';
-import { ResearchView } from './popups/ResearchView';
 import { SaveLoadView } from './popups/SaveLoadView';
 import { SettingsView } from './popups/SettingsView';
 import { FillBar, PrefabButton, PrefabUi } from './common/PrefabUi';
 import { confirm, toast } from './common/Popups';
-import { COLORS, ScrollList, costRow, text } from './common/UIKit';
+import { COLORS, ScrollList, text } from './common/UIKit';
 
 /** Overlays are small windows drawn above the current screen. They pause the game while open. */
 export interface IOverlay { root: Node; destroy(): void; }
@@ -149,66 +146,3 @@ export class SaveLoadOverlay implements IOverlay {
     destroy() { this.root.destroy(); }
 }
 
-/** Technology list of the Research Lab (prefabs/popups/Research, data from research.json). */
-export class ResearchOverlay implements IOverlay {
-    root: Node;
-    private rows: Array<{ id: string; level: Label; cost: Node; btn: PrefabButton }> = [];
-    private capLabel: Label;
-    private unsubscribe: () => void;
-    constructor(parent: Node) {
-        // Shorter than the screen so the header scroll stays below the top bar.
-        const W = Math.min(900, G.main.W - 60), H = G.main.H - 150;
-        const v = PrefabUi.view('popups/Research', parent, ResearchView);
-        this.root = v.node;
-        v.resize(W, H);
-        this.capLabel = v.capLabel!;
-        const area = PrefabUi.size(v.listArea!);
-        const list = new ScrollList(v.listArea!, 0, 0, area.width, area.height);
-        const rowH = 62;
-        const techs: any[] = ConfigMgr.research.techs;
-        techs.forEach((t, i) => {
-            const r = PrefabUi.view('items/ResearchRow', list.content, ResearchRowView);
-            r.node.setPosition(0, -rowH / 2 - 4 - i * rowH, 0);
-            PrefabUi.setSize(r.node, W - 60, rowH - 6);
-            PrefabUi.align(r.node);
-            r.techName!.string = t.name;
-            r.desc!.string = t.description;
-            const btn = new PrefabButton(r.researchButton, () => this.research(t.id));
-            this.rows.push({ id: t.id, level: r.level!, cost: r.cost!, btn });
-        });
-        list.setContentHeight(techs.length * rowH + 8);
-        new PrefabButton(v.closeButton, () => G.main.closeOverlay());
-        this.unsubscribe = ResourceMgr.inst.onChange(() => this.refresh());
-        this.refresh();
-    }
-
-    private refresh() {
-        const rm = ResourceMgr.inst;
-        const cap = rm.maxTechLevel;
-        const lab = rm.labLevel;
-        this.capLabel.string = lab === 0
-            ? 'Build a Research Lab to unlock research.'
-            : `Research Lab Lv ${lab}: technologies up to level ${cap}. Upgrade the Lab to raise the limit.`;
-        for (const r of this.rows) {
-            const t = ConfigMgr.techDef(r.id);
-            const lv = rm.techLevel(r.id);
-            const endless = ResourceMgr.isEndless(t);
-            const bonus = `(+${t.valuePerLevel * lv}${ConfigMgr.buffInfo(t.buffKey).unit})`;
-            r.level.string = endless ? `Lv ${lv} (endless)   ${bonus}` : `Lv ${lv}/${rm.techCap(r.id)}   ${bonus}`;
-            r.cost.destroyAllChildren();
-            const lock = rm.techLock(r.id);
-            if (lock) { text(r.cost, lock, 13, 0, 0, { ax: 0, color: COLORS.textDim }); r.btn.setEnabled(false); continue; }
-            if (!endless && lv >= t.maxLevel) { text(r.cost, 'Max level', 13, 0, 0, { ax: 0 }); r.btn.setEnabled(false); continue; }
-            const cost = rm.techCost(r.id);
-            costRow(r.cost, cost, 0, 0, { size: 18, fontSize: 13 });
-            r.btn.setEnabled(!rm.techBlock(r.id) && rm.canAfford(cost) && rm.isPreparation);
-        }
-    }
-
-    private research(id: string) {
-        const err = ResourceMgr.inst.doResearch(id);
-        if (err) toast(this.root, err);
-        else { toast(this.root, 'Research complete', true); G.main.playSfx('upgrade'); }
-    }
-    destroy() { this.unsubscribe(); this.root.destroy(); }
-}

@@ -1,10 +1,86 @@
 {
-  "version": 1,
+  "version": 2,
+  "branches": [
+    {
+      "id": "offense",
+      "name": "Offense",
+      "color": "#d9a441"
+    },
+    {
+      "id": "economy",
+      "name": "Economy",
+      "color": "#5fbf5a"
+    },
+    {
+      "id": "wall",
+      "name": "Fortification",
+      "color": "#4f9be0"
+    },
+    {
+      "id": "effects",
+      "name": "Tower Effects",
+      "color": "#a06ee0"
+    },
+    {
+      "id": "heroes",
+      "name": "Heroes",
+      "color": "#e0c050"
+    },
+    {
+      "id": "curses",
+      "name": "Curses",
+      "color": "#d0505a"
+    }
+  ],
+  "tiers": [
+    {
+      "tier": 1,
+      "labLevel": 1,
+      "name": "Tier 1 - Research Lab Lv 1"
+    },
+    {
+      "tier": 2,
+      "labLevel": 2,
+      "name": "Tier 2 - Research Lab Lv 2"
+    },
+    {
+      "tier": 3,
+      "labLevel": 3,
+      "name": "Tier 3 - Research Lab Lv 3"
+    },
+    {
+      "tier": 4,
+      "labLevel": 3,
+      "name": "Endless - Research Lab Lv 3",
+      "short": "END"
+    }
+  ],
   "techs": [
+    {
+      "id": "r_dmg_flat",
+      "name": "Hardened Tips",
+      "label": "DMG+",
+      "description": "+2 tower base damage per level",
+      "branch": "offense",
+      "tier": 1,
+      "buffKey": "damageFlat",
+      "valuePerLevel": 2,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 40,
+        "material": 80,
+        "food": 80
+      },
+      "costGrowth": 1.25
+    },
     {
       "id": "r_damage",
       "name": "Sharpened Ammunition",
+      "label": "DMG%",
       "description": "+5% tower damage per level",
+      "branch": "offense",
+      "tier": 2,
+      "parent": "r_dmg_flat",
       "buffKey": "damage",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -18,16 +94,14 @@
     {
       "id": "r_damage_inf",
       "name": "Masterwork Ammunition",
+      "label": "DMG∞",
       "description": "+5% tower damage per level. Endless.",
+      "branch": "offense",
+      "tier": 4,
+      "parent": "r_damage",
       "buffKey": "damage",
       "valuePerLevel": 5,
       "maxLevel": 0,
-      "requires": {
-        "labLevel": 3,
-        "techsMaxed": [
-          "r_damage"
-        ]
-      },
       "baseCost": {
         "gold": 4800,
         "material": 1750,
@@ -36,9 +110,30 @@
       "costGrowth": 1.08
     },
     {
+      "id": "r_aspd_flat",
+      "name": "Quick Hands",
+      "label": "SPD+",
+      "description": "+0.01 tower attacks per second per level",
+      "branch": "offense",
+      "tier": 1,
+      "buffKey": "attackSpeedFlat",
+      "valuePerLevel": 0.01,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 40,
+        "material": 80,
+        "food": 80
+      },
+      "costGrowth": 1.25
+    },
+    {
       "id": "r_aspd",
       "name": "Rapid Reload",
+      "label": "SPD%",
       "description": "+5% tower attack speed per level",
+      "branch": "offense",
+      "tier": 2,
+      "parent": "r_aspd_flat",
       "buffKey": "attackSpeed",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -50,197 +145,31 @@
       "costGrowth": 1.42
     },
     {
-      "id": "r_range",
-      "name": "Long Sight",
-      "description": "+5% tower attack range per level",
-      "buffKey": "attackRange",
+      "id": "r_projspeed",
+      "name": "Aerodynamics",
+      "label": "PROJ",
+      "description": "+5% projectile speed per level",
+      "branch": "offense",
+      "tier": 3,
+      "parent": "r_aspd",
+      "buffKey": "projectileSpeed",
       "valuePerLevel": 5,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 70,
-        "material": 146,
-        "food": 146
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_expl",
-      "name": "Volatile Payload",
-      "description": "+5% explosion range per level (not Crossbow)",
-      "buffKey": "explosionRange",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 94,
-        "material": 195,
-        "food": 195
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_food",
-      "name": "Crop Rotation",
-      "description": "+10% food production per level",
-      "buffKey": "foodProduction",
-      "valuePerLevel": 10,
-      "maxLevel": 4,
+      "maxLevel": 20,
       "baseCost": {
         "gold": 52,
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_material",
-      "name": "Better Tools",
-      "description": "+10% material production per level",
-      "buffKey": "materialProduction",
-      "valuePerLevel": 10,
-      "maxLevel": 4,
-      "baseCost": {
-        "gold": 52,
-        "material": 110,
-        "food": 110
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_gold",
-      "name": "Taxation",
-      "description": "+10% gold production per level",
-      "buffKey": "goldProduction",
-      "valuePerLevel": 10,
-      "maxLevel": 4,
-      "baseCost": {
-        "gold": 52,
-        "material": 110,
-        "food": 110
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_killgold",
-      "name": "Bounty Hunting",
-      "description": "+5% gold from kills per level",
-      "buffKey": "killGold",
-      "valuePerLevel": 5,
-      "maxLevel": 4,
-      "baseCost": {
-        "gold": 52,
-        "material": 110,
-        "food": 110
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_wallhp",
-      "name": "Reinforced Wall",
-      "description": "+5% wall HP per level",
-      "buffKey": "wallHp",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 94,
-        "material": 195,
-        "food": 195
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_wallhp_inf",
-      "name": "Living Stone",
-      "description": "+5% wall HP per level. Endless.",
-      "buffKey": "wallHp",
-      "valuePerLevel": 5,
-      "maxLevel": 0,
-      "requires": {
-        "labLevel": 3,
-        "techsMaxed": [
-          "r_wallhp"
-        ]
-      },
-      "baseCost": {
-        "gold": 3600,
-        "material": 1750,
-        "food": 1750
-      },
-      "costGrowth": 1.08
-    },
-    {
-      "id": "r_walldef",
-      "name": "Wall Plating",
-      "description": "+7 wall physic & magic def per level (max 70)",
-      "buffKey": "wallDef",
-      "valuePerLevel": 7,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 94,
-        "material": 195,
-        "food": 195
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_pdef",
-      "name": "Armor Piercing",
-      "description": "-10 enemy physic def per level",
-      "buffKey": "enemyPhysicDefReduce",
-      "valuePerLevel": 10,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 94,
-        "material": 195,
-        "food": 195
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_mdef",
-      "name": "Spell Piercing",
-      "description": "-10 enemy magic def per level",
-      "buffKey": "enemyMagicDefReduce",
-      "valuePerLevel": 10,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 94,
-        "material": 195,
-        "food": 195
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_edmg",
-      "name": "Weakening Hex",
-      "description": "-5% enemy damage per level",
-      "buffKey": "enemyDamageReduce",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 94,
-        "material": 195,
-        "food": 195
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_ehp",
-      "name": "Withering Curse",
-      "description": "-5% enemy HP per level",
-      "buffKey": "enemyHpReduce",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "baseCost": {
-        "gold": 94,
-        "material": 195,
-        "food": 195
-      },
-      "costGrowth": 1.42
+      "costGrowth": 1.12
     },
     {
       "id": "r_crit",
       "name": "Precision",
+      "label": "CRIT",
       "description": "+3% crit rate per level",
+      "branch": "offense",
+      "tier": 2,
+      "parent": "r_aspd_flat",
       "buffKey": "critRate",
       "valuePerLevel": 3,
       "maxLevel": 10,
@@ -254,7 +183,11 @@
     {
       "id": "r_critdmg",
       "name": "Lethality",
+      "label": "CDMG",
       "description": "+5% crit damage per level",
+      "branch": "offense",
+      "tier": 3,
+      "parent": "r_crit",
       "buffKey": "critDamage",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -266,12 +199,148 @@
       "costGrowth": 1.42
     },
     {
-      "id": "r_slowdur",
-      "name": "Lingering Frost",
-      "description": "+10% Slow duration per level",
-      "buffKey": "slowDuration",
+      "id": "r_range_flat",
+      "name": "Spotters",
+      "label": "RNG+",
+      "description": "+4 px tower attack range per level",
+      "branch": "offense",
+      "tier": 1,
+      "buffKey": "attackRangeFlat",
+      "valuePerLevel": 4,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 40,
+        "material": 80,
+        "food": 80
+      },
+      "costGrowth": 1.25
+    },
+    {
+      "id": "r_range",
+      "name": "Long Sight",
+      "label": "RNG%",
+      "description": "+5% tower attack range per level",
+      "branch": "offense",
+      "tier": 2,
+      "parent": "r_range_flat",
+      "buffKey": "attackRange",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 70,
+        "material": 146,
+        "food": 146
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_smart",
+      "name": "Smart Targeting",
+      "label": "AI",
+      "description": "Towers aim at the best target by themselves",
+      "branch": "offense",
+      "tier": 3,
+      "parent": "r_range",
+      "buffKey": "smartTarget",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 50000,
+        "material": 20000,
+        "food": 20000
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_expl",
+      "name": "Volatile Payload",
+      "label": "EXPL",
+      "description": "+5% explosion range per level (not Crossbow)",
+      "branch": "offense",
+      "tier": 2,
+      "parent": "r_range_flat",
+      "buffKey": "explosionRange",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 94,
+        "material": 195,
+        "food": 195
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_pdef",
+      "name": "Armor Piercing",
+      "label": "PHY-",
+      "description": "-10 enemy physic def per level",
+      "branch": "offense",
+      "tier": 1,
+      "buffKey": "enemyPhysicDefReduce",
       "valuePerLevel": 10,
-      "maxLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 94,
+        "material": 195,
+        "food": 195
+      },
+      "costGrowth": 1.42,
+      "labCaps": [
+        2,
+        5,
+        10
+      ]
+    },
+    {
+      "id": "r_mdef",
+      "name": "Spell Piercing",
+      "label": "MAG-",
+      "description": "-10 enemy magic def per level",
+      "branch": "offense",
+      "tier": 1,
+      "buffKey": "enemyMagicDefReduce",
+      "valuePerLevel": 10,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 94,
+        "material": 195,
+        "food": 195
+      },
+      "costGrowth": 1.42,
+      "labCaps": [
+        2,
+        5,
+        10
+      ]
+    },
+    {
+      "id": "r_food_flat",
+      "name": "Irrigation",
+      "label": "FOOD+",
+      "description": "+5 food per producing building per wave, per level",
+      "branch": "economy",
+      "tier": 1,
+      "buffKey": "foodProductionFlat",
+      "valuePerLevel": 5,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 40,
+        "material": 80,
+        "food": 80
+      },
+      "costGrowth": 1.25
+    },
+    {
+      "id": "r_food",
+      "name": "Crop Rotation",
+      "label": "FOOD%",
+      "description": "+10% food production per level",
+      "branch": "economy",
+      "tier": 2,
+      "parent": "r_food_flat",
+      "buffKey": "foodProduction",
+      "valuePerLevel": 10,
+      "maxLevel": 4,
       "baseCost": {
         "gold": 52,
         "material": 110,
@@ -280,12 +349,51 @@
       "costGrowth": 1.42
     },
     {
-      "id": "r_stundur",
-      "name": "Concussion",
-      "description": "+10% Stun duration per level",
-      "buffKey": "stunDuration",
+      "id": "r_food_2",
+      "name": "Fertile Fields",
+      "label": "FOOD2",
+      "description": "+10% food production per level",
+      "branch": "economy",
+      "tier": 3,
+      "parent": "r_food",
+      "buffKey": "foodProduction",
       "valuePerLevel": 10,
-      "maxLevel": 5,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 900,
+        "material": 1800,
+        "food": 1800
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_material_flat",
+      "name": "Sturdy Carts",
+      "label": "MAT+",
+      "description": "+5 material per producing building per wave, per level",
+      "branch": "economy",
+      "tier": 1,
+      "buffKey": "materialProductionFlat",
+      "valuePerLevel": 5,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 40,
+        "material": 80,
+        "food": 80
+      },
+      "costGrowth": 1.25
+    },
+    {
+      "id": "r_material",
+      "name": "Better Tools",
+      "label": "MAT%",
+      "description": "+10% material production per level",
+      "branch": "economy",
+      "tier": 2,
+      "parent": "r_material_flat",
+      "buffKey": "materialProduction",
+      "valuePerLevel": 10,
+      "maxLevel": 4,
       "baseCost": {
         "gold": 52,
         "material": 110,
@@ -294,12 +402,51 @@
       "costGrowth": 1.42
     },
     {
-      "id": "r_bleed",
-      "name": "Serrated Tips",
-      "description": "+10% Bleed damage per level",
-      "buffKey": "bleedDamage",
+      "id": "r_material_2",
+      "name": "Quarry Engineering",
+      "label": "MAT2",
+      "description": "+10% material production per level",
+      "branch": "economy",
+      "tier": 3,
+      "parent": "r_material",
+      "buffKey": "materialProduction",
       "valuePerLevel": 10,
-      "maxLevel": 5,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 900,
+        "material": 1800,
+        "food": 1800
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_gold_flat",
+      "name": "Trade Routes",
+      "label": "GOLD+",
+      "description": "+5 gold per producing building per wave, per level",
+      "branch": "economy",
+      "tier": 1,
+      "buffKey": "goldProductionFlat",
+      "valuePerLevel": 5,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 40,
+        "material": 80,
+        "food": 80
+      },
+      "costGrowth": 1.25
+    },
+    {
+      "id": "r_gold",
+      "name": "Taxation",
+      "label": "GOLD%",
+      "description": "+10% gold production per level",
+      "branch": "economy",
+      "tier": 2,
+      "parent": "r_gold_flat",
+      "buffKey": "goldProduction",
+      "valuePerLevel": 10,
+      "maxLevel": 4,
       "baseCost": {
         "gold": 52,
         "material": 110,
@@ -308,23 +455,686 @@
       "costGrowth": 1.42
     },
     {
-      "id": "r_burn",
-      "name": "Wildfire",
-      "description": "+10% Burn damage per level",
-      "buffKey": "burnDamage",
+      "id": "r_gold_2",
+      "name": "Royal Treasury",
+      "label": "GOLD2",
+      "description": "+10% gold production per level",
+      "branch": "economy",
+      "tier": 3,
+      "parent": "r_gold",
+      "buffKey": "goldProduction",
       "valuePerLevel": 10,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 900,
+        "material": 1800,
+        "food": 1800
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_research_cost",
+      "name": "Scholarship",
+      "label": "LAB-",
+      "description": "-4% research cost per level",
+      "branch": "economy",
+      "tier": 3,
+      "parent": "r_gold",
+      "buffKey": "researchCostReduce",
+      "valuePerLevel": 4,
       "maxLevel": 5,
+      "baseCost": {
+        "gold": 1500,
+        "material": 2500,
+        "food": 2500
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_killgold_flat",
+      "name": "Scavengers",
+      "label": "KILL+",
+      "description": "+1 gold per enemy killed, per level",
+      "branch": "economy",
+      "tier": 1,
+      "buffKey": "killGoldFlat",
+      "valuePerLevel": 1,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 40,
+        "material": 80,
+        "food": 80
+      },
+      "costGrowth": 1.25
+    },
+    {
+      "id": "r_killgold",
+      "name": "Bounty Hunting",
+      "label": "KILL%",
+      "description": "+5% gold from kills per level",
+      "branch": "economy",
+      "tier": 2,
+      "parent": "r_killgold_flat",
+      "buffKey": "killGold",
+      "valuePerLevel": 5,
+      "maxLevel": 4,
       "baseCost": {
         "gold": 52,
         "material": 110,
         "food": 110
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_killgold_2",
+      "name": "War Spoils",
+      "label": "KILL2",
+      "description": "+5% gold from kills per level",
+      "branch": "economy",
+      "tier": 3,
+      "parent": "r_killgold",
+      "buffKey": "killGold",
+      "valuePerLevel": 5,
+      "maxLevel": 4,
+      "baseCost": {
+        "gold": 900,
+        "material": 1800,
+        "food": 1800
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_wallhp_flat",
+      "name": "Stone Blocks",
+      "label": "HP+",
+      "description": "+100 wall HP per level",
+      "branch": "wall",
+      "tier": 1,
+      "buffKey": "wallHpFlat",
+      "valuePerLevel": 100,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 50,
+        "material": 110,
+        "food": 110
+      },
+      "costGrowth": 1.25
+    },
+    {
+      "id": "r_wallhp",
+      "name": "Reinforced Wall",
+      "label": "HP%",
+      "description": "+5% wall HP per level",
+      "branch": "wall",
+      "tier": 2,
+      "parent": "r_wallhp_flat",
+      "buffKey": "wallHp",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 94,
+        "material": 195,
+        "food": 195
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_wallhp_inf",
+      "name": "Living Stone",
+      "label": "HP∞",
+      "description": "+5% wall HP per level. Endless.",
+      "branch": "wall",
+      "tier": 4,
+      "parent": "r_wallhp",
+      "buffKey": "wallHp",
+      "valuePerLevel": 5,
+      "maxLevel": 0,
+      "baseCost": {
+        "gold": 3600,
+        "material": 1750,
+        "food": 1750
+      },
+      "costGrowth": 1.08
+    },
+    {
+      "id": "r_walldef",
+      "name": "Wall Plating",
+      "label": "DEF",
+      "description": "+7 wall physic & magic def per level (max 70)",
+      "branch": "wall",
+      "tier": 2,
+      "parent": "r_wallhp_flat",
+      "buffKey": "wallDef",
+      "valuePerLevel": 7,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 94,
+        "material": 195,
+        "food": 195
+      },
+      "costGrowth": 1.42,
+      "halfCap": true
+    },
+    {
+      "id": "r_wallregen",
+      "name": "Self-Mending Stone",
+      "label": "REGEN",
+      "description": "The wall recovers 2% of its max HP after each wave, per level",
+      "branch": "wall",
+      "tier": 3,
+      "parent": "r_walldef",
+      "buffKey": "wallRegen",
+      "valuePerLevel": 2,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 2500,
+        "material": 5000,
+        "food": 4000
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_repaircost",
+      "name": "Masonry Guild",
+      "label": "FIX-",
+      "description": "-8% wall repair cost per level",
+      "branch": "wall",
+      "tier": 3,
+      "parent": "r_walldef",
+      "buffKey": "wallRepairCostReduce",
+      "valuePerLevel": 8,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 2000,
+        "material": 4000,
+        "food": 3000
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_piercing_bolt",
+      "name": "Piercing Bolt: Unlock",
+      "label": "PIERCE",
+      "description": "Crossbow towers gain the Piercing Bolt effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:piercing_bolt",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 225,
+        "material": 115,
+        "food": 115
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_piercing_bolt",
+      "name": "Piercing Bolt",
+      "label": "PIERCE%",
+      "description": "Crossbow: +5% chance, bolt pierces up to 4 more enemies (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_piercing_bolt",
+      "buffKey": "effect:piercing_bolt",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 225,
+        "material": 115,
+        "food": 115
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_piercing_bolt_2",
+      "name": "Piercing Bolt II",
+      "label": "PIERCE2",
+      "description": "Crossbow: +5% Piercing Bolt chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_piercing_bolt",
+      "buffKey": "effect:piercing_bolt",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 1299,
+        "material": 664,
+        "food": 664
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_bleeding_bolt",
+      "name": "Bleeding Bolt: Unlock",
+      "label": "BLEED",
+      "description": "Crossbow towers gain the Bleeding Bolt effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:bleeding_bolt",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 225,
+        "material": 115,
+        "food": 115
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_bleeding_bolt",
+      "name": "Bleeding Bolt",
+      "label": "BLEED%",
+      "description": "Crossbow: +5% chance to bleed the target (x5 stacks bursts for 4% max HP) (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_bleeding_bolt",
+      "buffKey": "effect:bleeding_bolt",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 225,
+        "material": 115,
+        "food": 115
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_bleeding_bolt_2",
+      "name": "Bleeding Bolt II",
+      "label": "BLEED2",
+      "description": "Crossbow: +5% Bleeding Bolt chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_bleeding_bolt",
+      "buffKey": "effect:bleeding_bolt",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 1299,
+        "material": 664,
+        "food": 664
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_hunters_mark",
+      "name": "Hunter's Mark: Unlock",
+      "label": "MARK",
+      "description": "Crossbow towers gain the Hunter's Mark effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:hunters_mark",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 225,
+        "material": 115,
+        "food": 115
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_hunters_mark",
+      "name": "Hunter's Mark",
+      "label": "MARK%",
+      "description": "Crossbow: +5% chance, +50% Crossbow dmg per stack (x5, then +1% current HP per hit) (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_hunters_mark",
+      "buffKey": "effect:hunters_mark",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 225,
+        "material": 115,
+        "food": 115
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_hunters_mark_2",
+      "name": "Hunter's Mark II",
+      "label": "MARK2",
+      "description": "Crossbow: +5% Hunter's Mark chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_hunters_mark",
+      "buffKey": "effect:hunters_mark",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 1299,
+        "material": 664,
+        "food": 664
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_frost_explosion",
+      "name": "Frost Explosion: Unlock",
+      "label": "FROST",
+      "description": "Crystal towers gain the Frost Explosion effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:frost_explosion",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 1000,
+        "material": 500,
+        "food": 500
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_frost_explosion",
+      "name": "Frost Explosion",
+      "label": "FROST%",
+      "description": "Crystal: +5% chance to slow enemies hit (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_frost_explosion",
+      "buffKey": "effect:frost_explosion",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 1000,
+        "material": 500,
+        "food": 500
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_frost_explosion_2",
+      "name": "Frost Explosion II",
+      "label": "FROST2",
+      "description": "Crystal: +5% Frost Explosion chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_frost_explosion",
+      "buffKey": "effect:frost_explosion",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 5774,
+        "material": 2887,
+        "food": 2887
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_chain_lightning",
+      "name": "Chain Lightning: Unlock",
+      "label": "CHAIN",
+      "description": "Crystal towers gain the Chain Lightning effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:chain_lightning",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 560,
+        "material": 280,
+        "food": 280
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_chain_lightning",
+      "name": "Chain Lightning",
+      "label": "CHAIN%",
+      "description": "Crystal: +5% chance, lightning jumps to up to 5 enemies (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_chain_lightning",
+      "buffKey": "effect:chain_lightning",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 560,
+        "material": 280,
+        "food": 280
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_chain_lightning_2",
+      "name": "Chain Lightning II",
+      "label": "CHAIN2",
+      "description": "Crystal: +5% Chain Lightning chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_chain_lightning",
+      "buffKey": "effect:chain_lightning",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 3233,
+        "material": 1617,
+        "food": 1617
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_arcane_vulnerability",
+      "name": "Arcane Vulnerability: Unlock",
+      "label": "ARCANE",
+      "description": "Crystal towers gain the Arcane Vulnerability effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:arcane_vulnerability",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 560,
+        "material": 280,
+        "food": 280
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_arcane_vulnerability",
+      "name": "Arcane Vulnerability",
+      "label": "ARCANE%",
+      "description": "Crystal: +5% chance, enemies take +30% magic dmg per stack, x5 (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_arcane_vulnerability",
+      "buffKey": "effect:arcane_vulnerability",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 560,
+        "material": 280,
+        "food": 280
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_arcane_vulnerability_2",
+      "name": "Arcane Vulnerability II",
+      "label": "ARCANE2",
+      "description": "Crystal: +5% Arcane Vulnerability chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_arcane_vulnerability",
+      "buffKey": "effect:arcane_vulnerability",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 3233,
+        "material": 1617,
+        "food": 1617
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_shockwave",
+      "name": "Shockwave: Unlock",
+      "label": "SHOCK",
+      "description": "Catapult towers gain the Shockwave effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:shockwave",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 1450,
+        "material": 675,
+        "food": 675
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_shockwave",
+      "name": "Shockwave",
+      "label": "SHOCK%",
+      "description": "Catapult: +5% chance stun; immune: 4% max HP (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_shockwave",
+      "buffKey": "effect:shockwave",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 1450,
+        "material": 675,
+        "food": 675
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_shockwave_2",
+      "name": "Shockwave II",
+      "label": "SHOCK2",
+      "description": "Catapult: +5% Shockwave chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_shockwave",
+      "buffKey": "effect:shockwave",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 8372,
+        "material": 3897,
+        "food": 3897
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_heavy_impact",
+      "name": "Heavy Impact: Unlock",
+      "label": "HEAVY",
+      "description": "Catapult towers gain the Heavy Impact effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:heavy_impact",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 560,
+        "material": 280,
+        "food": 280
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_heavy_impact",
+      "name": "Heavy Impact",
+      "label": "HEAVY%",
+      "description": "Catapult: +5% chance, +6% max HP bonus damage (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_heavy_impact",
+      "buffKey": "effect:heavy_impact",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 560,
+        "material": 280,
+        "food": 280
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_heavy_impact_2",
+      "name": "Heavy Impact II",
+      "label": "HEAVY2",
+      "description": "Catapult: +5% Heavy Impact chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_heavy_impact",
+      "buffKey": "effect:heavy_impact",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 3233,
+        "material": 1617,
+        "food": 1617
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fxu_armor_break",
+      "name": "Armor Break: Unlock",
+      "label": "BREAK",
+      "description": "Catapult towers gain the Armor Break effect (its chance comes from the next technologies)",
+      "branch": "effects",
+      "tier": 2,
+      "buffKey": "effectUnlock:armor_break",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 1000,
+        "material": 500,
+        "food": 500
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_fx_armor_break",
+      "name": "Armor Break",
+      "label": "BREAK%",
+      "description": "Catapult: +5% chance, enemies lose 20 defense (max 25% here)",
+      "branch": "effects",
+      "tier": 2,
+      "parent": "r_fxu_armor_break",
+      "buffKey": "effect:armor_break",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 1000,
+        "material": 500,
+        "food": 500
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_fx_armor_break_2",
+      "name": "Armor Break II",
+      "label": "BREAK2",
+      "description": "Catapult: +5% Armor Break chance per level (max 50% in total)",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_armor_break",
+      "buffKey": "effect:armor_break",
+      "valuePerLevel": 5,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 5774,
+        "material": 2887,
+        "food": 2887
       },
       "costGrowth": 1.42
     },
     {
       "id": "r_effect",
       "name": "Arcane Mastery",
+      "label": "FX%",
       "description": "+5% special effect chance per level",
+      "branch": "effects",
+      "tier": 3,
       "buffKey": "effectChance",
       "valuePerLevel": 5,
       "maxLevel": 5,
@@ -336,201 +1146,52 @@
       "costGrowth": 1.42
     },
     {
-      "id": "r_projspeed",
-      "name": "Aerodynamics",
-      "description": "+5% projectile speed per level",
-      "buffKey": "projectileSpeed",
-      "valuePerLevel": 5,
-      "maxLevel": 20,
-      "labCapMul": 2,
-      "baseCost": {
-        "gold": 52,
-        "material": 110,
-        "food": 110
-      },
-      "costGrowth": 1.12
-    },
-    {
-      "id": "r_fx_piercing_bolt",
-      "name": "Piercing Bolt",
-      "description": "Crossbow: +5% chance, bolt pierces up to 4 more enemies (max 50%)",
-      "buffKey": "effect:piercing_bolt",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 225,
-        "material": 115,
-        "food": 115
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_bleeding_bolt",
-      "name": "Bleeding Bolt",
-      "description": "Crossbow: +5% chance to bleed the target (x5 stacks bursts for 4% max HP) (max 50%)",
-      "buffKey": "effect:bleeding_bolt",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 225,
-        "material": 115,
-        "food": 115
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_hunters_mark",
-      "name": "Hunter's Mark",
-      "description": "Crossbow: +5% chance, +50% Crossbow dmg per stack (x5, then +1% current HP per hit) (max 50%)",
-      "buffKey": "effect:hunters_mark",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 225,
-        "material": 115,
-        "food": 115
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_frost_explosion",
-      "name": "Frost Explosion",
-      "description": "Crystal: +5% chance to slow enemies hit (max 50%)",
-      "buffKey": "effect:frost_explosion",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 1000,
-        "material": 500,
-        "food": 500
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_chain_lightning",
-      "name": "Chain Lightning",
-      "description": "Crystal: +5% chance, lightning jumps to up to 5 enemies (max 50%)",
-      "buffKey": "effect:chain_lightning",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 560,
-        "material": 280,
-        "food": 280
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_arcane_vulnerability",
-      "name": "Arcane Vulnerability",
-      "description": "Crystal: +5% chance, enemies take +30% magic dmg per stack, x5 (max 50%)",
-      "buffKey": "effect:arcane_vulnerability",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 560,
-        "material": 280,
-        "food": 280
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_shockwave",
-      "name": "Shockwave",
-      "description": "Catapult: +5% chance stun; immune: 4% max HP (max 50%)",
-      "buffKey": "effect:shockwave",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 1450,
-        "material": 675,
-        "food": 675
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_heavy_impact",
-      "name": "Heavy Impact",
-      "description": "Catapult: +5% chance, +6% max HP bonus damage (max 50%)",
-      "buffKey": "effect:heavy_impact",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 560,
-        "material": 280,
-        "food": 280
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_fx_armor_break",
-      "name": "Armor Break",
-      "description": "Catapult: +5% chance, enemies lose 20 defense (max 50%)",
-      "buffKey": "effect:armor_break",
-      "valuePerLevel": 5,
-      "maxLevel": 10,
-      "requires": {
-        "labLevel": 3
-      },
-      "baseCost": {
-        "gold": 1000,
-        "material": 500,
-        "food": 500
-      },
-      "costGrowth": 1.42
-    },
-    {
-      "id": "r_smart",
-      "name": "Smart Targeting",
-      "description": "Towers aim at the best target by themselves",
-      "buffKey": "smartTarget",
+      "id": "r_hero_skill",
+      "name": "Hero Scholarship",
+      "label": "SKILL",
+      "description": "Heroes can learn skills from skill books",
+      "branch": "heroes",
+      "tier": 2,
+      "buffKey": "heroSkillUnlock",
       "valuePerLevel": 1,
       "maxLevel": 1,
-      "requires": {
-        "labLevel": 3
-      },
       "baseCost": {
-        "gold": 50000,
-        "material": 20000,
-        "food": 20000
+        "gold": 3000,
+        "material": 4000,
+        "food": 4000
+      },
+      "costGrowth": 1.42
+    },
+    {
+      "id": "r_hero_star",
+      "name": "Ascension",
+      "label": "STAR",
+      "description": "Heroes below 5 stars can be promoted (+1 star, +1 random buff)",
+      "branch": "heroes",
+      "tier": 3,
+      "parent": "r_hero_skill",
+      "buffKey": "heroStarUnlock",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 15000,
+        "material": 12000,
+        "food": 12000,
+        "core": 3
       },
       "costGrowth": 1
     },
     {
       "id": "r_sp_skill_cd",
       "name": "Battle Tactics",
+      "label": "CD-",
       "description": "Special: hero skills recharge 1 wave faster (5 -> 4 waves)",
+      "branch": "heroes",
+      "tier": 3,
+      "parent": "r_hero_skill",
       "buffKey": "skillCooldown",
       "valuePerLevel": 1,
       "maxLevel": 1,
-      "special": true,
-      "requires": {
-        "labLevel": 3
-      },
       "baseCost": {
         "gold": 20000,
         "material": 8000,
@@ -538,6 +1199,7 @@
         "core": 4
       },
       "costGrowth": 1.5,
+      "special": true,
       "growthKeys": [
         "gold",
         "material",
@@ -547,14 +1209,14 @@
     {
       "id": "r_sp_twin_cast",
       "name": "Twin Cast",
+      "label": "TWIN",
       "description": "Special: every hero skill can be used one more time before it recharges",
+      "branch": "heroes",
+      "tier": 3,
+      "parent": "r_hero_skill",
       "buffKey": "skillCharges",
       "valuePerLevel": 1,
       "maxLevel": 1,
-      "special": true,
-      "requires": {
-        "labLevel": 3
-      },
       "baseCost": {
         "gold": 25000,
         "material": 10000,
@@ -562,6 +1224,7 @@
         "core": 5
       },
       "costGrowth": 1.5,
+      "special": true,
       "growthKeys": [
         "gold",
         "material",
@@ -571,14 +1234,14 @@
     {
       "id": "r_sp_skill_power",
       "name": "Arcane Amplifier",
+      "label": "SK%",
       "description": "Special: +10% skill damage per level",
+      "branch": "heroes",
+      "tier": 3,
+      "parent": "r_hero_skill",
       "buffKey": "skillDamage",
       "valuePerLevel": 10,
       "maxLevel": 5,
-      "special": true,
-      "requires": {
-        "labLevel": 3
-      },
       "baseCost": {
         "gold": 6000,
         "material": 2500,
@@ -586,11 +1249,120 @@
         "core": 1
       },
       "costGrowth": 1.35,
+      "special": true,
       "growthKeys": [
         "gold",
         "material",
         "food"
       ]
+    },
+    {
+      "id": "r_edmg",
+      "name": "Weakening Hex",
+      "label": "EDMG-",
+      "description": "-5% enemy damage per level",
+      "branch": "curses",
+      "tier": 2,
+      "buffKey": "enemyDamageReduce",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 94,
+        "material": 195,
+        "food": 195
+      },
+      "costGrowth": 1.42,
+      "halfCap": true
+    },
+    {
+      "id": "r_ehp",
+      "name": "Withering Curse",
+      "label": "EHP-",
+      "description": "-5% enemy HP per level",
+      "branch": "curses",
+      "tier": 2,
+      "buffKey": "enemyHpReduce",
+      "valuePerLevel": 5,
+      "maxLevel": 10,
+      "baseCost": {
+        "gold": 94,
+        "material": 195,
+        "food": 195
+      },
+      "costGrowth": 1.42,
+      "halfCap": true
+    },
+    {
+      "id": "r_slowdur",
+      "name": "Lingering Frost",
+      "label": "SLOW",
+      "description": "+10% Slow duration per level",
+      "branch": "curses",
+      "tier": 2,
+      "buffKey": "slowDuration",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 52,
+        "material": 110,
+        "food": 110
+      },
+      "costGrowth": 1.42,
+      "halfCap": true
+    },
+    {
+      "id": "r_stundur",
+      "name": "Concussion",
+      "label": "STUN",
+      "description": "+10% Stun duration per level",
+      "branch": "curses",
+      "tier": 2,
+      "buffKey": "stunDuration",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 52,
+        "material": 110,
+        "food": 110
+      },
+      "costGrowth": 1.42,
+      "halfCap": true
+    },
+    {
+      "id": "r_bleed",
+      "name": "Serrated Tips",
+      "label": "BLEED",
+      "description": "+10% Bleed damage per level",
+      "branch": "curses",
+      "tier": 2,
+      "buffKey": "bleedDamage",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 52,
+        "material": 110,
+        "food": 110
+      },
+      "costGrowth": 1.42,
+      "halfCap": true
+    },
+    {
+      "id": "r_burn",
+      "name": "Wildfire",
+      "label": "BURN",
+      "description": "+10% Burn damage per level",
+      "branch": "curses",
+      "tier": 2,
+      "buffKey": "burnDamage",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 52,
+        "material": 110,
+        "food": 110
+      },
+      "costGrowth": 1.42,
+      "halfCap": true
     }
   ]
 }

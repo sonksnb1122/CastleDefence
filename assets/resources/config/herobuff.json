@@ -224,6 +224,111 @@
       "key": "skillCharges",
       "name": "Hero skill uses",
       "unit": ""
+    },
+    {
+      "key": "damageFlat",
+      "name": "Tower base damage",
+      "unit": ""
+    },
+    {
+      "key": "attackSpeedFlat",
+      "name": "Tower attacks per second",
+      "unit": ""
+    },
+    {
+      "key": "attackRangeFlat",
+      "name": "Tower attack range",
+      "unit": " px"
+    },
+    {
+      "key": "foodProductionFlat",
+      "name": "Food per building",
+      "unit": ""
+    },
+    {
+      "key": "materialProductionFlat",
+      "name": "Material per building",
+      "unit": ""
+    },
+    {
+      "key": "goldProductionFlat",
+      "name": "Gold per building",
+      "unit": ""
+    },
+    {
+      "key": "killGoldFlat",
+      "name": "Gold per kill",
+      "unit": ""
+    },
+    {
+      "key": "wallHpFlat",
+      "name": "Wall HP",
+      "unit": ""
+    },
+    {
+      "key": "wallRegen",
+      "name": "Wall HP recovered after a wave",
+      "unit": "%"
+    },
+    {
+      "key": "wallRepairCostReduce",
+      "name": "Wall repair cost reduction",
+      "unit": "%"
+    },
+    {
+      "key": "heroSkillUnlock",
+      "name": "Hero skills unlocked",
+      "unit": ""
+    },
+    {
+      "key": "heroStarUnlock",
+      "name": "Hero promotion unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:piercing_bolt",
+      "name": "Piercing Bolt unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:bleeding_bolt",
+      "name": "Bleeding Bolt unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:hunters_mark",
+      "name": "Hunter's Mark unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:frost_explosion",
+      "name": "Frost Explosion unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:chain_lightning",
+      "name": "Chain Lightning unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:arcane_vulnerability",
+      "name": "Arcane Vulnerability unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:shockwave",
+      "name": "Shockwave unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:heavy_impact",
+      "name": "Heavy Impact unlocked",
+      "unit": ""
+    },
+    {
+      "key": "effectUnlock:armor_break",
+      "name": "Armor Break unlocked",
+      "unit": ""
     }
   ]
 }

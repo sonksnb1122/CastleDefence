@@ -13,7 +13,8 @@ import { LoadingScreen } from './views/LoadingScreen';
 import { MainMenuScreen } from './views/MainMenuScreen';
 import { OutCastleScreen } from './views/OutCastleScreen';
 import { Display, DisplayKey } from './core/Display';
-import { IOverlay, PauseOverlay, ResearchOverlay, SaveLoadOverlay, SettingsOverlay } from './views/Overlays';
+import { IOverlay, PauseOverlay, SaveLoadOverlay, SettingsOverlay } from './views/Overlays';
+import { ResearchOverlay } from './views/ResearchTree';
 
 const { ccclass } = _decorator;
 
@@ -36,7 +37,7 @@ const PREFABS = [
     'screens/Loading', 'screens/MainMenu', 'screens/InCastle', 'screens/OutCastle', 'screens/HeroRecruit', 'screens/Trade',
     'popups/Pause', 'popups/Settings', 'popups/SaveLoad', 'popups/Research', 'popups/Confirm', 'popups/Message',
     'popups/Info', 'popups/Build', 'popups/NewHero',
-    'items/TopBar', 'items/DefTab', 'items/SaveSlot', 'items/ResearchRow', 'items/BuildRow', 'items/HeroCard',
+    'items/TopBar', 'items/DefTab', 'items/SaveSlot', 'items/BuildRow', 'items/HeroCard',
     'items/LevelTag', 'items/ArcButton', 'items/Toast', 'items/TowerButton', 'items/SkillCard',
 ];
 const SAVE_KEY = 'castle_defense_save_';
@@ -46,7 +47,7 @@ const SETTINGS_KEY = 'castle_defense_settings';
  * (tools/harness/prog.js, "full" variant: all research, heroes and Market trades). They are listed in Load Game and cannot be deleted.
  * Temporary, for testing: set to [] to hide them.
  */
-const TEST_SAVES = [30, 50, 70, 90, 100, 110];
+const TEST_SAVES = [30, 50, 70, 90, 100, 110, 130];
 
 interface IScreen { root: Node; update(dt: number): void; destroy(): void; }
 

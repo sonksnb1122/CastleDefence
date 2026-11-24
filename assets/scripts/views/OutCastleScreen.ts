@@ -230,12 +230,12 @@ export class OutCastleScreen implements CombatEvents {
             `Crit: ${r1(s.critRate)}%  x${r1(s.critDamage)}%`,
             `Target mode: ${unit.save.targetMode}`,
         ];
-        // Special effects: chance (from research at Lab Lv 3) and what each one does.
+        // Special effects: unlocked and powered by the Tower Effects branch of the research tree.
         const effects = unit.effectInfo();
         if (effects.length) {
             lines.push('', 'Special effects:');
             for (const e of effects) {
-                const state = e.chance > 0 ? `${e.chance}% chance` : 'locked - research it at Research Lab Lv 3';
+                const state = e.chance >= 0 ? `${e.chance}% chance` : 'locked - unlock it in the research tree (Tower Effects, Lab Lv 2)';
                 lines.push(`- ${e.name} (${state}): ${e.description}`);
             }
         }
@@ -456,6 +456,8 @@ export class OutCastleScreen implements CombatEvents {
             if (v.placeholder) v.placeholder.string = hero.name.split(' ')[0];
             const a = PrefabUi.size(v.art!);
             const art = new CardArt(v.art!, hero.imagePath, a.width + 4, a.height + 4);
+            const stars = this.rm.heroes.stars(c.heroId);
+            if (stars !== hero.stars) art.stars = stars;   // promoted: the new star bar covers the printed one
             art.setWanted(true);
             v.skillName!.string = skillName(c.skillId);
             const card = { heroId: c.heroId, skillId: c.skillId, v, art, x, y };

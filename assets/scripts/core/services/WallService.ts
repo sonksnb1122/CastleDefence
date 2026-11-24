@@ -7,7 +7,7 @@ export class WallService {
     constructor(private rm: ResourceMgr) {}
 
     maxHp(): number {
-        return Math.floor(ConfigMgr.building.wall.hp * (1 + this.rm.buff('wallHp') / 100));
+        return Math.floor((ConfigMgr.building.wall.hp + this.rm.buff('wallHpFlat')) * (1 + this.rm.buff('wallHp') / 100));
     }
 
     def(type: DamageType): number {
@@ -30,9 +30,18 @@ export class WallService {
         // Repairs get more expensive with every Base level (wall.repairCostMul, one value per level).
         const muls: number[] = wall.repairCostMul || [];
         const mul = muls.length ? muls[Math.min(muls.length, this.rm.baseLevel) - 1] : 1;
+        // Research "Masonry Guild" makes repairs cheaper (at most -90%).
+        const discount = 1 - Math.min(90, this.rm.buff('wallRepairCostReduce')) / 100;
         const out: Cost = {};
-        for (const k in per) out[k] = Math.ceil(missing * per[k] * mul);
+        for (const k in per) out[k] = Math.ceil(missing * per[k] * mul * discount);
         return out;
+    }
+
+    /** Research "Self-Mending Stone": the wall gets back a part of its max HP after each wave. */
+    regenAfterWave() {
+        const pct = this.rm.buff('wallRegen');
+        const d = this.rm.data;
+        if (pct > 0 && d.wallHp > 0) d.wallHp = Math.min(this.maxHp(), d.wallHp + Math.floor(this.maxHp() * pct / 100));
     }
 
     repair(): string | null {

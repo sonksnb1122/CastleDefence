@@ -296,7 +296,7 @@ export class InCastleScreen {
         if (Object.keys(prod).length > 0) lines.push({ label: 'Produces after each wave:', cost: prod });
         if (lv.towerLimit) lines.push(`Defense tower limit: ${lv.towerLimit}`);
         if (lv.heroLimit) lines.push(`Hero limit: ${lv.heroLimit}`);
-        if (lv.maxTechLevel) lines.push(`Max technology level: ${lv.maxTechLevel}`);
+        if (b.id === 'research') lines.push(`Opens research tree tier ${Math.min(3, b.level)}` + (b.level < 3 ? ' (half levels for some tier 2 nodes until Lv 3)' : ''));
         const cost = this.rm.buildingUpgradeCost(b);
         lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');
         if (b.id === 'base') {

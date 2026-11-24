@@ -306,12 +306,16 @@ export class ConfigMgr {
         }
         if (uniqueIds('research.json', ConfigMgr.research.techs, 'techs')) {
             for (const t of ConfigMgr.research.techs) {
-                // maxLevel 0 = endless technology (needs "requires").
+                // maxLevel 0 = endless technology. Research tree: branch, tier (1-3, 4 = endless row) and parent node.
                 num('research.json', t, 'valuePerLevel', t.id); num('research.json', t, 'maxLevel', t.id, 0); num('research.json', t, 'costGrowth', t.id, 1);
                 cost('research.json', t.baseCost, t.id);
-                for (const id of ((t.requires && t.requires.techsMaxed) || [])) {
-                    const req = ConfigMgr.techDef(id);
-                    if (!req || !req.maxLevel) E.push(`research.json: tech "${t.id}" requires unknown or endless tech "${id}"`);
+                const branches: any[] = ConfigMgr.research.branches || [];
+                if (!branches.some(b => b.id === t.branch)) E.push(`research.json: tech "${t.id}" has unknown branch "${t.branch}"`);
+                if (!(t.tier >= 1 && t.tier <= 4)) E.push(`research.json: tech "${t.id}" needs "tier" 1 to 4`);
+                if (t.parent) {
+                    const p = ConfigMgr.techDef(t.parent);
+                    if (!p || !p.maxLevel) E.push(`research.json: tech "${t.id}" has an unknown or endless parent "${t.parent}"`);
+                    else if (p.branch !== t.branch || p.tier > t.tier) E.push(`research.json: tech "${t.id}": parent "${t.parent}" must be in the same branch and not in a lower tier`);
                 }
                 if (!buffKeys[t.buffKey]) E.push(`research.json: tech "${t.id}" uses unknown buff key "${t.buffKey}"`);
             }

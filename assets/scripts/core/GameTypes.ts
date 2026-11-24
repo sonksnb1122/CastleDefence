@@ -7,7 +7,8 @@ export type GameState = 'Preparation' | 'Combat';
 export const RESOURCE_KEYS = ['food', 'material', 'gold', 'core'];
 /** Resources that the Market trades (Energy Core is not traded). */
 export const TRADE_KEYS = ['food', 'material', 'gold'];
-export const SAVE_VERSION = 4;
+/** 5: research tree (old saves get their technologies moved into the tree, see SaveCodec). */
+export const SAVE_VERSION = 5;
 
 export interface BuffEntry { key: string; value: number; towerId?: string; }
 
@@ -47,6 +48,8 @@ export interface SaveData {
     skillUses?: { [heroId: string]: number };
     /** Skill books bought in the Market (skill id -> wave): a bought skill is never offered again. */
     boughtBooks?: { [skillId: string]: number };
+    /** Stars added to each hero by promotions (research "Ascension"). */
+    heroStars?: { [heroId: string]: number };
 }
 
 /** Result of one damage calculation (see CombatManager). */

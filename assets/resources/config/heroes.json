@@ -292,6 +292,33 @@
         "bottom": 0
       },
       "scale": 1.36
+    },
+    "starTab5": {
+      "path": "sprites/ui/star_tab_5",
+      "width": 296,
+      "height": 68
     }
+  },
+  "promotion": {
+    "_comment": "Cost to promote a hero from N stars straight to 5 stars (research \"Ascension\" needed). The hero gets 1 random buff per star gained: 2 from 3 stars, 1 from 4 stars.",
+    "3": {
+      "gold": 28000,
+      "material": 21000,
+      "food": 21000,
+      "core": 6
+    },
+    "4": {
+      "gold": 20000,
+      "material": 15000,
+      "food": 15000,
+      "core": 4
+    }
+  },
+  "starTab": {
+    "_comment": "Star bar drawn over the top of a promoted hero card (in card cell pixels: x, y from the top-left, width, height).",
+    "x": 70,
+    "y": 0,
+    "width": 148,
+    "height": 34
   }
 }

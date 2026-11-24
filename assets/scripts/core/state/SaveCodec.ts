@@ -79,6 +79,7 @@ export class SaveCodec {
             books: {},
             skillUses: {},
             boughtBooks: {},
+            heroStars: {},
         };
         // Skill cooldowns: only skills that still exist in skills.json.
         const ready = raw.skillReady && typeof raw.skillReady === 'object' ? raw.skillReady : {};
@@ -143,11 +144,49 @@ export class SaveCodec {
             const r = rolls[h.id];
             if (Array.isArray(r) && r.every((e: any) => e && typeof e.key === 'string' && typeof e.value === 'number')) d.heroRolls[h.id] = r;
         }
-        const research = raw.research || {};
+        const stars = raw.heroStars && typeof raw.heroStars === 'object' ? raw.heroStars : {};
+        for (const h in stars) {
+            const def = ConfigMgr.heroDef(h);
+            if (def) { const k = Math.min(5 - def.stars, Math.floor(n(stars[h], 0))); if (k > 0) d.heroStars![h] = k; }
+        }
+        let research = raw.research || {};
+        if (raw.saveVersion < 5) research = SaveCodec.migrateResearch(research, d);
         for (const t of ConfigMgr.research.techs) {
             const lv = research[t.id];
             if (typeof lv === 'number' && lv > 0) d.research[t.id] = t.maxLevel ? Math.min(t.maxLevel, Math.floor(lv)) : Math.floor(lv);
         }
         return { data: d };
+    }
+
+    /**
+     * Saves made before the research tree (version < 5) keep their technology levels:
+     *  - effect research up to Lv 10 is split into the tier 2 rate node (5 levels) and the tier 3 one,
+     *    and the effect's "Unlock" node is given;
+     *  - every node with a level gets its parents at max level (the tree path is opened for free);
+     *  - "Hero Scholarship" is given when the Research Lab is Lv 2 or more (skills could be learned before).
+     */
+    static migrateResearch(old: any, d: SaveData): { [id: string]: number } {
+        const out: { [id: string]: number } = {};
+        for (const id in old) if (typeof old[id] === 'number' && old[id] > 0) out[id] = Math.floor(old[id]);
+        for (const id in old) {
+            const m = /^r_fx_(.+)$/.exec(id);
+            if (!m || !(out[id] > 0) || !ConfigMgr.techDef('r_fxu_' + m[1])) continue;
+            const lv = out[id];
+            out['r_fxu_' + m[1]] = 1;
+            out[id] = Math.min(5, lv);
+            if (lv > 5) out[id + '_2'] = lv - 5;
+        }
+        const lab = d.buildings.filter(b => b.id === 'research').reduce((a, b) => Math.max(a, b.level), 0);
+        if (lab >= 2 && ConfigMgr.techDef('r_hero_skill')) out['r_hero_skill'] = 1;
+        for (const id of Object.keys(out)) {
+            let t = ConfigMgr.techDef(id);
+            while (t && t.parent) {
+                const p = ConfigMgr.techDef(t.parent);
+                if (!p) break;
+                out[p.id] = Math.max(out[p.id] || 0, p.maxLevel);
+                t = p;
+            }
+        }
+        return out;
     }
 }

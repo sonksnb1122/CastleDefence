@@ -66,7 +66,7 @@ Destroying a building refunds 50% of its build cost.
 | **Base** | 120 / 250 / 900 gold | 1 (fixed in the centre) | Raises the tower limit (10 / 20 / 30), the hero limit (3 / 7 / 12), the number of other buildings and the max tower level. Upgrade: 900 gold + 500 material + 400 food, then 4000 gold + 6000 material + 6000 food. |
 | **Farm** | 95 / 150 / 495 food | 5 per Base level | Build: 60 gold + 100 material |
 | **Lumber & Quarry** | 115 / 180 / 480 material | 5 per Base level | Build: 80 gold + 80 food |
-| **Research Lab** | nothing | 1 | Opens research. Max technology level is 2 / 5 / 10 at Lab Lv 1 / 2 / 3. Lab Lv 3 also unlocks the tower special effects, Smart Targeting and the endless technologies. |
+| **Research Lab** | nothing | 1 | Opens the research tree. Lab Lv 1 / 2 / 3 opens tier 1 / 2 / 3 of the tree (see [Research](#research)). |
 
 ---
 
@@ -110,11 +110,12 @@ The Crossbow is strong early on. The Catapult starts weak but becomes the main d
   living enemy that is not already doomed (or, when all are, to the nearest one).
 
 ### Special effects
-Every tower has three special effects. They are unlocked and made more likely by research
-at Research Lab Lv 3: each research step adds +5% chance, up to 50%. The Crystal gets twice
-the chance at level 3, so a fully researched Crystal reaches 100%.
-*Arcane Mastery* (and hero effect-chance buffs) add their points on top, above the 50% limit:
-with +25% every researched effect reaches 75% (100% at most).
+Every tower has three special effects. An effect does nothing until its **Unlock** technology is researched
+(Tower Effects branch, Research Lab Lv 2). Its chance then comes from two rate technologies: +5% per level,
+5 levels in tier 2 and 5 more in tier 3, up to 50%. The Crystal gets twice the chance at level 3, so a fully
+researched Crystal reaches 100%.
+*Arcane Mastery* (and hero effect-chance buffs) add their points on top of every unlocked effect, above the 50%
+limit: with +25% every researched effect reaches 75% (100% at most).
 The tower's *Info* window lists its three effects with their current chance and what they do
 (the texts are the `"description"` fields of `effects.json`).
 
@@ -232,6 +233,14 @@ Heroes are recruited at the Base. Each recruit is a random pick among the heroes
   - *Siege Commander*
   - *Treasurer*
 - **Limits:** the Base level limits how many heroes you can own (3 / 7 / 12).
+- **Hero window:** tap a hero card to open it: animated card, stars, buffs and learned skills with their
+  description. Two icon buttons: *Learn skill* and *Promote*. A locked button says why when tapped. Tap outside
+  the window to close it.
+- **Promotion** (research *Ascension*, Research Lab Lv 3): a hero below 5 stars goes straight to 5 stars and gets
+  1 random buff it does not have yet per star gained: **2 buffs from 3 stars, 1 buff from 4 stars**. Cost (`heroes.json`
+  "promotion"): from 3 stars 28,000 gold + 21,000 material + 21,000 food + 6 Energy Cores; from 4 stars 20,000 gold
+  + 15,000 material + 15,000 food + 4 Energy Cores. A promoted hero gets the 5-star skill slots (1 active + 1 passive),
+  and the 5-star bar is drawn over the stars printed on its card (`sprites/ui/star_tab_5`).
 - **Price:** each recruit costs 600 gold + 600 material + 600 food, plus 400 of each per hero you already own.
 
 The buffs of every owned hero are permanent and stack with research.
@@ -253,20 +262,32 @@ The Base also opens the **Market** (*Market* button), a screen to trade one reso
 
 ## Research
 
-The Research Lab has about 35 technologies. Each level costs more than the last, and the Lab
-level limits how high a technology can go (2 / 5 / 10).
-*Aerodynamics* (projectile speed, +5% per level) goes up to level 20: twice the Lab limit (`"labCapMul": 2`).
-It does not add damage, so it stays cheap (all 20 levels cost about 3.7k gold and 7.9k material and food).
+Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from top to bottom.
+- **Tier N needs Research Lab Lv N.**
+- **A node needs its parent** (the node above it in the same branch) **at max level.**
+- Some tier 2 nodes give only **half of their levels** until the Lab reaches Lv 3 (`"halfCap"`).
+  *Armor Piercing* and *Spell Piercing* keep their old limits: 2 / 5 / 10 levels at Lab Lv 1 / 2 / 3 (`"labCaps"`).
+- The tree window: drag to move around. Tap a node: a confirm window shows what it does, its level and its
+  cost (*Research* / *Cancel*); a locked or finished node shows an info window with the reason. Lines light up in the branch color once the parent is done; locked nodes are grey. Node pictures are
+  short texts for now (`"label"`).
 
-| Group | Technologies |
-|---|---|
-| Towers | Damage, Attack speed, Range, Explosion radius, Crit rate, Crit damage, Projectile speed |
-| Economy | Food, Material and Gold production, Gold from kills |
-| Wall | Wall HP, Wall defense |
-| Enemies | Armor Piercing (physical def), Spell Piercing (magic def), Weakening Hex (damage), Withering Curse (HP) |
-| Effects (Lab Lv 3) | One technology per tower special effect (9), Arcane Mastery (all effects), longer Slow / Stun, stronger Bleed / Burn |
-| Endless (Lab Lv 3) | *Masterwork Ammunition* (damage) and *Living Stone* (wall HP) have no max level. They open once the normal version is maxed. |
-| Smart Targeting (Lab Lv 3) | A very expensive one-time technology that adds the *Smart* target mode. |
+| Branch | Tier 1 (Lab Lv 1) | Tier 2 (Lab Lv 2) | Tier 3 (Lab Lv 3) |
+|---|---|---|---|
+| Offense | Flat bonuses: +2 damage, +0.01 attacks/s, +4 px range (10 levels each); Armor / Spell Piercing | Damage %, Attack speed %, Range %, Crit rate, Explosion radius | Aerodynamics, Smart Targeting, Crit damage |
+| Economy | +5 food / material / gold per building per wave, +1 gold per kill (4 levels each) | Food / material / gold production %, gold from kills % | One more % node for each, Scholarship (-4% research cost per level) |
+| Fortification | +100 wall HP per level (5 levels) | Wall HP %, Wall defense (half levels) | Self-Mending Stone (+2% max HP back after each wave), Masonry Guild (-8% repair cost) |
+| Tower Effects | - | Unlock each of the 9 effects, then its first 5 rate levels | 5 more rate levels per effect, Arcane Mastery |
+| Heroes | - | Hero Scholarship (heroes can learn skills) | Ascension (hero promotion), Battle Tactics, Twin Cast, Arcane Amplifier |
+| Curses | - | Weakening Hex, Withering Curse, Slow / Stun duration, Bleed / Burn damage (half levels) | (full levels) |
+
+**Endless row** (Research Lab Lv 3, at the bottom of the tree): *Masterwork Ammunition* (+5% damage per level, under
+the Damage % node) and *Living Stone* (+5% wall HP per level, under the Wall HP % node) have no max level.
+
+Flat bonuses are added to the base value before the % bonuses.
+
+**Old saves** (before the tree) keep their technology levels: every node with a level gets its parents at max
+level for free, effect research is split into the Unlock node + the two rate nodes, and *Hero Scholarship* is
+given when the Research Lab is Lv 2 or more.
 
 ---
 
@@ -321,14 +342,16 @@ left, this wave's offers on the right. Every wave brings a new random choice of 
 (`skills.json` "bookShop": price = 2000 x (1 + 5% per wave), +/- 20%). A book can teach any of the active
 skills above or a passive skill.
 
-**Learning:** in the hero recruitment, owned heroes with a free skill slot show a **+** at the top right of
-their card. It opens a popup listing the books the hero can learn; learning costs **1 Energy Core** and
+**Learning** (research *Hero Scholarship*, Research Lab Lv 2): in the hero recruitment, owned heroes with a free
+skill slot can learn from the *Learn skill* button of the hero window (tap the hero card). It opens
+a popup listing the books the hero can learn; learning costs **1 Energy Core** and
 uses up the book. 5-star heroes learn 1 active + 1 passive skill, the other heroes 1 skill (active or
 passive). Learned skills are listed on the hero card.
 
 **In battle:** when a wave starts, the tower build buttons are replaced by small cards of the heroes that
 learned an active skill. Tap a card to highlight it and read its skill on the right side of the screen;
-drag it up out of the card bar to cast the skill (targeted skills land where the card is released).
+drag it up out of the card bar to cast the skill. For an area skill the card goes back to its place and the
+player taps the enemy path to choose where it lands (tap the card again to cancel).
 An active hero skill can be used **once every 5 waves**. Passive skills (`skills.json` "passives") give
 their buffs permanently, like hero buffs (the passive list is a placeholder for now).
 
@@ -445,7 +468,7 @@ assets/
   - `enemy.json`: enemies, resistances, abilities
   - `waves.json`: wave size, HP curve, bosses, milestones, special waves, defense growth
   - `heroes.json` and `herobuff.json`: hero pool, star weights, buff ranges
-  - `research.json`: technologies, costs, requirements
+  - `research.json`: research tree (branches, tiers, technologies with their parent node, costs)
   - `effects.json`: status effects and tower special effects
 
   Configs are validated when the game starts: errors stop the loading screen and are listed,

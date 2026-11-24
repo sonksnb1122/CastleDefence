@@ -107,18 +107,25 @@ export class TowerUnit {
         if (this.rangeNode.active) this.showRange(true);
     }
 
+    /** Damage of the tower level plus the flat research bonus (before the % buffs). */
+    baseDamage(): number { return this.lv.damage + (this.demo ? 0 : ResourceMgr.inst.buff('damageFlat', this.save.id)); }
+
+    /** An effect works only once its "Unlock" technology is researched. */
+    effectUnlocked(id: string): boolean { return !this.demo && ResourceMgr.inst.buff('effectUnlock:' + id) > 0; }
+
     /** Stats with research and hero buffs applied. */
     stats(): TowerStats {
         const id = this.save.id;
         const rm = { buff: (k: string, t?: string) => (this.demo ? 0 : ResourceMgr.inst.buff(k, t)) };
         const sk = this.demo ? { damage: 1, attackSpeed: 1 } : TowerUnit.skillMul;
-        const attackSpeed = this.lv.attackSpeed * (1 + rm.buff('attackSpeed', id) / 100) * sk.attackSpeed;
+        // Flat research bonuses (tier 1) are added to the level values, then the % buffs apply.
+        const attackSpeed = (this.lv.attackSpeed + rm.buff('attackSpeedFlat', id)) * (1 + rm.buff('attackSpeed', id) / 100) * sk.attackSpeed;
         const explosionBuff = this.def.explosionBuffable ? rm.buff('explosionRange', id) : 0;
         return {
-            damage: this.lv.damage * (1 + rm.buff('damage', id) / 100) * sk.damage,
+            damage: this.baseDamage() * (1 + rm.buff('damage', id) / 100) * sk.damage,
             attackSpeed,
             interval: 1 / attackSpeed,
-            range: this.lv.attackRange * (1 + rm.buff('attackRange', id) / 100),
+            range: (this.lv.attackRange + rm.buff('attackRangeFlat', id)) * (1 + rm.buff('attackRange', id) / 100),
             explosion: this.lv.explosionRange * (1 + explosionBuff / 100),
             critRate: Math.max(0, Math.min(100, this.lv.critRate + rm.buff('critRate', id))),
             critDamage: this.lv.critDamage + rm.buff('critDamage', id),
@@ -147,7 +154,7 @@ export class TowerUnit {
     }
 
     /**
-     * The tower's special effects for the info window: chance in % (0 = not researched yet),
+     * The tower's special effects for the info window: chance in % (-1 = not unlocked yet),
      * with the research bonus and the effect-chance buff, as in combat.
      */
     effectInfo(): Array<{ name: string; description: string; chance: number }> {
@@ -156,13 +163,12 @@ export class TowerUnit {
         for (const e of (this.lv.effects || [])) {
             const def = ConfigMgr.towerEffectDef(e.id);
             if (!def) continue;
+            if (!this.effectUnlocked(e.id)) { out.push({ name: def.name, description: def.description || '', chance: -1 }); continue; }
             const researched = rm.buff('effect:' + e.id);
             const mul = this.lv.effectChanceMul || 1;
-            let base = 0, max = 100;
-            if (researched > 0) { base = researched * mul; max = (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul; }
-            else if (e.enabled) { base = def.chance; max = def.maxChance || 100; }
+            const base = researched * mul, max = (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul;
             // Same rule as CombatManager.explode: the effect-chance buff adds points above the cap.
-            const chance = base > 0 ? Math.min(100, Math.min(max, base) + rm.buff('effectChance', this.save.id)) : 0;
+            const chance = Math.min(100, Math.min(max, base) + rm.buff('effectChance', this.save.id));
             out.push({ name: def.name, description: def.description || '', chance: Math.min(100, Math.round(chance)) });
         }
         return out;
@@ -175,16 +181,17 @@ export class TowerUnit {
         for (const e of (this.lv.effects || [])) {
             const def = ConfigMgr.towerEffectDef(e.id);
             if (!def) continue;
-            // Effect research (Lab Lv 3) turns an effect on with its own chance: +5% per level, max 50%.
-            const researched = this.demo ? 0 : ResourceMgr.inst.buff('effect:' + e.id);
+            // The "Unlock" technology turns an effect on; its chance comes from the rate technologies
+            // (+5% per level, max 50%) and the effect-chance buff.
+            if (!this.effectUnlocked(e.id)) continue;
+            const researched = ResourceMgr.inst.buff('effect:' + e.id);
             // effectChanceMul (per tower level, e.g. Crystal Lv 3 x2) multiplies the chance and its cap.
             const mul = this.lv.effectChanceMul || 1;
-            if (researched > 0) effects.push(Object.assign({}, def, { chance: researched * mul, maxChance: (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul }));
-            else if (e.enabled) effects.push(def);
+            effects.push(Object.assign({}, def, { unlocked: true, chance: researched * mul, maxChance: (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul }));
         }
         return {
             towerUid: this.save.uid, towerId: this.save.id, level: this.save.level,
-            damage: this.lv.damage, damageTypes: this.def.damageTypes,
+            damage: this.baseDamage(), damageTypes: this.def.damageTypes,
             explosionRange: s.explosion, critRate: this.lv.critRate, critDamage: this.lv.critDamage,
             effects, isAoe: !!this.def.explosionBuffable,
         } as ShotInfo;

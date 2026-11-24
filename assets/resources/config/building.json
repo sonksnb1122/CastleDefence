@@ -343,7 +343,9 @@
     "act_recruit": "sprites/ui/icon_act_recruit",
     "act_trade": "sprites/ui/icon_act_trade",
     "act_destroy": "sprites/ui/icon_act_destroy",
-    "act_research": "sprites/ui/icon_act_research"
+    "act_research": "sprites/ui/icon_act_research",
+    "learn_skill": "sprites/ui/icon_learn_skill",
+    "star_up": "sprites/ui/icon_star_up"
   },
   "uiStyle": {
     "buttons": {
