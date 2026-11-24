@@ -1,5 +1,6 @@
 import { Node, Sprite, Graphics, Label, Color, UITransform } from 'cc';
 import { Assets } from '../core/Assets';
+import { ConfigMgr } from '../core/ConfigMgr';
 import { DamageType } from '../core/GameTypes';
 import { hex, mk, sprite, text } from '../views/common/UIKit';
 import { HpBar } from './HpBar';
@@ -102,7 +103,7 @@ export class Enemy {
         this.goldReward = stats.goldReward;
         this.physicDef = stats.physicDef;
         this.magicDef = stats.magicDef;
-        this.alive = true; this.removed = false; this.reachedWall = false; this.rewarded = false;
+        this.alive = true; this.removed = false; this.reachedWall = false; this.rewarded = false; this.pushTime = 0;
         this.statuses.length = 0;
         this.pendingDamage = 0;
         this.waveResist = stats.statusResist || { types: [], value: 0 };
@@ -284,6 +285,30 @@ export class Enemy {
         return v;
     }
 
+    // Push from a skill (Air Burst knock-back): velocity in px/s for pushTime seconds, even while stunned.
+    private pushVX = 0;
+    private pushVY = 0;
+    private pushTime = 0;
+
+    /** Moves the enemy by (dx, dy) over `time` seconds (skills). */
+    push(dx: number, dy: number, time: number) {
+        if (!this.alive) return;
+        const t = Math.max(0.01, time);
+        this.pushVX = dx / t; this.pushVY = dy / t; this.pushTime = t;
+    }
+
+    /**
+     * Stun from a skill (Crater Impact): ignores resistance and stun immunity, and the duration is
+     * fixed. Tower stuns cannot shorten it (the immunity covers it).
+     */
+    forceStun(def: any, seconds: number) {
+        if (!this.alive || !def) return;
+        this.statuses = this.statuses.filter(s => s.def.type !== 'stun');
+        this.statuses.push({ def, remaining: seconds, value: def.value || 0, stacks: 1, tick: 0, sourceUid: 0 });
+        this.immune[def.type] = seconds + (def.immunityAfter || 0);
+        this.refreshStatusLabel();
+    }
+
     /** Display.effects when the status icons were last drawn (redrawn when the setting changes). */
     private shownEffects = true;
 
@@ -437,6 +462,13 @@ export class Enemy {
         if (this.stunned) speed = 0;
         speed = Math.max(0, speed);
         this.x -= speed * dt;
+        if (this.pushTime > 0) {
+            const t = Math.min(dt, this.pushTime);
+            this.pushTime -= t;
+            const bf = ConfigMgr.tower.battlefield;
+            this.x = Math.min(bf.spawnX, this.x + this.pushVX * t);
+            this.y = Math.max(bf.enemyLaneY[0], Math.min(bf.enemyLaneY[1], this.y + this.pushVY * t));
+        }
         this.node.setPosition(this.x, this.y, 0);
         if (speed > 0) this.anim.update(dt);
 

@@ -31,6 +31,9 @@ export interface TowerStats { damage: number; attackSpeed: number; interval: num
  * The weapon turns toward its target and only fires once it is aligned.
  */
 export class TowerUnit {
+    /** Multipliers of every tower while a skill buff runs (Angel Feather: damage, Buff Arrow: attack speed). */
+    static skillMul = { damage: 1, attackSpeed: 1 };
+
     node: Node;
     def: any;
     lv: any;
@@ -108,10 +111,11 @@ export class TowerUnit {
     stats(): TowerStats {
         const id = this.save.id;
         const rm = { buff: (k: string, t?: string) => (this.demo ? 0 : ResourceMgr.inst.buff(k, t)) };
-        const attackSpeed = this.lv.attackSpeed * (1 + rm.buff('attackSpeed', id) / 100);
+        const sk = this.demo ? { damage: 1, attackSpeed: 1 } : TowerUnit.skillMul;
+        const attackSpeed = this.lv.attackSpeed * (1 + rm.buff('attackSpeed', id) / 100) * sk.attackSpeed;
         const explosionBuff = this.def.explosionBuffable ? rm.buff('explosionRange', id) : 0;
         return {
-            damage: this.lv.damage * (1 + rm.buff('damage', id) / 100),
+            damage: this.lv.damage * (1 + rm.buff('damage', id) / 100) * sk.damage,
             attackSpeed,
             interval: 1 / attackSpeed,
             range: this.lv.attackRange * (1 + rm.buff('attackRange', id) / 100),

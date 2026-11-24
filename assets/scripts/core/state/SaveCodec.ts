@@ -74,7 +74,11 @@ export class SaveCodec {
             heroRolls: {},
             research: {},
             marketSeed: Math.floor(n(raw.marketSeed, Math.floor(Math.random() * 1e9))),
+            skillReady: {},
         };
+        // Skill cooldowns: only skills that still exist in skills.json.
+        const ready = raw.skillReady && typeof raw.skillReady === 'object' ? raw.skillReady : {};
+        for (const id in ready) if (ConfigMgr.skillDef(id)) d.skillReady![id] = Math.floor(n(ready[id], 0));
         let maxUid = 1;
         const center = Placement.castleCenter();
         for (const b of (Array.isArray(raw.buildings) ? raw.buildings : [])) {

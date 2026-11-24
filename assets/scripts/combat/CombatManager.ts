@@ -13,6 +13,7 @@ import { SpriteAnim } from './SpriteAnim';
 import { ITowerHost, TowerUnit } from './TowerUnit';
 import { SpawnEntry, WaveMgr, WavePlan } from './WaveMgr';
 import { WaveStats } from './WaveStats';
+import { ISkillHost, SkillManager } from './SkillManager';
 
 /** A short visual effect. `kind` says which pool it goes back to. */
 interface Fx { kind: 'impact' | 'ground' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; }
@@ -39,7 +40,7 @@ interface Reservation { e: Enemy; serial: number; amount: number; }
  * Runs one battle: spawning, targeting, projectiles, explosions and the single
  * damage pipeline every tower goes through.
  */
-export class CombatManager implements IEnemyHost, ITowerHost {
+export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     enemies: Enemy[] = [];
     towers: TowerUnit[] = [];
     projectiles: Projectile[] = [];
@@ -50,6 +51,10 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     goldFromKills = 0;
     /** Statistics of the running (or last) wave, see WaveStats. */
     stats = new WaveStats();
+    /** Active skills (skills.json). */
+    skills: SkillManager;
+    /** Hits on the wall still blocked by Barrier Block (this wave only). */
+    barrierCharges = 0;
 
     // Who is dealing the damage that applyDamage is about to apply (wave statistics).
     private ctxTower = '';
@@ -91,6 +96,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const parent = enemyLayer.parent;
         this.groundFxLayer = mk('GroundFx', parent || fxLayer);
         if (parent) this.groundFxLayer.setSiblingIndex(parent.children.indexOf(enemyLayer));
+        this.skills = new SkillManager(this, fxLayer, this.groundFxLayer);
     }
 
     get enemiesLeft(): number { return this.queue.length + this.enemies.filter(e => e.alive).length; }
@@ -104,6 +110,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         this.goldFromKills = 0;
         this.gameOver = false;
         this.active = true;
+        this.barrierCharges = 0;
         this.stats.reset(wave, this.towers.map(t => ({ id: t.save.id, name: (t.def && t.def.name) || t.save.id })));
     }
 
@@ -139,6 +146,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
     // ------------------------------------------------------------------ update
     update(dt: number) {
+        this.skills.update(dt);
         // Visual effects keep running even between waves.
         for (let i = this.fx.length - 1; i >= 0; i--) {
             const f = this.fx[i];
@@ -191,6 +199,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             this.active = false;
             for (const p of this.projectiles) { p.release(); this.projectilePool.push(p); }
             this.projectiles.length = 0;
+            this.skills.clear();
             this.events.onWaveCleared(this.wave, this.goldFromKills);
         }
     }
@@ -208,6 +217,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         this.fxPool = { impact: [], ground: [], ring: [], line: [] };
         this.queue.length = 0;
         this.stacks.clear();
+        this.skills.clear();
         this.active = false;
     }
 
@@ -466,6 +476,35 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (died) this.onEnemyKilled(e);
     }
 
+    // ------------------------------------------------------------------ skills (ISkillHost)
+    /** Skill damage: true damage (no defense, no crit), counted under "Skills" in the wave statistics. */
+    skillHit(e: Enemy, amount: number, skill: any) {
+        const prevTower = this.ctxTower, prevEffect = this.ctxEffect;
+        this.ctxTower = 'skill';
+        this.ctxEffect = { key: 'skill_' + skill.id, name: skill.name };
+        if (!this.demo) this.stats.tower('skill', 'Skills');
+        this.applyDamage(e, { amount, crit: false, dodged: false });
+        this.ctxTower = prevTower;
+        this.ctxEffect = prevEffect;
+    }
+
+    skillCast(skill: any) {
+        if (this.demo) return;
+        this.stats.tower('skill', 'Skills');
+        this.stats.trigger('skill_' + skill.id, skill.name, 'skill', !!(skill.effect && skill.effect.damagePct));
+    }
+
+    /** Holy Heal: the wall gets its full HP back. */
+    healWall() {
+        if (this.demo) return;
+        const max = this.rm.wallMaxHp();
+        const gain = Math.max(0, max - this.rm.data.wallHp);
+        this.rm.data.wallHp = max;
+        this.rm.notify();
+        this.float('+' + Math.round(gain), this.wallRightX - 20, 470, '#7bd66a', 20, true);
+        this.events.onWallChanged();
+    }
+
     /** Wave statistics of one hit: HP really removed, split between the tower and its effects. */
     private recordHit(e: Enemy, res: DamageResult) {
         const eff = Math.min(res.amount, Math.max(0, e.hp));
@@ -701,6 +740,13 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             this.float('-' + Math.floor(e.wallDamage()), this.wallRightX - 20, e.y + 20, '#ff6b6b', 18, true);
             return;
         }
+        if (this.barrierCharges > 0) {
+            // Barrier Block: the hit is stopped where the enemy touches the wall.
+            this.barrierCharges--;
+            this.skills.barrierHit(e.y);
+            this.float('BLOCK', this.wallRightX + 10, e.y + 20, '#9fe8ff', 16, true);
+            return;
+        }
         const type: DamageType = e.def.damageType === 'magic' ? 'magic' : 'physic';
         const amount = Math.max(0, Math.floor(e.wallDamage() * (1 - this.rm.wallDef(type) / 100)));
         const destroyed = this.rm.damageWall(amount);
@@ -710,6 +756,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (destroyed && !this.gameOver) {
             this.gameOver = true;
             this.active = false;
+            this.skills.clear();
             this.events.onGameOver(this.wave);
         }
     }

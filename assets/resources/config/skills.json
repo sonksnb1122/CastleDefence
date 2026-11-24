@@ -1,0 +1,591 @@
+{
+  "version": 1,
+  "_doc": "Active skills. The skill circle has the diameter of the enemy lane (tower.json battlefield.enemyLaneY); \"areaScale\" is the zone diameter as a share of it. Damage is a share of the max HP of each enemy, \"bossDamageMul\" on bosses. vfx: sheet of cellW x cellH frames (8 per row), \"hitFrame\" = frame when the effect lands; placement: wall | path | area | towers | towerFront | contact; anchorX / anchorY: point of the sheet placed on the target (default 0.5); size: px width of one sprite (area: share of the zone diameter); extra: more sprites at [dx, dy] x zone diameter from the center.",
+  "bossDamageMul": 0.5,
+  "skills": [
+    {
+      "id": "air_burst",
+      "name": "Air Burst",
+      "cooldownWaves": 5,
+      "target": "none",
+      "description": "A blast of wind along the wall throws every enemy back, away from the wall.",
+      "effect": {
+        "type": "knockback",
+        "distance": 260,
+        "time": 0.45
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_airburst",
+        "cellW": 112,
+        "cellH": 111,
+        "frames": 14,
+        "frameTime": 0.05,
+        "hitFrame": 3,
+        "placement": "wall",
+        "size": 120,
+        "spacing": 0.75
+      }
+    },
+    {
+      "id": "crater_impact",
+      "name": "Crater Impact",
+      "cooldownWaves": 8,
+      "target": "none",
+      "description": "Every enemy is stunned for 5 s (even when immune; the time is never reduced) and loses 20% of its max HP.",
+      "effect": {
+        "type": "stunAll",
+        "duration": 5,
+        "damagePct": 20
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_craterimpact",
+        "cellW": 96,
+        "cellH": 96,
+        "frames": 15,
+        "frameTime": 0.06,
+        "hitFrame": 1,
+        "placement": "path",
+        "size": 140
+      }
+    },
+    {
+      "id": "fire_cast",
+      "name": "Fire Cast",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 0.5,
+      "description": "Calls a small fire zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 80
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_firecast",
+        "cellW": 64,
+        "cellH": 64,
+        "frames": 14,
+        "frameTime": 0.05,
+        "hitFrame": 8,
+        "placement": "area",
+        "count": 1,
+        "size": 1.38
+      }
+    },
+    {
+      "id": "ice_cast",
+      "name": "Ice Cast",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 0.5,
+      "description": "Calls a small ice zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 80
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_icecast",
+        "cellW": 64,
+        "cellH": 64,
+        "frames": 15,
+        "frameTime": 0.05,
+        "hitFrame": 8,
+        "placement": "area",
+        "count": 1,
+        "size": 1.38
+      }
+    },
+    {
+      "id": "lightning_cast",
+      "name": "Lightning Cast",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 0.5,
+      "description": "Calls a small lightning zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 80
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_lightningcast",
+        "cellW": 64,
+        "cellH": 64,
+        "frames": 14,
+        "frameTime": 0.05,
+        "hitFrame": 8,
+        "placement": "area",
+        "count": 1,
+        "size": 1.38
+      }
+    },
+    {
+      "id": "shadow_cast",
+      "name": "Shadow Cast",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 0.5,
+      "description": "Calls a small shadow zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 80
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_shadowcast",
+        "cellW": 64,
+        "cellH": 64,
+        "frames": 12,
+        "frameTime": 0.05,
+        "hitFrame": 6,
+        "placement": "area",
+        "count": 1,
+        "size": 1.38
+      }
+    },
+    {
+      "id": "nature_cast",
+      "name": "Nature Cast",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 0.5,
+      "description": "Calls a small nature zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 80
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_naturecast",
+        "cellW": 64,
+        "cellH": 64,
+        "frames": 12,
+        "frameTime": 0.05,
+        "hitFrame": 6,
+        "placement": "area",
+        "count": 1,
+        "size": 1.38
+      }
+    },
+    {
+      "id": "arcane_cast",
+      "name": "Arcane Cast",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 0.5,
+      "description": "Calls a small arcane zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 80
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_arcanecast",
+        "cellW": 64,
+        "cellH": 64,
+        "frames": 12,
+        "frameTime": 0.05,
+        "hitFrame": 6,
+        "placement": "area",
+        "count": 1,
+        "size": 1.38
+      }
+    },
+    {
+      "id": "holy_sword",
+      "name": "Holy Sword Hit",
+      "cooldownWaves": 7,
+      "target": "none",
+      "description": "Holy swords strike the whole battlefield: every enemy loses 40% of its max HP.",
+      "effect": {
+        "type": "globalDamage",
+        "damagePct": 40
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_holyswordhit",
+        "cellW": 104,
+        "cellH": 112,
+        "frames": 13,
+        "frameTime": 0.06,
+        "hitFrame": 3,
+        "placement": "path",
+        "size": 120,
+        "anchorY": 0.05
+      }
+    },
+    {
+      "id": "divine_beam",
+      "name": "Divine Beam",
+      "cooldownWaves": 10,
+      "target": "area",
+      "areaScale": 0.375,
+      "description": "A beam of light falls on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 100
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_divinebeam",
+        "cellW": 48,
+        "cellH": 96,
+        "frames": 18,
+        "frameTime": 0.06,
+        "hitFrame": 4,
+        "placement": "area",
+        "count": 1,
+        "size": 1.55,
+        "anchorY": 0.06
+      }
+    },
+    {
+      "id": "magic_circle_frost",
+      "name": "Frost Circle",
+      "cooldownWaves": 10,
+      "target": "area",
+      "areaScale": 0.375,
+      "description": "A frost magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 100
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_magiccircle_frost",
+        "cellW": 96,
+        "cellH": 576,
+        "frames": 8,
+        "frameTime": 0.09,
+        "hitFrame": 2,
+        "placement": "area",
+        "count": 1,
+        "size": 1.3,
+        "anchorY": 0.139
+      }
+    },
+    {
+      "id": "magic_circle_solar",
+      "name": "Solar Circle",
+      "cooldownWaves": 10,
+      "target": "area",
+      "areaScale": 0.375,
+      "description": "A solar magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 100
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_magiccircle_solar",
+        "cellW": 96,
+        "cellH": 576,
+        "frames": 8,
+        "frameTime": 0.09,
+        "hitFrame": 2,
+        "placement": "area",
+        "count": 1,
+        "size": 1.3,
+        "anchorY": 0.139
+      }
+    },
+    {
+      "id": "magic_circle_spirit",
+      "name": "Spirit Circle",
+      "cooldownWaves": 10,
+      "target": "area",
+      "areaScale": 0.375,
+      "description": "A spirit magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 100
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_magiccircle_spirit",
+        "cellW": 96,
+        "cellH": 576,
+        "frames": 8,
+        "frameTime": 0.09,
+        "hitFrame": 2,
+        "placement": "area",
+        "count": 1,
+        "size": 1.3,
+        "anchorY": 0.139
+      }
+    },
+    {
+      "id": "magic_circle_red",
+      "name": "Crimson Circle",
+      "cooldownWaves": 10,
+      "target": "area",
+      "areaScale": 0.375,
+      "description": "A crimson magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 100
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_magiccircle_red",
+        "cellW": 96,
+        "cellH": 576,
+        "frames": 8,
+        "frameTime": 0.09,
+        "hitFrame": 2,
+        "placement": "area",
+        "count": 1,
+        "size": 1.3,
+        "anchorY": 0.139
+      }
+    },
+    {
+      "id": "meteor_strike",
+      "name": "Meteor Strike",
+      "cooldownWaves": 10,
+      "target": "area",
+      "areaScale": 0.5625,
+      "description": "A meteor crashes on the chosen spot. Enemies in a small zone (9/16 of the skill circle) lose 100% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 100
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_meteorstrike",
+        "cellW": 96,
+        "cellH": 96,
+        "frames": 25,
+        "frameTime": 0.06,
+        "hitFrame": 6,
+        "placement": "area",
+        "count": 1,
+        "size": 1.44,
+        "anchorY": 0.26,
+        "anchorX": 0.44
+      }
+    },
+    {
+      "id": "angel_feather",
+      "name": "Angel Feather",
+      "cooldownWaves": 5,
+      "target": "none",
+      "description": "Doubles the damage of every tower (+100% of the current damage) for 15 s.",
+      "effect": {
+        "type": "towerBuff",
+        "stat": "damage",
+        "mul": 2,
+        "duration": 15
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_angelfeather",
+        "cellW": 56,
+        "cellH": 72,
+        "frames": 20,
+        "frameTime": 0.07,
+        "hitFrame": 0,
+        "placement": "towers",
+        "size": 56,
+        "loop": true
+      }
+    },
+    {
+      "id": "gravity_well",
+      "name": "Gravity Well",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 1,
+      "description": "A gravity well on the chosen spot pulls the enemies of the skill circle to its center, then they lose 20% of their max HP.",
+      "effect": {
+        "type": "gravity",
+        "damagePct": 20,
+        "pullTime": 1.4,
+        "pullSpeed": 220
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_gravitywell",
+        "cellW": 112,
+        "cellH": 100,
+        "frames": 24,
+        "frameTime": 0.06,
+        "hitFrame": 23,
+        "placement": "area",
+        "count": 1,
+        "size": 1.1,
+        "layer": "ground"
+      }
+    },
+    {
+      "id": "fire_tornado",
+      "name": "Fire Tornado",
+      "cooldownWaves": 2,
+      "target": "none",
+      "description": "Fire tornadoes sweep the whole battlefield: every enemy loses 20% of its max HP.",
+      "effect": {
+        "type": "globalDamage",
+        "damagePct": 20
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_firetornado",
+        "cellW": 48,
+        "cellH": 80,
+        "frames": 16,
+        "frameTime": 0.05,
+        "hitFrame": 3,
+        "placement": "path",
+        "size": 80,
+        "anchorY": 0.05
+      }
+    },
+    {
+      "id": "buff_arrow",
+      "name": "Buff Arrow",
+      "cooldownWaves": 5,
+      "target": "none",
+      "description": "Doubles the attack speed of every tower (+100% of the current speed) for 15 s.",
+      "effect": {
+        "type": "towerBuff",
+        "stat": "attackSpeed",
+        "mul": 2,
+        "duration": 15
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_buffarrow",
+        "cellW": 40,
+        "cellH": 48,
+        "frames": 12,
+        "frameTime": 0.07,
+        "hitFrame": 0,
+        "placement": "towerFront",
+        "size": 40,
+        "loop": true
+      }
+    },
+    {
+      "id": "holy_heal",
+      "name": "Holy Heal",
+      "cooldownWaves": 12,
+      "target": "none",
+      "description": "Holy light runs along the wall and restores it to full HP.",
+      "effect": {
+        "type": "healWall"
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_holyheal",
+        "cellW": 64,
+        "cellH": 96,
+        "frames": 20,
+        "frameTime": 0.06,
+        "hitFrame": 9,
+        "placement": "wall",
+        "size": 80,
+        "spacing": 0.8,
+        "anchorY": 0.1
+      }
+    },
+    {
+      "id": "barrier_block",
+      "name": "Barrier Block",
+      "cooldownWaves": 5,
+      "target": "none",
+      "description": "Blocks the next 20 hits on the wall. Only lasts for the wave it is cast in.",
+      "effect": {
+        "type": "barrier",
+        "charges": 20
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_barrierblock",
+        "cellW": 40,
+        "cellH": 56,
+        "frames": 15,
+        "frameTime": 0.05,
+        "hitFrame": 0,
+        "placement": "contact",
+        "size": 48
+      }
+    },
+    {
+      "id": "lightning_strike",
+      "name": "Lightning Strike",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 1,
+      "description": "Lightning bolts rain on the chosen spot. Enemies inside the skill circle lose 50% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 50
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_lightningstrike",
+        "cellW": 96,
+        "cellH": 192,
+        "frames": 16,
+        "frameTime": 0.05,
+        "hitFrame": 2,
+        "placement": "area",
+        "count": 7,
+        "size": 0.45,
+        "anchorY": 0.02,
+        "spread": 0.35,
+        "extra": [
+          [
+            -0.22,
+            -0.4
+          ],
+          [
+            0.22,
+            -0.4
+          ]
+        ]
+      }
+    },
+    {
+      "id": "rock_fall",
+      "name": "Rock Fall",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 1,
+      "description": "Rocks fall on the chosen spot. Enemies inside the skill circle lose 50% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 50
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_rockfall",
+        "cellW": 128,
+        "cellH": 134,
+        "frames": 30,
+        "frameTime": 0.05,
+        "hitFrame": 9,
+        "placement": "area",
+        "count": 7,
+        "size": 0.5,
+        "anchorY": 0.05,
+        "spread": 0.35,
+        "extra": [
+          [
+            -0.22,
+            -0.4
+          ],
+          [
+            0.22,
+            -0.4
+          ]
+        ]
+      }
+    },
+    {
+      "id": "void_rift",
+      "name": "Void Rift",
+      "cooldownWaves": 5,
+      "target": "area",
+      "areaScale": 1,
+      "description": "Void rifts tear open on the chosen spot. Enemies inside the skill circle lose 50% of their max HP.",
+      "effect": {
+        "type": "areaDamage",
+        "damagePct": 50
+      },
+      "vfx": {
+        "path": "sprites/skills/vfx_voidrift",
+        "cellW": 64,
+        "cellH": 94,
+        "frames": 24,
+        "frameTime": 0.05,
+        "hitFrame": 4,
+        "placement": "area",
+        "count": 7,
+        "size": 0.3,
+        "anchorY": 0.5,
+        "spread": 0.35
+      }
+    }
+  ]
+}

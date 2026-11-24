@@ -503,6 +503,10 @@ function outCastleScreen() {
   refs.waveInfo = lab(w, info);
   refs.pauseButton = pauseButton(w, root);
   refs.speedButton = button(w, root, 'SpeedButton', 'x1', -SCREEN_W / 2 + 102, -SCREEN_H / 2 + 30, 56, 40, C.button, 17, 'game', { widget: { left: 74, bottom: 10 } });
+  // Temporary: casts the skills of skills.json one after another (testing); << and >> pick the previous / next one.
+  refs.skillBackButton = button(w, root, 'SkillBackButton', '<<', -SCREEN_W / 2 + 160, -SCREEN_H / 2 + 30, 44, 40, C.button, 16, 'game', { widget: { left: 138, bottom: 10 }, active: false });
+  refs.skillTestButton = button(w, root, 'SkillTestButton', 'Skill', -SCREEN_W / 2 + 288, -SCREEN_H / 2 + 30, 200, 40, C.buttonOk, 15, 'game', { widget: { left: 188, bottom: 10 }, active: false });
+  refs.skillSkipButton = button(w, root, 'SkillSkipButton', '>>', -SCREEN_W / 2 + 416, -SCREEN_H / 2 + 30, 44, 40, C.button, 16, 'game', { widget: { left: 394, bottom: 10 }, active: false });
   refs.cancelButton = button(w, root, 'CancelButton', 'Cancel placement', 0, -SCREEN_H / 2 + 30, 200, 40, C.buttonDanger, 16, 'game', { widget: { bottom: 10 }, active: false });
   refs.buildBar = w.node('BuildBar', root, { x: 20, y: -SCREEN_H / 2 + 30, w: 520, h: 44 });
   w.widget(refs.buildBar, { bottom: 8 });

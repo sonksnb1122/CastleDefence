@@ -16,5 +16,9 @@ export class OutCastleView extends Component {
     @property(Node) pauseButton: Node | null = null;
     @property(Node) speedButton: Node | null = null;
     @property(Node) cancelButton: Node | null = null;
+    /** Temporary skill test buttons (previous skill / cast the skill / next skill). */
+    @property(Node) skillBackButton: Node | null = null;
+    @property(Node) skillTestButton: Node | null = null;
+    @property(Node) skillSkipButton: Node | null = null;
     @property(Node) buildBar: Node | null = null;
 }

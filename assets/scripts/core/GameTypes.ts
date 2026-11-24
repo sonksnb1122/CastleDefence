@@ -34,6 +34,8 @@ export interface SaveData {
     research: { [techId: string]: number };
     /** Seed of the Market price changes (one random number per game). */
     marketSeed?: number;
+    /** Active skills: wave from which each skill can be cast again (cooldown in waves). */
+    skillReady?: { [skillId: string]: number };
 }
 
 /** Result of one damage calculation (see CombatManager). */

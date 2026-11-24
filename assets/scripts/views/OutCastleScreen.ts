@@ -2,6 +2,7 @@ import { waveStatsWindow } from './WaveStatsWindow';
 import { Node, Graphics, EventTouch, EventMouse, Vec3, Label, UITransform } from 'cc';
 import { CombatEvents, CombatManager } from '../combat/CombatManager';
 import { TowerUnit } from '../combat/TowerUnit';
+import { SkillManager } from '../combat/SkillManager';
 import { WaveMgr } from '../combat/WaveMgr';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
@@ -64,6 +65,13 @@ export class OutCastleScreen implements CombatEvents {
     private waveInfo: Label;
     private unsubscribe: () => void;
     private ground: BattlefieldGround;
+    // Temporary skill test: casts the skills of skills.json one after another (cooldowns ignored).
+    private skillBtn: PrefabButton;
+    private skillSkipBtn: PrefabButton;
+    private skillBackBtn: PrefabButton;
+    private skillIndex = 0;
+    /** Targeted skill waiting for a tap on the battlefield. */
+    private skillAiming: any = null;
 
     constructor(parent: Node) {
         const W = G.main.W, H = G.main.H;
@@ -105,6 +113,13 @@ export class OutCastleScreen implements CombatEvents {
         this.speedBtn = new PrefabButton(v.speedButton, () => this.cycleSpeed());
         this.cancelBtn = new PrefabButton(v.cancelButton, () => this.stopPlacing());
         this.cancelBtn.setVisible(false);
+        this.skillBtn = new PrefabButton(v.skillTestButton, () => this.testSkill());
+        this.skillSkipBtn = new PrefabButton(v.skillSkipButton, () => { this.skillIndex++; this.stopAiming(); });
+        this.skillBackBtn = new PrefabButton(v.skillBackButton, () => {
+            const n = Math.max(1, SkillManager.list.length);
+            this.skillIndex = (this.skillIndex % n + n - 1) % n;
+            this.stopAiming();
+        });
 
         // Tower build buttons (prefabs/items/TowerButton, one per tower of tower.json).
         this.buildBar = v.buildBar!;
@@ -282,6 +297,7 @@ export class OutCastleScreen implements CombatEvents {
     }
 
     private onHover(uiX: number, uiY: number) {
+        if (this.skillAiming) { toLocal(this.world, uiX, uiY, this.tmp); this.drawSkillZone(this.tmp.x, this.tmp.y); return; }
         if (!this.placing) return;
         toLocal(this.world, uiX, uiY, this.tmp);
         this.drawGhost(this.tmp.x, this.tmp.y);
@@ -290,6 +306,7 @@ export class OutCastleScreen implements CombatEvents {
     private onTap(uiX: number, uiY: number) {
         toLocal(this.world, uiX, uiY, this.tmp);
         const x = this.tmp.x, y = this.tmp.y;
+        if (this.skillAiming) { this.castAimed(x, y); return; }
         if (this.placing) { this.tryPlace(x, y); return; }
         let picked = 0;
         // Towers lower on the screen are in front, so test them first.
@@ -334,6 +351,72 @@ export class OutCastleScreen implements CombatEvents {
     }
 
     // ------------------------------------------------------------------ waves
+    // ------------------------------------------------------------------ skill test (temporary)
+    private get testSkillDef(): any {
+        const list = SkillManager.list;
+        return list.length > 0 ? list[this.skillIndex % list.length] : null;
+    }
+
+    /** Casts the next skill; a targeted one waits for a tap on the battlefield (tap the button again to cancel). */
+    private testSkill() {
+        const def = this.testSkillDef;
+        if (!def || !this.combat.active) return;
+        if (this.skillAiming) { this.stopAiming(); return; }
+        if (def.target === 'area') {
+            this.skillAiming = def;
+            this.refreshSkillButton();
+            return;
+        }
+        this.combat.skills.cast(def);
+        this.skillIndex++;
+        this.refreshSkillButton();
+    }
+
+    private castAimed(x: number, y: number) {
+        const def = this.skillAiming;
+        const bf = this.bf;
+        // Only on the enemy path (right of the wall); the zone center stays inside the lane.
+        if (x < this.combat.wallRightX + 10) { toast(this.root, 'Choose a spot on the enemy path', false); return; }
+        const cy = Math.max(bf.enemyLaneY[0], Math.min(bf.enemyLaneY[1], y));
+        this.combat.skills.cast(def, x, cy);
+        this.skillIndex++;
+        this.stopAiming();
+    }
+
+    private stopAiming() {
+        this.skillAiming = null;
+        if (!this.placing) { this.ghostG.clear(); this.ghost.active = false; }
+        this.refreshSkillButton();
+    }
+
+    /** Preview of the zone of the skill being aimed. */
+    private drawSkillZone(x: number, y: number) {
+        const r = SkillManager.areaDiameter(this.skillAiming) / 2;
+        this.ghost.active = true;
+        const g = this.ghostG;
+        g.clear();
+        g.fillColor = hex('#ffe9a8', 40);
+        g.circle(x, Math.max(this.bf.enemyLaneY[0], Math.min(this.bf.enemyLaneY[1], y)), r);
+        g.fill();
+        g.lineWidth = 2;
+        g.strokeColor = hex('#ffe9a8', 220);
+        g.circle(x, Math.max(this.bf.enemyLaneY[0], Math.min(this.bf.enemyLaneY[1], y)), r);
+        g.stroke();
+    }
+
+    private refreshSkillButton() {
+        const show = this.combat.active && !this.finished;
+        this.skillBtn.setVisible(show);
+        this.skillSkipBtn.setVisible(show);
+        this.skillBackBtn.setVisible(show);
+        if (!show) return;
+        const def = this.testSkillDef;
+        const n = SkillManager.list.length;
+        if (!def) { this.skillBtn.setText('No skills'); return; }
+        const i = (this.skillIndex % n) + 1;
+        this.skillBtn.setText(this.skillAiming ? 'Tap the field: ' + def.name : `${i}/${n} ${def.name}`);
+    }
+
     private startWave() {
         if (!this.rm.isPreparation || this.placing) return;
         if (this.rm.data.towers.length === 0) {
@@ -348,6 +431,7 @@ export class OutCastleScreen implements CombatEvents {
         this.rm.beginCombat();
         this.combat.startWave(this.rm.data.currentWave);
         this.showMenu();
+        this.refreshSkillButton();
         toast(this.root, this.combat.plan!.name, true);
         G.main.playSfx('wave_start');
         // Boss waves have their own music until the wave is over.
@@ -357,6 +441,8 @@ export class OutCastleScreen implements CombatEvents {
     onWallChanged() { this.refreshHud(); }
 
     onWaveCleared(wave: number, goldFromKills: number) {
+        this.skillAiming = null;
+        this.refreshSkillButton();
         const gained = this.rm.completeWave(wave);
         G.main.autoSave();
         G.main.playSfx('win');
@@ -371,6 +457,8 @@ export class OutCastleScreen implements CombatEvents {
 
     onGameOver(wave: number) {
         this.finished = true;
+        this.skillAiming = null;
+        this.refreshSkillButton();
         G.main.playSfx('lose');
         message(this.root, 'GAME OVER', `The castle wall was destroyed on wave ${wave}.\n\nHighest wave cleared: ${this.rm.data.highestWave}`, () => G.main.goto('menu'), 440, 260);
     }

@@ -13,13 +13,15 @@ export class ConfigMgr {
     static herobuff: any = null;
     static research: any = null;
     static effects: any = null;
+    /** Active skills (skills.json). */
+    static skills: any = null;
 
     /** Fatal problems found while loading / validating. */
     static errors: string[] = [];
     /** Non fatal problems (missing art, ...). */
     static warnings: string[] = [];
 
-    private static readonly FILES = ['building', 'tower', 'enemy', 'waves', 'heroes', 'herobuff', 'research', 'effects'];
+    private static readonly FILES = ['building', 'tower', 'enemy', 'waves', 'heroes', 'herobuff', 'research', 'effects', 'skills'];
 
     static load(done: () => void) {
         let remaining = ConfigMgr.FILES.length;
@@ -56,6 +58,7 @@ export class ConfigMgr {
     static techDef(id: string): any { return ConfigMgr.find(ConfigMgr.research.techs, id); }
     static statusDef(id: string): any { return ConfigMgr.find(ConfigMgr.effects.statusEffects, id); }
     static towerEffectDef(id: string): any { return ConfigMgr.find(ConfigMgr.effects.towerEffects, id); }
+    static skillDef(id: string): any { return ConfigMgr.find((ConfigMgr.skills && ConfigMgr.skills.skills) || [], id); }
     /** Animated card sheet layout shared by every hero (heroes.json "card"). */
     static get heroCard(): { cellW: number; cellH: number; frames: number; frameTime: number } {
         return ConfigMgr.heroes.card || { cellW: 576, cellH: 816, frames: 1, frameTime: 0.1 };
@@ -95,6 +98,7 @@ export class ConfigMgr {
         for (const k in icons) if (typeof icons[k] === 'string') out.push(icons[k]);
         for (const p of ConfigMgr.uiStylePaths()) out.push(p);
         for (const s of ConfigMgr.effects.statusEffects) if (s.visual && s.visual.icon) out.push(s.visual.icon);
+        for (const s of ((ConfigMgr.skills && ConfigMgr.skills.skills) || [])) if (s.vfx && s.vfx.path) out.push(s.vfx.path);
         return out;
     }
 

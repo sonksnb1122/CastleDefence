@@ -17,6 +17,7 @@ Video demo: https://drive.google.com/drive/folders/15IWJf0NY1LbKzWitaf19cV2dwojP
 - [Combat rules](#combat-rules)
 - [Heroes](#heroes)
 - [Research](#research)
+- [Active skills](#active-skills)
 - [Art style](#art-style)
 - [Getting started](#getting-started)
 - [Project architecture](#project-architecture)
@@ -266,6 +267,47 @@ It does not add damage, so it stays cheap (all 20 levels cost about 3.7k gold an
 
 ---
 
+## Active skills
+
+Skills are defined in `config/skills.json` (`combat/SkillManager.ts`). The **skill circle** has the
+diameter of the enemy lane (top to bottom of the path, `battlefield.enemyLaneY`); targeted skills use a
+zone that is a share of it (`areaScale`). Skill damage is a share of each enemy's max HP, ignores
+defense, and bosses take only 50% of it (`bossDamageMul`). Cooldowns are counted in waves and kept in
+the save.
+
+**Testing (temporary):** during a wave, the green button at the bottom left casts the skills one after
+another, ignoring cooldowns. Targeted skills wait for a tap on the enemy path (tap the button again to
+cancel); `<<` and `>>` go to the previous / next skill.
+
+| Skill | Cooldown (waves) | Effect |
+|---|---|---|
+| Air Burst | 5 | A blast of wind along the wall throws every enemy back, away from the wall. |
+| Crater Impact | 8 | Every enemy is stunned for 5 s (even when immune; the time is never reduced) and loses 20% of its max HP. |
+| Fire Cast | 5 | Calls a small fire zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP. |
+| Ice Cast | 5 | Calls a small ice zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP. |
+| Lightning Cast | 5 | Calls a small lightning zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP. |
+| Shadow Cast | 5 | Calls a small shadow zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP. |
+| Nature Cast | 5 | Calls a small nature zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP. |
+| Arcane Cast | 5 | Calls a small arcane zone (half of the skill circle) at the chosen spot: enemies inside lose 80% of their max HP. |
+| Holy Sword Hit | 7 | Holy swords strike the whole battlefield: every enemy loses 40% of its max HP. |
+| Divine Beam | 10 | A beam of light falls on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP. |
+| Frost Circle | 10 | A frost magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP. |
+| Solar Circle | 10 | A solar magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP. |
+| Spirit Circle | 10 | A spirit magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP. |
+| Crimson Circle | 10 | A crimson magic circle opens on the chosen spot. Enemies in a small zone (3/8 of the skill circle) lose 100% of their max HP. |
+| Meteor Strike | 10 | A meteor crashes on the chosen spot. Enemies in a small zone (9/16 of the skill circle) lose 100% of their max HP. |
+| Angel Feather | 5 | Doubles the damage of every tower (+100% of the current damage) for 15 s. |
+| Gravity Well | 5 | A gravity well on the chosen spot pulls the enemies of the skill circle to its center, then they lose 20% of their max HP. |
+| Fire Tornado | 2 | Fire tornadoes sweep the whole battlefield: every enemy loses 20% of its max HP. |
+| Buff Arrow | 5 | Doubles the attack speed of every tower (+100% of the current speed) for 15 s. |
+| Holy Heal | 12 | Holy light runs along the wall and restores it to full HP. |
+| Barrier Block | 5 | Blocks the next 20 hits on the wall. Only lasts for the wave it is cast in. |
+| Lightning Strike | 5 | Lightning bolts rain on the chosen spot. Enemies inside the skill circle lose 50% of their max HP. |
+| Rock Fall | 5 | Rocks fall on the chosen spot. Enemies inside the skill circle lose 50% of their max HP. |
+| Void Rift | 5 | Void rifts tear open on the chosen spot. Enemies inside the skill circle lose 50% of their max HP. |
+
+---
+
 ## Art style
 
 - **Pixel-art fantasy:**
@@ -416,6 +458,7 @@ Thanks to the artists whose free assets are used in this game. All packs were do
 | Asset | Author | Used for | License |
 |---|---|---|---|
 | [Spire Tower Pack 1](https://foozlecc.itch.io/spire-tower-pack-1) and [Spire Tower Pack 2](https://foozlecc.itch.io/spire-tower-pack-2) | Baldur / [Foozle](https://foozlecc.itch.io) | Defense tower sprites | CC0 |
+| PVFX Foundry 1.0.0 | Pixel VFX Studio (made with the [pixelfx](https://github.com/patch-gg/pixelfx) toolkit, MIT) | Active skill effects (`sprites/skills`) | CC0 |
 | Monsters, castle buildings, maps, heroes, UI | Project author | Everything else | Project-owned |
 
 ### Music
