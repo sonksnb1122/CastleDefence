@@ -3,6 +3,7 @@ import { Assets } from '../core/Assets';
 import { DamageType } from '../core/GameTypes';
 import { hex, mk, sprite, text } from '../views/common/UIKit';
 import { HpBar } from './HpBar';
+import { Display } from '../core/Display';
 import { SpriteAnim } from './SpriteAnim';
 
 /** Size (px) of the status icons above an enemy (sprites/status, drawn 1:1). */
@@ -22,7 +23,7 @@ export interface StatusInstance {
 export interface IEnemyHost {
     wallRightX: number;
     onEnemyReachedWall(e: Enemy): void;
-    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string): void;
+    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid?: number, statusId?: string): void;
 }
 
 export interface EnemyStats { hp: number; damage: number; moveSpeed: number; goldReward: number; scale: number; boss: boolean; physicDef: number; magicDef: number;
@@ -123,7 +124,7 @@ export class Enemy {
         if (frames.length > 0) this.anim.play(frames, mv.frameTime, true);
         else this.showPlaceholder(def);
         if (this.placeholder) this.placeholder.active = frames.length === 0;
-        this.hpBar.node.active = true;
+        this.hpBar.node.active = Display.hpBars;
         this.hpBar.resize(stats.boss ? 70 : 36, stats.boss ? 6 : 4);
         this.hpBar.node.setPosition(0, this.radius + 12, 0);
         this.hpBar.set(1, '#6ad66a');
@@ -283,13 +284,18 @@ export class Enemy {
         return v;
     }
 
+    /** Display.effects when the status icons were last drawn (redrawn when the setting changes). */
+    private shownEffects = true;
+
     private refreshStatusLabel() {
+        this.shownEffects = Display.effects;
         // One icon per status type (effects.json "visual.icon"); statuses without an icon (Burn) are shown as text.
         const icons: string[] = [];
         const stacks: number[] = [];
         const labels: string[] = [];
         let color = '#ffffff';
-        for (const s of this.statuses) {
+        // Settings > Effects off: no status icons, labels or tint.
+        for (const s of (Display.effects ? this.statuses : [])) {
             const v = s.def.visual || {};
             if (v.icon) {
                 const k = icons.indexOf(v.icon);
@@ -396,6 +402,9 @@ export class Enemy {
             this.flash -= dt;
             if (this.flash <= 0) this.refreshStatusLabel();
         }
+        // Display settings changed during the battle.
+        if (this.hpBar.node.active !== Display.hpBars) this.hpBar.node.active = Display.hpBars;
+        if (this.shownEffects !== Display.effects) this.refreshStatusLabel();
 
         // Status effects: damage over time and expiry.
         for (const k in this.immune) if (this.immune[k] > 0) this.immune[k] -= dt;
@@ -406,7 +415,7 @@ export class Enemy {
                 s.tick -= dt;
                 while (s.tick <= 0 && this.alive) {
                     s.tick += s.def.tickInterval;
-                    host.applyDot(this, s.value * s.stacks, s.def.damageType || (s.def.type === 'bleed' ? 'physic' : 'magic'), s.def.type);
+                    host.applyDot(this, s.value * s.stacks, s.def.damageType || (s.def.type === 'bleed' ? 'physic' : 'magic'), s.def.type, s.sourceUid, s.def.id);
                 }
                 if (!this.alive) return;
             }

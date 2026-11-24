@@ -180,9 +180,9 @@ function pausePopup() {
 
 function settingsPopup() {
   const w = new PrefabWriter('Settings');
-  const p = popup(w, 'Settings', 'Setting', 480, 300);
+  const p = popup(w, 'Settings', 'Setting', 480, 470);
   const refs = p.refs;
-  [['Music', 'music', 60], ['Sound FX', 'sfx', 0]].forEach(([name, key, y]) => {
+  [['Music', 'music', 145], ['Sound FX', 'sfx', 95]].forEach(([name, key, y]) => {
     const row = w.node(name.replace(' ', '') + 'Row', p.box, { y, w: 440, h: 36 });
     label(w, row, 'Name', name, -200, 0, 18, { ax: 0 });
     refs[key + 'Bar'] = fillBar(w, row, 'Bar', 40, 0, 150, 14, C.accent);
@@ -190,7 +190,14 @@ function settingsPopup() {
     refs[key + 'Minus'] = button(w, row, 'Minus', '-', -70, 0, 36, 34, C.button, 22, 'menu');
     refs[key + 'Plus'] = button(w, row, 'Plus', '+', 150, 0, 36, 34, C.button, 22, 'menu');
   });
-  refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 0, -105, 160, 44, C.button, 18, 'menu');
+  // Battle display options: On / Off toggles (SettingsOverlay sets the text and color).
+  label(w, p.box, 'DisplayTitle', 'Battle display', -200, 50, 16, { ax: 0, color: C.textDim });
+  [['Damage Numbers', 'damageToggle', 12], ['Health Bars', 'hpBarToggle', -36], ['Effects', 'effectsToggle', -84]].forEach(([name, key, y]) => {
+    const row = w.node(name.replace(' ', '') + 'Row', p.box, { y, w: 440, h: 36 });
+    label(w, row, 'Name', name, -200, 0, 18, { ax: 0 });
+    refs[key] = button(w, row, 'Toggle', 'On', 150, 0, 90, 34, C.buttonOk, 18, 'menu');
+  });
+  refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 0, -172, 160, 44, C.button, 18, 'menu');
   save(w, 'popups/Settings', p.root, 'SettingsView', 'popups', refs);
 }
 

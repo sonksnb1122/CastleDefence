@@ -37,7 +37,13 @@ export interface SaveData {
 }
 
 /** Result of one damage calculation (see CombatManager). */
-export interface DamageResult { amount: number; crit: boolean; dodged: boolean; }
+export interface DamageResult {
+    amount: number; crit: boolean; dodged: boolean;
+    /** Part of `amount` that comes from the flat bonus (Heavy Impact, Hunter's Mark x5), for the wave statistics. */
+    flat?: number;
+    /** Part of `amount` added by a damage mark (Hunter's Mark, Arcane Vulnerability), and which one. */
+    amp?: number; ampType?: DamageType;
+}
 
 /** Snapshot of a tower's effective stats at the moment it fires. */
 export interface ShotInfo {

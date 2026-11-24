@@ -1,5 +1,6 @@
 import { Node, Label } from 'cc';
 import { ConfigMgr } from '../core/ConfigMgr';
+import { Display, DisplayKey } from '../core/Display';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
 import { ResearchRowView } from './items/ResearchRowView';
@@ -33,7 +34,7 @@ export class PauseOverlay implements IOverlay {
     destroy() { this.root.destroy(); }
 }
 
-/** Audio settings (prefabs/popups/Settings): music and sound effect volume. */
+/** Settings (prefabs/popups/Settings): music and sound effect volume, battle display options. */
 export class SettingsOverlay implements IOverlay {
     root: Node;
     constructor(parent: Node) {
@@ -48,6 +49,15 @@ export class SettingsOverlay implements IOverlay {
         };
         row(v.musicBar, v.musicValue, v.musicMinus, v.musicPlus, () => G.main.musicVolume, x => G.main.setVolumes(x, G.main.sfxVolume));
         row(v.sfxBar, v.sfxValue, v.sfxMinus, v.sfxPlus, () => G.main.sfxVolume, x => { G.main.setVolumes(G.main.musicVolume, x); G.main.playSfx('click'); });
+        // Battle display: damage numbers, health bars, effects (On / Off).
+        const toggle = (node: Node | null, key: DisplayKey) => {
+            const b = new PrefabButton(node, () => { G.main.setDisplay(key, !Display[key]); G.main.playSfx('click'); refresh(); });
+            const refresh = () => { b.setText(Display[key] ? 'On' : 'Off'); b.setColor(Display[key] ? COLORS.buttonOk : COLORS.buttonDanger); };
+            refresh();
+        };
+        toggle(v.damageToggle, 'damageNumbers');
+        toggle(v.hpBarToggle, 'hpBars');
+        toggle(v.effectsToggle, 'effects');
         new PrefabButton(v.closeButton, () => G.main.closeOverlay());
     }
     destroy() { this.root.destroy(); }

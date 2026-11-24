@@ -1,6 +1,7 @@
 import { Node, Graphics, UIOpacity, UITransform, isValid, Color } from 'cc';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
+import { Display } from '../core/Display';
 import { DamageResult, DamageType, ShotInfo } from '../core/GameTypes';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
@@ -11,6 +12,7 @@ import { Projectile } from './Projectile';
 import { SpriteAnim } from './SpriteAnim';
 import { ITowerHost, TowerUnit } from './TowerUnit';
 import { SpawnEntry, WaveMgr, WavePlan } from './WaveMgr';
+import { WaveStats } from './WaveStats';
 
 /** A short visual effect. `kind` says which pool it goes back to. */
 interface Fx { kind: 'impact' | 'ground' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; }
@@ -46,6 +48,15 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     wave = 0;
     plan: WavePlan | null = null;
     goldFromKills = 0;
+    /** Statistics of the running (or last) wave, see WaveStats. */
+    stats = new WaveStats();
+
+    // Who is dealing the damage that applyDamage is about to apply (wave statistics).
+    private ctxTower = '';
+    /** The whole hit belongs to this effect (chain jump, Bleed burst, stun-immune hit). */
+    private ctxEffect: { key: string; name: string } | null = null;
+    /** Flat bonus parts of the current hit (Heavy Impact, Hunter's Mark x5). */
+    private ctxFlat: Array<{ key: string; name: string; amount: number }> = [];
 
     private queue: SpawnEntry[] = [];
     private elapsed = 0;
@@ -93,7 +104,9 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         this.goldFromKills = 0;
         this.gameOver = false;
         this.active = true;
+        this.stats.reset(wave, this.towers.map(t => ({ id: t.save.id, name: (t.def && t.def.name) || t.save.id })));
     }
+
 
     /** Demo mode: spawn one enemy right away (the menu background keeps calling this). */
     spawnDemo(enemyId: string, hpMul: number, speedMul: number) {
@@ -143,6 +156,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
         if (this.active) {
             this.elapsed += dt;
+            this.stats.time += dt;
             while (this.queue.length > 0 && this.queue[0].time <= this.elapsed) this.spawn(this.queue.shift()!);
         }
 
@@ -414,20 +428,22 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         const rm = this.rm;
         if (Math.random() * 100 < e.abilityValue('dodge')) return { amount: 0, crit: false, dodged: true };
         const base = shot.damage * baseMul * (1 + this.buff('damage', shot.towerId) / 100);
-        let normal = -Infinity;
+        let normal = -Infinity, amp = 0, ampType: DamageType = 'physic';
         for (const type of shot.damageTypes) {
             let d = base * this.defenseMultiplier(e, type);
-            d *= 1 + e.markBonus(shot.towerId, type) / 100;
+            const mark = e.markBonus(shot.towerId, type) / 100;
+            d *= 1 + mark;
             if (type === 'physic') d *= 1 - e.abilityValue('physicDamageReduction') / 100;
-            if (d > normal) normal = d;
+            if (d > normal) { normal = d; amp = mark > 0 ? d - d / (1 + mark) : 0; ampType = type; }
         }
-        if (shot.isAoe) normal *= 1 - e.abilityValue('aoeReduction') / 100;
+        if (shot.isAoe) { const k = 1 - e.abilityValue('aoeReduction') / 100; normal *= k; amp *= k; }
         normal += flatBonus;
         const critRate = Math.max(0, Math.min(100, shot.critRate + this.buff('critRate', shot.towerId)));
         const critDamage = shot.critDamage + this.buff('critDamage', shot.towerId);
         const crit = Math.random() * 100 < critRate;
-        const final = crit ? normal * critDamage / 100 : normal;
-        return { amount: Math.max(1, Math.floor(final)), crit, dodged: false };
+        const mul = crit ? critDamage / 100 : 1;
+        const final = normal * mul;
+        return { amount: Math.max(1, Math.floor(final)), crit, dodged: false, flat: Math.max(0, flatBonus * mul), amp: Math.max(0, amp * mul), ampType };
     }
 
     /** 1 - EffectiveDefense / 100, where EffectiveDefense = def * 2 - reductions (not clamped). */
@@ -442,6 +458,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     private applyDamage(e: Enemy, res: DamageResult) {
         if (!e.alive) return;
         if (res.dodged) { this.enemyFloat(e, 'MISS', '#cccccc', 13); return; }
+        if (!this.demo && this.ctxTower) this.recordHit(e, res);
         const died = e.takeDamage(res.amount);
         // Crits: red, bigger, with a thick outline so they look bold.
         if (res.crit) this.enemyFloat(e, res.amount + '!', '#ff3030', 19, 3);
@@ -449,9 +466,30 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (died) this.onEnemyKilled(e);
     }
 
+    /** Wave statistics of one hit: HP really removed, split between the tower and its effects. */
+    private recordHit(e: Enemy, res: DamageResult) {
+        const eff = Math.min(res.amount, Math.max(0, e.hp));
+        if (eff <= 0) return;
+        const st = this.stats, tower = this.ctxTower;
+        st.damage(tower, eff);
+        if (this.ctxEffect) { st.effectDamage(this.ctxEffect.key, this.ctxEffect.name, tower, eff); return; }
+        const k = eff / res.amount;
+        if (res.flat && this.ctxFlat.length > 0) {
+            let sum = 0;
+            for (const f of this.ctxFlat) sum += f.amount;
+            for (const f of this.ctxFlat) if (sum > 0) st.effectDamage(f.key, f.name, tower, res.flat * k * f.amount / sum);
+        }
+        if (res.amp) {
+            // Extra damage of a damage mark: Hunter's Mark (Crossbow) or Arcane Vulnerability (magic).
+            const hunter = res.ampType !== 'magic';
+            st.effectDamage((hunter ? 'amp_hunter_' : 'amp_arcane_') + tower, hunter ? "Hunter's Mark (bonus damage)" : 'Arcane Vulnerability (bonus damage)', tower, res.amp * k, false);
+        }
+    }
+
     private onEnemyKilled(e: Enemy) {
         if (e.rewarded) return;
         e.rewarded = true;
+        if (!this.demo) this.stats.kills++;
         const gold = this.demo ? e.goldReward : this.rm.killGold(e.goldReward);
         this.float('+' + gold, e.x + 8, e.y - 6, '#f2c14e', 15, true, 'gold');
         if (this.demo) return;
@@ -462,10 +500,19 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     }
 
     /** Damage over time from Bleed / Burn. Goes through defense but never crits. */
-    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string) {
+    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid = 0, statusId = '') {
         if (!e.alive) return;
         const buff = this.buff(statusType === 'bleed' ? 'bleedDamage' : 'burnDamage');
         const amount = Math.max(1, Math.floor(rawDamage * (1 + buff / 100) * this.defenseMultiplier(e, type)));
+        if (!this.demo) {
+            const src = this.towerByUid(sourceUid);
+            const tower = src ? src.save.id : 'other';
+            if (!src) this.stats.tower('other', 'Other');
+            const def = ConfigMgr.statusDef(statusId);
+            const eff = Math.min(amount, Math.max(0, e.hp));
+            this.stats.damage(tower, eff);
+            this.stats.effectDamage('dot_' + (statusId || statusType), ((def && def.name) || statusType) + ' (damage over time)', tower, eff, false);
+        }
         const died = e.takeDamage(amount);
         this.enemyFloat(e, String(amount), statusType === 'bleed' ? '#ff7a7a' : '#ffa64d', 13);
         if (died) this.onEnemyKilled(e);
@@ -485,6 +532,9 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         }
         this.impactFx(shot, x, y);
         const tower = this.towerByUid(shot.towerUid);
+        const st = this.demo ? null : this.stats;
+        if (st) st.shot(shot.towerId, hit.length > 0);
+        this.ctxTower = shot.towerId;
         // "effectChance" (Arcane Mastery research, heroes) adds percentage points on top of the effect's
         // own chance and above its cap: a researched effect at 50% becomes 75% with +25%.
         const extra = this.buff('effectChance', shot.towerId);
@@ -496,20 +546,29 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         for (const e of hit) {
             // Pre-damage effects (extra damage based on max HP).
             let bonus = 0;
+            this.ctxFlat.length = 0;
             for (const ef of shot.effects) {
                 if (ef.kind === 'bonusMaxHp' && ready(ef) && Math.random() * 100 < chance(ef)) {
-                    bonus += Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100 * this.percentHpMul(e));
+                    const b = Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100 * this.percentHpMul(e));
+                    bonus += b;
+                    if (st) { st.trigger(ef.id, ef.name, shot.towerId, true); this.ctxFlat.push({ key: ef.id, name: ef.name, amount: b }); }
                 }
             }
-            bonus += this.markHpBonus(shot, e);
+            const mb = this.markHpBonus(shot, e);
+            if (mb > 0) {
+                bonus += mb;
+                if (st) { st.trigger('hunter_full', "Hunter's Mark x5 (+1% current HP)", shot.towerId, true); this.ctxFlat.push({ key: 'hunter_full', name: "Hunter's Mark x5 (+1% current HP)", amount: mb }); }
+            }
             this.applyDamage(e, this.computeDamage(shot, e, 1, bonus));
+            this.ctxFlat.length = 0;
             if (!e.alive) continue;
             // Post-damage effects: status effects on the enemies that were hit.
             for (const ef of shot.effects) {
                 if (ef.kind !== 'status' || !ready(ef)) continue;
                 if ((statusCount[ef.id] || 0) >= (ef.maxTargets || 1)) continue;
                 if (Math.random() * 100 >= chance(ef)) continue;
-                this.applyStatusFromTower(e, ef.statusId, shot.towerUid, shot.damage * (1 + this.buff('damage', shot.towerId) / 100));
+                const landed = this.applyStatusFromTower(e, ef.statusId, shot.towerUid, shot.damage * (1 + this.buff('damage', shot.towerId) / 100));
+                if (st) { if (landed === 'landed') st.trigger(ef.id, ef.name, shot.towerId); else if (landed === 'resisted') st.resist(ef.id, ef.name, shot.towerId); }
                 if (!statusCount[ef.id] && !this.demo) this.effectSfx(ef.statusId);
                 statusCount[ef.id] = (statusCount[ef.id] || 0) + 1;
             }
@@ -523,6 +582,8 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             if (Math.random() * 100 >= chance(ef)) continue;
             used(ef);
             if (!this.demo) G.main.playSfx(shot.damageTypes[0] === 'magic' ? 'fx_lightning' : 'hit_' + shot.towerId);
+            let jumped = false;
+            this.ctxEffect = { key: ef.id, name: ef.name };
             let fromX = x, fromY = y;
             for (let n = 0; n < (ef.maxTargets || 1); n++) {
                 let next: Enemy | null = null;
@@ -536,9 +597,13 @@ export class CombatManager implements IEnemyHost, ITowerHost {
                 hit.push(next);
                 this.lineFx(fromX, fromY, next.x, next.y, shot.damageTypes[0] === 'magic' ? '#9fe8ff' : '#ffffff');
                 fromX = next.x; fromY = next.y;
+                jumped = true;
                 this.applyDamage(next, this.computeDamage(shot, next, ef.value / 100, this.markHpBonus(shot, next)));
             }
+            this.ctxEffect = null;
+            if (st && jumped) st.trigger(ef.id, ef.name, shot.towerId, true);
         }
+        this.ctxTower = '';
         if (!this.demo) {
             // Catapult stones crash down (explode), the other towers have their own hit sound.
             if (shot.towerId === 'catapult') G.main.playSfx('explode');
@@ -556,18 +621,19 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     }
 
     /** `hitDamage`: damage of the shot before defense; statuses with "percentOfHit" scale their value with it. */
-    private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number, hitDamage = 0) {
+    /** 'landed', 'resisted', or 'immune' (blocked by the immunity; may have dealt the stun-immune hit instead). */
+    private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number, hitDamage = 0): 'landed' | 'resisted' | 'immune' {
         const def = ConfigMgr.statusDef(statusId);
-        if (!def) return;
+        if (!def) return 'resisted';
         const src = this.towerByUid(sourceUid);
         const srcId = src ? src.save.id : '';
         if (e.isImmune(def.type)) {
             // Stun immunity: a stunning hit that lands during the immunity deals a share of the max HP instead (effects.json "immuneHit").
             if (def.immuneHit && def.immuneHit.maxHpPct > 0 && !e.resists(def)) { // the hit must still beat the resistance
                 const amount = Math.max(1, Math.floor(this.capPercentHp(e.maxHp * def.immuneHit.maxHpPct / 100 * this.percentHpMul(e), hitDamage, srcId)));
-                this.applyDamage(e, { amount, crit: true, dodged: false });
+                this.hitAsEffect(e, amount, 'immune_' + def.id, def.name + ' (immune: ' + def.immuneHit.maxHpPct + '% max HP)', srcId);
             }
-            return;
+            return 'immune';
         }
         let durationMul = 1, valueMul = 1;
         if (def.percentOfHit) valueMul = Math.max(0.01, hitDamage / 100);
@@ -576,15 +642,27 @@ export class CombatManager implements IEnemyHost, ITowerHost {
         if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) {
             // Marks and Bleed land many times per second: no "RESIST" text for them (it would cover the field).
             if (def.type !== 'mark' && def.type !== 'bleed') this.enemyFloat(e, 'RESIST', '#aaaaaa', 12);
-            return;
+            return 'resisted';
         }
         // Burst at full stacks (Bleed x5): the stacks are removed and the enemy loses a share of its max HP.
         const burst = def.burstAtMaxStacks;
         if (burst && e.stacksOf(def.id) >= Math.max(1, def.maxStacks || 1)) {
             e.clearStatus(def.id);
             const amount = Math.max(1, Math.floor(this.capPercentHp(e.maxHp * (burst.maxHpPct || 0) / 100 * this.percentHpMul(e), hitDamage, srcId)));
-            this.applyDamage(e, { amount, crit: true, dodged: false });
+            this.hitAsEffect(e, amount, 'burst_' + def.id, def.name + ' burst (x' + (def.maxStacks || 1) + ')', srcId);
         }
+        return 'landed';
+    }
+
+    /** Damage dealt by an effect on its own (Bleed burst, stun-immune hit): shown as a red number, counted for that effect. */
+    private hitAsEffect(e: Enemy, amount: number, key: string, name: string, towerId: string) {
+        const prevTower = this.ctxTower, prevEffect = this.ctxEffect;
+        this.ctxTower = towerId || prevTower;
+        this.ctxEffect = { key, name };
+        if (!this.demo && this.ctxTower) this.stats.trigger(key, name, this.ctxTower, true);
+        this.applyDamage(e, { amount, crit: true, dodged: false });
+        this.ctxTower = prevTower;
+        this.ctxEffect = prevEffect;
     }
 
     /** Extra damage of a hit on an enemy whose mark from this tower is at full stacks (Hunter's Mark x5: 1% of current HP). */
@@ -649,7 +727,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
      * (a new text pushes the others up; the oldest one disappears).
      */
     enemyFloat(e: Enemy, str: string, color: string, size: number, outline = 2) {
-        if (this.floats.length >= MAX_FLOAT_TEXTS) return;
+        if (!Display.damageNumbers || this.floats.length >= MAX_FLOAT_TEXTS) return;
         let st = this.stacks.get(e);
         if (!st) { st = []; this.stacks.set(e, st); }
         if (st.length >= TEXT_ROWS) { const old = st.shift()!; old.row = TEXT_ROWS; old.stack = null; old.expire(); }
@@ -683,6 +761,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     }
 
     private impactFx(shot: ShotInfo, x: number, y: number) {
+        if (!Display.effects) return;
         const im = (shot as any).impact;
         if (im) {
             const frames = Assets.pick(im.path, im.cellW, im.cellH, im.frames);
@@ -722,6 +801,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     }
 
     private lineFx(x1: number, y1: number, x2: number, y2: number, color: string) {
+        if (!Display.effects) return;
         const f = this.takeFx('line');
         const g = f.g!;
         g.clear();

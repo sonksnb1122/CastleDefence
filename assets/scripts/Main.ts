@@ -12,6 +12,7 @@ import { InCastleScreen } from './views/InCastleScreen';
 import { LoadingScreen } from './views/LoadingScreen';
 import { MainMenuScreen } from './views/MainMenuScreen';
 import { OutCastleScreen } from './views/OutCastleScreen';
+import { Display, DisplayKey } from './core/Display';
 import { IOverlay, PauseOverlay, ResearchOverlay, SaveLoadOverlay, SettingsOverlay } from './views/Overlays';
 
 const { ccclass } = _decorator;
@@ -322,6 +323,8 @@ export class Main extends Component implements IMain {
             const s = JSON.parse(sys.localStorage.getItem(SETTINGS_KEY) || '{}');
             if (typeof s.musicVolume === 'number') this.musicVolume = Math.max(0, Math.min(1, s.musicVolume));
             if (typeof s.sfxVolume === 'number') this.sfxVolume = Math.max(0, Math.min(1, s.sfxVolume));
+            const d = s.display || {};
+            for (const k of Object.keys(Display) as DisplayKey[]) if (typeof d[k] === 'boolean') Display[k] = d[k];
         } catch (e) { /* keep defaults */ }
         this.music.volume = this.musicVolume * MUSIC_GAIN;
     }
@@ -330,7 +333,19 @@ export class Main extends Component implements IMain {
         this.musicVolume = Math.max(0, Math.min(1, music));
         this.sfxVolume = Math.max(0, Math.min(1, sfx));
         this.music.volume = this.musicVolume * MUSIC_GAIN;
-        try { sys.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ musicVolume: this.musicVolume, sfxVolume: this.sfxVolume })); } catch (e) { /* ignore */ }
+        this.saveSettings();
+    }
+
+    /** Battle display options (Settings popup): damage numbers, health bars, effects. */
+    setDisplay(key: DisplayKey, on: boolean) {
+        Display[key] = on;
+        this.saveSettings();
+    }
+
+    private saveSettings() {
+        try {
+            sys.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ musicVolume: this.musicVolume, sfxVolume: this.sfxVolume, display: Display }));
+        } catch (e) { /* ignore */ }
     }
 
     /**

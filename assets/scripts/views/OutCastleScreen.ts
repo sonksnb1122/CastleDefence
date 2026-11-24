@@ -1,3 +1,4 @@
+import { waveStatsWindow } from './WaveStatsWindow';
 import { Node, Graphics, EventTouch, EventMouse, Vec3, Label, UITransform } from 'cc';
 import { CombatEvents, CombatManager } from '../combat/CombatManager';
 import { TowerUnit } from '../combat/TowerUnit';
@@ -361,10 +362,11 @@ export class OutCastleScreen implements CombatEvents {
         G.main.playSfx('win');
         G.main.playMusic('bgm_battle');
         this.showMenu();
-        const lines: InfoLine[] = [{ label: 'Gold from kills:', cost: { gold: goldFromKills } }, ''];
-        lines.push(Object.keys(gained).length > 0 ? { label: 'Production:', cost: gained } : 'Production: nothing');
-        lines.push('', 'Progress saved automatically.');
-        infoWindow(this.root, `Wave ${wave} cleared!`, lines);
+        // Rewards and the statistics of the wave (damage per tower, hit rate, effects).
+        const rewards: InfoLine[] = [{ label: 'Gold from kills:', cost: { gold: goldFromKills } }];
+        rewards.push(Object.keys(gained).length > 0 ? { label: 'Production:', cost: gained } : 'Production: nothing');
+        rewards.push('Progress saved automatically.');
+        waveStatsWindow(this.root, `Wave ${wave} cleared!`, rewards, this.combat.stats);
     }
 
     onGameOver(wave: number) {
