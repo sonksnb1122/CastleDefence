@@ -353,7 +353,7 @@
     {
       "id": "r_fx_piercing_bolt",
       "name": "Piercing Bolt",
-      "description": "Crossbow: +5% chance, bolt pierces 2 more enemies (max 50%)",
+      "description": "Crossbow: +5% chance, bolt pierces up to 4 more enemies (max 50%)",
       "buffKey": "effect:piercing_bolt",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -370,7 +370,7 @@
     {
       "id": "r_fx_bleeding_bolt",
       "name": "Bleeding Bolt",
-      "description": "Crossbow: +5% chance to make the target bleed (max 50%)",
+      "description": "Crossbow: +5% chance to bleed the target (x5 stacks bursts for 4% max HP) (max 50%)",
       "buffKey": "effect:bleeding_bolt",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -387,7 +387,7 @@
     {
       "id": "r_fx_hunters_mark",
       "name": "Hunter's Mark",
-      "description": "Crossbow: +5% chance, target takes +50% Crossbow dmg (max 50%)",
+      "description": "Crossbow: +5% chance, +50% Crossbow dmg per stack (x5, then +1% current HP per hit) (max 50%)",
       "buffKey": "effect:hunters_mark",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -421,7 +421,7 @@
     {
       "id": "r_fx_chain_lightning",
       "name": "Chain Lightning",
-      "description": "Crystal: +5% chance, lightning jumps to 3 enemies (max 50%)",
+      "description": "Crystal: +5% chance, lightning jumps to up to 5 enemies (max 50%)",
       "buffKey": "effect:chain_lightning",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -438,7 +438,7 @@
     {
       "id": "r_fx_arcane_vulnerability",
       "name": "Arcane Vulnerability",
-      "description": "Crystal: +5% chance, enemies take +20% magic dmg (max 50%)",
+      "description": "Crystal: +5% chance, enemies take +30% magic dmg per stack, x5 (max 50%)",
       "buffKey": "effect:arcane_vulnerability",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -455,7 +455,7 @@
     {
       "id": "r_fx_shockwave",
       "name": "Shockwave",
-      "description": "Catapult: +5% chance to stun enemies hit (max 50%)",
+      "description": "Catapult: +5% chance to stun enemies hit; immune ones take 4% max HP (max 50%)",
       "buffKey": "effect:shockwave",
       "valuePerLevel": 5,
       "maxLevel": 10,

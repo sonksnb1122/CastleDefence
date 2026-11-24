@@ -122,6 +122,13 @@
       "hpMul": 0.69,
       "countMul": 1.3,
       "bossCount": 2
+    },
+    {
+      "wave": 100,
+      "name": "Abyss Siege",
+      "hpMul": 1.15,
+      "countMul": 1.3,
+      "bossCount": 2
     }
   ],
   "hpCurve": {
@@ -148,33 +155,39 @@
         "perWave": 1.093
       },
       {
-        "fromWave": 71,
-        "perWave": 1.025
+        "fromWave": 51,
+        "perWave": 1.3245
       },
       {
-        "fromWave": 86,
-        "perWave": 1.115
+        "fromWave": 71,
+        "perWave": 1.0
+      },
+      {
+        "fromWave": 96,
+        "perWave": 1.045
+      },
+      {
+        "fromWave": 111,
+        "perWave": 1.02
       }
     ],
-    "steps": [
-      {
-        "fromWave": 101,
-        "mul": 1.2
-      }
-    ]
+    "steps": []
   },
   "countScaleRef": {
     "base": 8,
     "perWave": 2
   },
   "statusResistance": {
-    "startWave": 70,
-    "perWave": 1.5,
+    "startWave": 50,
+    "perWave": 1.6,
     "max": 70,
     "bossBonus": 20,
     "types": [
       "stun",
-      "slow"
+      "slow",
+      "bleed",
+      "mark",
+      "armorBreak"
     ]
   }
 }

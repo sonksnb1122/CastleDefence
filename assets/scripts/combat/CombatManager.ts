@@ -498,9 +498,10 @@ export class CombatManager implements IEnemyHost, ITowerHost {
             let bonus = 0;
             for (const ef of shot.effects) {
                 if (ef.kind === 'bonusMaxHp' && ready(ef) && Math.random() * 100 < chance(ef)) {
-                    bonus += Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100);
+                    bonus += Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100 * this.percentHpMul(e));
                 }
             }
+            bonus += this.markHpBonus(shot, e);
             this.applyDamage(e, this.computeDamage(shot, e, 1, bonus));
             if (!e.alive) continue;
             // Post-damage effects: status effects on the enemies that were hit.
@@ -517,7 +518,8 @@ export class CombatManager implements IEnemyHost, ITowerHost {
 
         // Chain / pierce: jumps from the impact point to enemies that were not hit yet.
         for (const ef of shot.effects) {
-            if (ef.kind !== 'chain' || !ready(ef) || hit.length === 0) continue;
+            // "fromImpact" (Chain Lightning): the lightning jumps from the impact point even when the shot hit no enemy.
+            if (ef.kind !== 'chain' || !ready(ef) || (hit.length === 0 && !ef.fromImpact)) continue;
             if (Math.random() * 100 >= chance(ef)) continue;
             used(ef);
             if (!this.demo) G.main.playSfx(shot.damageTypes[0] === 'magic' ? 'fx_lightning' : 'hit_' + shot.towerId);
@@ -534,7 +536,7 @@ export class CombatManager implements IEnemyHost, ITowerHost {
                 hit.push(next);
                 this.lineFx(fromX, fromY, next.x, next.y, shot.damageTypes[0] === 'magic' ? '#9fe8ff' : '#ffffff');
                 fromX = next.x; fromY = next.y;
-                this.applyDamage(next, this.computeDamage(shot, next, ef.value / 100));
+                this.applyDamage(next, this.computeDamage(shot, next, ef.value / 100, this.markHpBonus(shot, next)));
             }
         }
         if (!this.demo) {
@@ -556,12 +558,56 @@ export class CombatManager implements IEnemyHost, ITowerHost {
     /** `hitDamage`: damage of the shot before defense; statuses with "percentOfHit" scale their value with it. */
     private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number, hitDamage = 0) {
         const def = ConfigMgr.statusDef(statusId);
-        if (!def || e.isImmune(def.type)) return;
+        if (!def) return;
+        const src = this.towerByUid(sourceUid);
+        const srcId = src ? src.save.id : '';
+        if (e.isImmune(def.type)) {
+            // Stun immunity: a stunning hit that lands during the immunity deals a share of the max HP instead (effects.json "immuneHit").
+            if (def.immuneHit && def.immuneHit.maxHpPct > 0 && !e.resists(def)) { // the hit must still beat the resistance
+                const amount = Math.max(1, Math.floor(this.capPercentHp(e.maxHp * def.immuneHit.maxHpPct / 100 * this.percentHpMul(e), hitDamage, srcId)));
+                this.applyDamage(e, { amount, crit: true, dodged: false });
+            }
+            return;
+        }
         let durationMul = 1, valueMul = 1;
         if (def.percentOfHit) valueMul = Math.max(0.01, hitDamage / 100);
         if (def.type === 'slow') { durationMul += this.buff('slowDuration') / 100; valueMul += this.buff('slowEffect') / 100; }
         if (def.type === 'stun') durationMul += this.buff('stunDuration') / 100;
-        if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) this.enemyFloat(e, 'RESIST', '#aaaaaa', 12);
+        if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) {
+            // Marks and Bleed land many times per second: no "RESIST" text for them (it would cover the field).
+            if (def.type !== 'mark' && def.type !== 'bleed') this.enemyFloat(e, 'RESIST', '#aaaaaa', 12);
+            return;
+        }
+        // Burst at full stacks (Bleed x5): the stacks are removed and the enemy loses a share of its max HP.
+        const burst = def.burstAtMaxStacks;
+        if (burst && e.stacksOf(def.id) >= Math.max(1, def.maxStacks || 1)) {
+            e.clearStatus(def.id);
+            const amount = Math.max(1, Math.floor(this.capPercentHp(e.maxHp * (burst.maxHpPct || 0) / 100 * this.percentHpMul(e), hitDamage, srcId)));
+            this.applyDamage(e, { amount, crit: true, dodged: false });
+        }
+    }
+
+    /** Extra damage of a hit on an enemy whose mark from this tower is at full stacks (Hunter's Mark x5: 1% of current HP). */
+    private markHpBonus(shot: ShotInfo, e: Enemy): number {
+        const full = e.fullMark(shot.towerId);
+        if (!full || !full.currentHpPct) return 0;
+        return this.capPercentHp(e.hp * full.currentHpPct / 100 * this.percentHpMul(e), shot.damage * (1 + this.buff('damage', shot.towerId) / 100), shot.towerId);
+    }
+
+    /** Effects based on a share of the HP (Heavy Impact, Bleed burst, Hunter's Mark x5, stun-immune hit) are weaker on bosses (effects.json "bossPercentHpMul"). */
+    /**
+     * Damage based on a share of the HP is limited to effects.json "percentHpCapHitMul" times the damage of
+     * the hit that caused it ("percentHpCapByTower" overrides it per tower) (before defense), so enemy HP keeps mattering in the late waves.
+     */
+    private capPercentHp(amount: number, hitDamage: number, towerId = ''): number {
+        const byTower = ConfigMgr.effects.percentHpCapByTower || {};
+        const k = byTower[towerId] > 0 ? byTower[towerId] : ConfigMgr.effects.percentHpCapHitMul;
+        return k > 0 && hitDamage > 0 ? Math.min(amount, hitDamage * k) : amount;
+    }
+
+    private percentHpMul(e: Enemy): number {
+        const m = ConfigMgr.effects.bossPercentHpMul;
+        return e.boss && m > 0 ? m : 1;
     }
 
     private towerByUid(uid: number): TowerUnit | null {

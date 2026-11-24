@@ -73,6 +73,8 @@ export class Enemy {
     /** Row of status icons above the HP bar (effects.json visual.icon); created on demand. */
     private statusIcons: Node | null = null;
     private iconSprites: Sprite[] = [];
+    /** Stack count on each status icon (statuses that stack). */
+    private iconCounts: Label[] = [];
     private placeholder: Node | null = null;
     private flash = 0;
     private sprintTimer = 0;
@@ -176,11 +178,18 @@ export class Enemy {
      * `valueMul` carry research / hero bonuses. Returns false when resisted.
      * Call isImmune() first: an immune enemy simply ignores the effect (no "RESIST" text).
      */
-    applyStatus(def: any, sourceUid: number, durationMul = 1, valueMul = 1): boolean {
-        if (!this.alive) return false;
+    /** Rolls the status resistance (own + wave resistance, at most 95%). True = resisted. */
+    resists(def: any): boolean {
         let resist = (this.def.statusEffectResistance && this.def.statusEffectResistance[def.type]) || 0;
         if (this.waveResist.types.indexOf(def.type) >= 0) resist += this.waveResist.value;
-        if (Math.random() * 100 < Math.min(95, resist)) return false;
+        return Math.random() * 100 < Math.min(95, resist);
+    }
+
+    applyStatus(def: any, sourceUid: number, durationMul = 1, valueMul = 1): boolean {
+        if (!this.alive) return false;
+        // "resistFirstStackOnly" (Bleed): only the first stack can be resisted; an enemy that already bleeds takes every new stack.
+        const has = def.resistFirstStackOnly && this.statuses.some(s => s.def.id === def.id);
+        if (!has && this.resists(def)) return false;
         const duration = def.duration * durationMul;
         // Short immunity (e.g. Stun): the effect cannot be applied again while it lasts and for
         // "immunityAfter" seconds after it ends, so enemies are never stunned without a break.
@@ -240,6 +249,29 @@ export class Enemy {
     }
 
     /** Extra damage % taken from this tower / damage type because of Mark effects. */
+    /** Mark of this tower at its maximum stacks (Hunter's Mark x5), or null. */
+    fullMark(towerId: string): any {
+        for (const s of this.statuses) {
+            if (s.def.type !== 'mark' || !s.def.atMaxStacks) continue;
+            if (s.def.towerIds && s.def.towerIds.indexOf(towerId) >= 0 && s.stacks >= Math.max(1, s.def.maxStacks || 1)) return s.def.atMaxStacks;
+        }
+        return null;
+    }
+
+    /** Removes every instance of a status (Bleed burst). */
+    clearStatus(id: string) {
+        const n = this.statuses.length;
+        this.statuses = this.statuses.filter(s => s.def.id !== id);
+        if (this.statuses.length !== n) this.refreshStatusLabel();
+    }
+
+    /** Stacks of a status (0 when absent). */
+    stacksOf(id: string): number {
+        let n = 0;
+        for (const s of this.statuses) if (s.def.id === id) n = Math.max(n, s.stacks);
+        return n;
+    }
+
     markBonus(towerId: string, type: DamageType): number {
         let v = 0;
         for (const s of this.statuses) {
@@ -254,18 +286,23 @@ export class Enemy {
     private refreshStatusLabel() {
         // One icon per status type (effects.json "visual.icon"); statuses without an icon (Burn) are shown as text.
         const icons: string[] = [];
+        const stacks: number[] = [];
         const labels: string[] = [];
         let color = '#ffffff';
         for (const s of this.statuses) {
             const v = s.def.visual || {};
-            if (v.icon) { if (icons.indexOf(v.icon) < 0) icons.push(v.icon); }
+            if (v.icon) {
+                const k = icons.indexOf(v.icon);
+                const n = (s.def.maxStacks || 1) > 1 ? s.stacks : 0; // count only for statuses that stack
+                if (k < 0) { icons.push(v.icon); stacks.push(n); } else stacks[k] = Math.max(stacks[k], n);
+            }
             else {
                 const l = v.label || s.def.name;
                 if (labels.indexOf(l) < 0) labels.push(l);
             }
             color = v.color || color;
         }
-        this.showStatusIcons(icons);
+        this.showStatusIcons(icons, stacks);
         if (labels.length > 0 && !this.statusLabel) {
             // Created on demand. Bold with a dark outline so it reads on sand, grass and other enemies.
             // BITMAP cache: the outline needs it, and the text only changes when a status starts or ends.
@@ -287,7 +324,7 @@ export class Enemy {
     }
 
     /** Status icons in a centered row (pictures come from the combat atlas). */
-    private showStatusIcons(paths: string[]) {
+    private showStatusIcons(paths: string[], stacks: number[] = []) {
         if (paths.length === 0) { if (this.statusIcons) this.statusIcons.active = false; return; }
         if (!this.statusIcons) {
             this.statusIcons = mk('StatusIcons', this.node, 0, this.radius + 21);
@@ -301,6 +338,18 @@ export class Enemy {
             sp.spriteFrame = frames.length > 0 ? frames[0] : null;
             sp.node.active = true;
             sp.node.setPosition(x0 + i * step, 0, 0);
+            // Stack count (Hunter's Mark, Bleed) in the icon's lower right corner.
+            // Stacking statuses show "x1".."x5" small and white in the lower right quarter of the icon.
+            const n = stacks[i] || 0;
+            let lb = this.iconCounts[i];
+            if (n > 0 && !lb) {
+                lb = text(sp.node, '', 8, STATUS_ICON / 4 + 1, -STATUS_ICON / 4 + 1, { bold: true });
+                lb.enableOutline = true;
+                lb.outlineColor = new Color(20, 14, 28, 255);
+                lb.outlineWidth = 1;
+                this.iconCounts[i] = lb;
+            }
+            if (lb) { lb.node.active = n > 0; if (n > 0) lb.string = 'x' + n; }
         }
         for (let i = paths.length; i < this.iconSprites.length; i++) this.iconSprites[i].node.active = false;
     }

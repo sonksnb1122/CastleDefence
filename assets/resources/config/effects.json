@@ -1,5 +1,10 @@
 {
   "version": 1,
+  "bossPercentHpMul": 0.333,
+  "percentHpCapHitMul": 4,
+  "percentHpCapByTower": {
+    "crossbow": 10
+  },
   "statusEffects": [
     {
       "id": "slow",
@@ -20,7 +25,7 @@
       "id": "stun",
       "type": "stun",
       "name": "Stun",
-      "description": "Prevents movement. Cannot be applied again until immunityAfter seconds after it ends.",
+      "description": "Prevents movement. Cannot be applied again until immunityAfter seconds after it ends; a stunning hit during that time deals 4% of the max HP instead (1/3 on bosses, at most 4x the hit).",
       "duration": 0.3,
       "immunityAfter": 0.5,
       "value": 0,
@@ -30,25 +35,32 @@
         "label": "STUN",
         "color": "#ffe066",
         "icon": "sprites/status/status_stun"
+      },
+      "immuneHit": {
+        "maxHpPct": 4
       }
     },
     {
       "id": "bleed",
       "type": "bleed",
       "name": "Bleed",
-      "description": "Physical damage every tick: value % of the hit that caused it.",
+      "description": "Physical damage every tick (only the first stack can be resisted): value % of the hit that caused it. At 5 stacks the stacks are removed and the enemy loses 4% of its max HP (1/3 on bosses, at most 10x the hit).",
       "duration": 4,
       "value": 20,
       "tickInterval": 1,
       "damageType": "physic",
       "stacking": "StackValue",
-      "maxStacks": 3,
+      "maxStacks": 5,
       "visual": {
         "label": "BLEED",
         "color": "#ff5a5a",
         "icon": "sprites/status/status_bleed"
       },
-      "percentOfHit": true
+      "percentOfHit": true,
+      "burstAtMaxStacks": {
+        "maxHpPct": 4
+      },
+      "resistFirstStackOnly": true
     },
     {
       "id": "burn",
@@ -90,32 +102,35 @@
       "id": "hunter_mark",
       "type": "mark",
       "name": "Hunter's Mark",
-      "description": "Takes value % more damage from Crossbow towers.",
+      "description": "Takes value % more damage from Crossbow towers per stack (max 5, shared by all Crossbows). At 5 stacks every Crossbow hit also deals 1% of the current HP (1/3 on bosses, at most 10x the hit).",
       "duration": 5,
       "value": 50,
       "towerIds": [
         "crossbow"
       ],
-      "stacking": "RefreshDuration",
-      "maxStacks": 1,
+      "stacking": "StackValue",
+      "maxStacks": 5,
       "visual": {
         "label": "MARK",
         "color": "#ffffff",
         "icon": "sprites/status/status_mark"
+      },
+      "atMaxStacks": {
+        "currentHpPct": 1
       }
     },
     {
       "id": "arcane_mark",
       "type": "mark",
       "name": "Arcane Vulnerability",
-      "description": "Takes value % more magic damage.",
+      "description": "Takes value % more magic damage per stack (max 5).",
       "duration": 4,
-      "value": 20,
+      "value": 30,
       "damageTypes": [
         "magic"
       ],
-      "stacking": "RefreshDuration",
-      "maxStacks": 1,
+      "stacking": "StackValue",
+      "maxStacks": 5,
       "visual": {
         "label": "VULN",
         "color": "#b48cff",
@@ -127,20 +142,20 @@
     {
       "id": "piercing_bolt",
       "name": "Piercing Bolt",
-      "description": "The bolt goes on to hit 2 more enemies nearby.",
+      "description": "The bolt goes on to hit up to 4 more enemies nearby.",
       "trigger": "onHit",
       "kind": "chain",
       "chance": 25,
       "value": 100,
       "range": 140,
-      "maxTargets": 2,
+      "maxTargets": 4,
       "cooldown": 0,
       "targetType": "enemy"
     },
     {
       "id": "bleeding_bolt",
       "name": "Bleeding Bolt",
-      "description": "Bleed: 20% of the hit as physical damage every second for 4 s (stacks 3 times).",
+      "description": "Bleed: 20% of the hit as physical damage every second for 4 s (stacks 5 times). At 5 stacks the bleed bursts for 4% of the max HP (1/3 on bosses, at most 10x the hit).",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "bleed",
@@ -152,7 +167,7 @@
     {
       "id": "hunters_mark",
       "name": "Hunter's Mark",
-      "description": "The target takes +50% damage from Crossbows for 5 s.",
+      "description": "The target takes +50% Crossbow damage per stack for 5 s (max 5 stacks, shared by all Crossbows). At 5 stacks every Crossbow hit also deals 1% of the current HP (1/3 on bosses, at most 10x the hit).",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "hunter_mark",
@@ -176,20 +191,21 @@
     {
       "id": "chain_lightning",
       "name": "Chain Lightning",
-      "description": "Lightning jumps to 3 more enemies for 80% damage.",
+      "description": "Lightning jumps to up to 5 more enemies for 80% damage, even when the shot hits no enemy.",
       "trigger": "onHit",
       "kind": "chain",
       "chance": 25,
       "value": 80,
       "range": 140,
-      "maxTargets": 3,
+      "maxTargets": 5,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "fromImpact": true
     },
     {
       "id": "arcane_vulnerability",
       "name": "Arcane Vulnerability",
-      "description": "Enemies hit take +20% magic damage for 4 s.",
+      "description": "Enemies hit take +30% magic damage per stack for 4 s (max 5 stacks).",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "arcane_mark",
@@ -201,7 +217,7 @@
     {
       "id": "shockwave",
       "name": "Shockwave",
-      "description": "Enemies hit are stunned for 0.3 s (then immune to stun for 0.5 s).",
+      "description": "Enemies hit are stunned for 0.3 s (then immune to stun for 0.5 s). A stunned or immune enemy takes 4% of its max HP instead (1/3 on bosses, at most 4x the hit).",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "stun",
@@ -213,7 +229,7 @@
     {
       "id": "heavy_impact",
       "name": "Heavy Impact",
-      "description": "Bonus damage equal to 6% of the target's max HP (at most one normal hit).",
+      "description": "Bonus damage equal to 6% of the target's max HP (at most 5 normal hits, 1/3 on bosses).",
       "trigger": "onHit",
       "kind": "bonusMaxHp",
       "chance": 100,
@@ -221,7 +237,7 @@
       "maxTargets": 99,
       "cooldown": 0,
       "targetType": "enemy",
-      "capHitMul": 1.0
+      "capHitMul": 5
     },
     {
       "id": "armor_break",
