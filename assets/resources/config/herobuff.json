@@ -209,6 +209,21 @@
       "key": "smartTarget",
       "name": "Smart Targeting",
       "unit": ""
+    },
+    {
+      "key": "skillCooldown",
+      "name": "Hero skill cooldown",
+      "unit": " wave"
+    },
+    {
+      "key": "skillDamage",
+      "name": "Skill damage",
+      "unit": "%"
+    },
+    {
+      "key": "skillCharges",
+      "name": "Hero skill uses",
+      "unit": ""
     }
   ]
 }

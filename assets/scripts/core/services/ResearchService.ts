@@ -53,7 +53,8 @@ export class ResearchService {
         const out: Cost = {};
         for (const k in t.baseCost) {
             const growth = !keys || keys.indexOf(k) >= 0 ? Math.pow(t.costGrowth, lv) : 1;
-            out[k] = Math.ceil(t.baseCost[k] * growth * (1 - discount / 100));
+            // Energy Cores (special research) are never discounted.
+            out[k] = Math.ceil(t.baseCost[k] * growth * (1 - (k === 'core' ? 0 : discount) / 100));
         }
         return out;
     }

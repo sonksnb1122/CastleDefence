@@ -5,7 +5,7 @@ import { G } from '../../core/Globals';
 import { ResourceMgr } from '../../core/ResourceMgr';
 import { TopBarView } from '../items/TopBarView';
 import { PrefabButton, PrefabUi } from './PrefabUi';
-import { COLORS, hex, mk, text } from './UIKit';
+import { COLORS, hex, mk, resIcon, text } from './UIKit';
 
 /** Resource bar shown at the top of the castle and battlefield screens (prefabs/items/TopBar). */
 export class TopBar {
@@ -24,6 +24,10 @@ export class TopBar {
         this.node = this.view.node;
         const v = this.view;
         this.labels = { food: v.food!, material: v.material!, gold: v.gold! };
+        if (v.core) {
+            this.labels.core = v.core;
+            if (v.coreIcon) resIcon(v.coreIcon, 'core', 28);
+        }
         if (v.background) PrefabUi.blockTaps(v.background);   // the bar blocks taps on the map below
         if (v.towers) v.towers.node.active = showTowers && demoValue === null;
         for (const l of [v.wave, v.state]) if (l) l.node.active = demoValue === null;
@@ -40,8 +44,9 @@ export class TopBar {
         // Exactly the screen width (not wider), so its corner ornaments are not cut off by the screen edges.
         if (v.frame) { const k = v.frame.scale.x || 1; PrefabUi.setSize(v.frame, W / k, PrefabUi.size(v.frame).height); }
         // Resources share the left part (narrow screens get a smaller spacing), wave + state sit on the right edge.
-        const spacing = Math.max(120, Math.min(190, (W - 330) / 3));
-        ['food', 'material', 'gold'].forEach((k, i) => {
+        const keys = Object.keys(this.labels);
+        const spacing = Math.max(105, Math.min(170, (W - 420) / keys.length));
+        keys.forEach((k, i) => {
             const group = this.labels[k].node.parent!;
             group.setPosition(16 + spacing * i, group.position.y, 0);
         });

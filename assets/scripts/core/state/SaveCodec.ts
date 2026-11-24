@@ -23,7 +23,7 @@ export class SaveCodec {
             configVersion: ConfigMgr.version,
             savedAt: 0,
             state: 'Preparation',
-            resources: { food: cfg.startResources.food || 0, material: cfg.startResources.material || 0, gold: cfg.startResources.gold || 0 },
+            resources: { food: cfg.startResources.food || 0, material: cfg.startResources.material || 0, gold: cfg.startResources.gold || 0, core: cfg.startResources.core || 0 },
             currentWave: 1,
             highestWave: 0,
             lastRewardedWave: 0,
@@ -62,7 +62,7 @@ export class SaveCodec {
             configVersion: n(raw.configVersion, 0),
             savedAt: n(raw.savedAt, 0),
             state: 'Preparation', // saves are only written between waves
-            resources: { food: n(res.food, start.food || 0), material: n(res.material, start.material || 0), gold: n(res.gold, start.gold || 0) },
+            resources: { food: n(res.food, start.food || 0), material: n(res.material, start.material || 0), gold: n(res.gold, start.gold || 0), core: Math.floor(n(res.core, start.core || 0)) },
             currentWave: Math.floor(n(raw.currentWave, 1, 1)),
             highestWave: Math.floor(n(raw.highestWave, 0)),
             lastRewardedWave: Math.floor(n(raw.lastRewardedWave, 0)),
@@ -75,10 +75,24 @@ export class SaveCodec {
             research: {},
             marketSeed: Math.floor(n(raw.marketSeed, Math.floor(Math.random() * 1e9))),
             skillReady: {},
+            heroSkills: {},
+            books: {},
+            skillUses: {},
+            bookShop: { wave: 0, bought: [] },
         };
         // Skill cooldowns: only skills that still exist in skills.json.
         const ready = raw.skillReady && typeof raw.skillReady === 'object' ? raw.skillReady : {};
-        for (const id in ready) if (ConfigMgr.skillDef(id)) d.skillReady![id] = Math.floor(n(ready[id], 0));
+        for (const id in ready) if (ConfigMgr.skillDef(id) || ConfigMgr.heroDef(id)) d.skillReady![id] = Math.floor(n(ready[id], 0));
+        // Hero skills, skill books, skill uses and the book offers bought this wave.
+        const known = (id: any) => typeof id === 'string' && !!ConfigMgr.anySkillDef(id);
+        const hs = raw.heroSkills && typeof raw.heroSkills === 'object' ? raw.heroSkills : {};
+        for (const h in hs) if (ConfigMgr.heroDef(h) && Array.isArray(hs[h])) d.heroSkills![h] = hs[h].filter(known);
+        const books = raw.books && typeof raw.books === 'object' ? raw.books : {};
+        for (const id in books) if (known(id) && n(books[id], 0) > 0) d.books![id] = Math.floor(n(books[id], 0));
+        const uses = raw.skillUses && typeof raw.skillUses === 'object' ? raw.skillUses : {};
+        for (const h in uses) if (ConfigMgr.heroDef(h)) d.skillUses![h] = Math.floor(n(uses[h], 0));
+        const shop = raw.bookShop || {};
+        d.bookShop = { wave: Math.floor(n(shop.wave, 0)), bought: Array.isArray(shop.bought) ? shop.bought.filter((x: any) => typeof x === 'number') : [] };
         let maxUid = 1;
         const center = Placement.castleCenter();
         for (const b of (Array.isArray(raw.buildings) ? raw.buildings : [])) {

@@ -6,7 +6,8 @@ import { TopBar } from './common/TopBar';
 import { TradeView } from './screens/TradeView';
 import { toast } from './common/Popups';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
-import { COLORS, hex, resIcon } from './common/UIKit';
+import { COLORS, ScrollList, hex, resIcon, text } from './common/UIKit';
+import { bookCard } from './SkillCards';
 
 const KEYS = ['gold', 'material', 'food'];
 const NAMES: { [k: string]: string } = { gold: 'Gold', material: 'Material', food: 'Food' };
@@ -35,6 +36,8 @@ function centerGroup(icon: Node | null, label: Label, gap = 6) {
 
 interface ResButton { btn: PrefabButton; icon: Node | null; amount: Label | null; }
 
+const BOOK_H = 170;
+
 /**
  * Market of the Base (prefabs/screens/Trade), opened like the hero recruitment.
  * Left, "Trade Amount": pick the resource to give; it shows the amount being traded
@@ -42,6 +45,8 @@ interface ResButton { btn: PrefabButton; icon: Node | null; amount: Label | null
  * Right, "Receive Amount": pick the resource to get; it shows the amount received.
  * Any resource can be traded for any other. The step buttons in the middle set the amount.
  * Rates, fee and price changes come from building.json "trade" (see TradeService).
+ * Second tab, "Skill Books": books owned on the left, this wave's book offers on the right
+ * (bought with gold, see HeroSkillService).
  */
 export class TradeScreen {
     root: Node;
@@ -55,6 +60,12 @@ export class TradeScreen {
     private getBtns: { [k: string]: ResButton } = {};
     private tradeBtn: PrefabButton;
     private unsubscribe: () => void;
+    private tab: 'market' | 'books' = 'market';
+    private marketTab: PrefabButton;
+    private booksTab: PrefabButton;
+    private ownedList: ScrollList | null = null;
+    private shopList: ScrollList | null = null;
+    private listW = 470;
 
     constructor(parent: Node) {
         const v = PrefabUi.view('screens/Trade', parent, TradeView);
@@ -82,8 +93,68 @@ export class TradeScreen {
         new PrefabButton(v.maxButton, () => this.setAmount(this.rm.get(this.give)));
         new PrefabButton(v.backButton, () => G.main.goto('inCastle'));
         this.tradeBtn = new PrefabButton(v.tradeButton, () => this.doTrade());
-        this.unsubscribe = this.rm.onChange(() => this.refresh());
-        this.refresh();
+        this.marketTab = new PrefabButton(v.marketTab, () => this.setTab('market'));
+        this.booksTab = new PrefabButton(v.booksTab, () => this.setTab('books'));
+        this.listW = Math.min(470, G.main.W / 2 - 42);
+        this.unsubscribe = this.rm.onChange(() => { this.refresh(); if (this.tab === 'books') this.refreshBooks(); });
+        this.setTab('market');
+    }
+
+    // ------------------------------------------------------------------ tabs
+    private setTab(tab: 'market' | 'books') {
+        this.tab = tab;
+        const v = this.view, books = tab === 'books';
+        for (const n of [v.header, v.marketPanel, v.tradeButton]) if (n) n.active = !books;
+        for (const n of [v.ownedBooksArea, v.ownedBooksHeader, v.shopArea, v.shopHeader]) if (n) n.active = books;
+        this.marketTab.setColor(books ? COLORS.button : COLORS.buttonOk);
+        this.booksTab.setColor(books ? COLORS.buttonOk : COLORS.button);
+        if (books) {
+            if (!this.ownedList) this.ownedList = this.makeList(v.ownedBooksArea!);
+            if (!this.shopList) this.shopList = this.makeList(v.shopArea!);
+            this.refreshBooks();
+        } else this.refresh();
+    }
+
+    /** Scroll list filling a list area of the prefab (its width follows the screen), like the hero recruitment. */
+    private makeList(area: Node): ScrollList {
+        const h = PrefabUi.size(area).height;
+        PrefabUi.setSize(area, this.listW, h);
+        const frame = area.getChildByName('Frame');
+        if (frame) { const k = frame.scale.x || 1; PrefabUi.setSize(frame, (this.listW + 36) / k, (h + 36) / k); }
+        return new ScrollList(area, 0, 0, this.listW, h, false);
+    }
+
+    /** Skill Books tab: books owned (left) and this wave's offers (right). */
+    private refreshBooks() {
+        const v = this.view, sk = this.rm.skills;
+        const cw = this.listW - 22, ch = BOOK_H - 8;
+        const owned = sk.ownedBooks();
+        let total = 0;
+        for (const id of owned) total += sk.bookCount(id);
+        v.ownedBooksTitle!.string = `Skill books (${total})`;
+        const ol = this.ownedList!, sl = this.shopList!;
+        // Rebuilt after every purchase: keep the scroll positions.
+        const keepO = ol.scroll, keepS = sl.scroll;
+        ol.clear();
+        owned.forEach((id, i) => bookCard(ol.content, id, 0, -4 - i * BOOK_H - BOOK_H / 2 + 4, cw, ch, { count: sk.bookCount(id) }));
+        if (owned.length === 0) text(ol.content, 'No skill book yet.\nBuy books on the right, then teach them\nto heroes in the hero recruitment (+).', 15, 0, -60, { color: COLORS.textDim });
+        ol.setContentHeight(Math.max(1, owned.length) * BOOK_H + 8);
+        ol.scrollBy(keepO);
+        const offers = sk.offers();
+        v.shopTitle!.string = `For sale - wave ${this.rm.data.currentWave}`;
+        sl.clear();
+        offers.forEach((o, i) => bookCard(sl.content, o.skillId, 0, -4 - i * BOOK_H - BOOK_H / 2 + 4, cw, ch, {
+            price: o.price, bought: o.bought, onBuy: () => this.buyBook(o.index),
+        }));
+        sl.setContentHeight(offers.length * BOOK_H + 8);
+        sl.scrollBy(keepS);
+    }
+
+    private buyBook(index: number) {
+        const err = this.rm.skills.buyBook(index);
+        if (err) { toast(this.root, err); return; }
+        G.main.playSfx('coin');
+        toast(this.root, 'Skill book bought', true);
     }
 
     private pickGive(k: string) {

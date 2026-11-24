@@ -18,6 +18,7 @@ Video demo: https://drive.google.com/drive/folders/15IWJf0NY1LbKzWitaf19cV2dwojP
 - [Heroes](#heroes)
 - [Research](#research)
 - [Active skills](#active-skills)
+- [Hero skills and Energy Cores](#hero-skills-and-energy-cores)
 - [Art style](#art-style)
 - [Getting started](#getting-started)
 - [Project architecture](#project-architecture)
@@ -46,6 +47,8 @@ When every monster of the wave is dead:
 If the wall's HP reaches 0, the game is over.
 
 **Starting resources:** 600 food, 700 material, 700 gold.
+
+**Energy Core:** a fourth resource, dropped by bosses (see [Hero skills and Energy Cores](#hero-skills-and-energy-cores)). It is shown in the top bar and cannot be traded in the Market.
 
 **Saving:** one autosave slot (written after every wave and when the app goes to the background)
 and three manual slots. Saving is only possible during preparation.
@@ -305,6 +308,39 @@ cancel); `<<` and `>>` go to the previous / next skill.
 | Lightning Strike | 5 | Lightning bolts rain on the chosen spot. Enemies inside the skill circle lose 50% of their max HP. |
 | Rock Fall | 5 | Rocks fall on the chosen spot. Enemies inside the skill circle lose 50% of their max HP. |
 | Void Rift | 5 | Void rifts tear open on the chosen spot. Enemies inside the skill circle lose 50% of their max HP. |
+
+---
+
+## Hero skills and Energy Cores
+
+**Energy Cores** drop from every boss: `2 + floor(wave / 50)` cores per boss (`waves.json` "bossCoreDrop"),
+so later bosses give more. The cores of a wave are listed in the "Wave cleared" window.
+
+**Skill books** are sold in the Market of the Base, tab **Skill Books** (bottom right): books owned on the
+left, this wave's offers on the right. Every wave brings a new random choice of 4-6 books, paid in gold
+(`skills.json` "bookShop": price = 2000 x (1 + 5% per wave), +/- 20%). A book can teach any of the active
+skills above or a passive skill.
+
+**Learning:** in the hero recruitment, owned heroes with a free skill slot show a **+** at the top right of
+their card. It opens a popup listing the books the hero can learn; learning costs **1 Energy Core** and
+uses up the book. 5-star heroes learn 1 active + 1 passive skill, the other heroes 1 skill (active or
+passive). Learned skills are listed on the hero card.
+
+**In battle:** when a wave starts, the tower build buttons are replaced by small cards of the heroes that
+learned an active skill. Tap a card to highlight it and read its skill on the right side of the screen;
+drag it up out of the card bar to cast the skill (targeted skills land where the card is released).
+An active hero skill can be used **once every 5 waves**. Passive skills (`skills.json` "passives") give
+their buffs permanently, like hero buffs (the passive list is a placeholder for now).
+
+**Special research** (Research Lab Lv 3, paid with Energy Cores as well):
+
+| Technology | Effect | Energy Cores |
+|---|---|---|
+| Battle Tactics | Hero skills recharge 1 wave faster (5 -> 4 waves) | 4 |
+| Twin Cast | Every hero skill can be used one more time before it recharges | 5 |
+| Arcane Amplifier | +10% skill damage per level (5 levels) | 1 per level |
+
+The research cost discount never applies to Energy Cores.
 
 ---
 

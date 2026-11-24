@@ -42,6 +42,8 @@ export class BuffService {
         const def = ConfigMgr.heroDef(heroId);
         const list: BuffEntry[] = (this.rm.data.heroRolls[heroId] || []).slice();
         if (def && def.passive) for (const b of def.passive.buffs) list.push(b);
+        // Passive skills the hero learned (skills.json "passives").
+        for (const b of this.rm.skills.passiveBuffs(heroId)) list.push(b);
         return list;
     }
 

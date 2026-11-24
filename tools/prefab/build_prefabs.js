@@ -304,6 +304,12 @@ function topBarItem() {
     w.sprite(icon, frameUuid(buildingCfg.resourceIcons[key]));
     refs[key] = lab(w, label(w, g, 'Amount', '0', 34, 0, 18, { ax: 0, color, bold: true }));
   });
+  // Energy Core (boss drop). Its icon is set at runtime (TopBar) from building.json "resourceIcons.core".
+  {
+    const g = w.node('Core', left, { x: 16 + 190 * 3, w: 110, h: 40, ax: 0 });
+    refs.coreIcon = w.node('Icon', g, { x: 14, w: 28, h: 28 });
+    refs.core = lab(w, label(w, g, 'Amount', '0', 34, 0, 18, { ax: 0, color: '#7fd8ff', bold: true }));
+  }
   const right = w.node('Right', root, { x: SCREEN_W / 2, w: 400, h: 40, ax: 1 });
   w.widget(right, { right: 0 });
   refs.towers = lab(w, label(w, right, 'Towers', 'Towers 0/10', -360, 0, 16, { ax: 0, bold: true, color: '#cfe3ff' }));
@@ -393,7 +399,26 @@ function heroCardItem() {
   refs.heroName = text('HeroName', 'Hero Name', ty, 16, { bold: true });
   refs.passive = text('Passive', '[Passive]', ty - 18, 12, { color: C.accent });
   refs.buffs = text('Buffs', 'Buff 1\nBuff 2', ty - 36 + 8, 12, { ay: 1, color: '#bfe8b0', lineHeight: 16 });
+  // "+" at the top right corner: learn a skill from a skill book (shown by the recruitment screen).
+  refs.learnButton = button(w, root, 'LearnButton', '+', W / 2 - 30, H / 2 - 28, 34, 34, C.buttonOk, 20, 'game', { active: false });
+  w.widget(refs.learnButton, { right: 13, top: 11 });
   save(w, 'items/HeroCard', root, 'HeroCardView', 'items', refs);
+}
+
+function skillCardItem() {
+  // Small hero card of the battle HUD (hero skills): hero picture, skill name, recharge overlay, highlight.
+  const w = new PrefabWriter('SkillCard');
+  const W = 74, H = 104;
+  const root = w.node('SkillCard', null, { w: W, h: H });
+  const refs = {};
+  refs.glow = box(w, root, 'Glow', 0, 0, W + 10, H + 10, hex('#ffe27a', 235), { active: false });
+  refs.frame = spr(w, sliced(w, root, 'Frame', UI.cardFrame, 0, 0, W, H));
+  refs.art = panel(w, root, 'Art', 0, 8, W - 16, H - 36, '#1c1826');
+  refs.placeholder = lab(w, label(w, refs.art, 'Placeholder', 'Hero', 0, 0, 11, { color: C.textDim }));
+  refs.skillName = lab(w, label(w, root, 'SkillName', 'Skill', 0, -H / 2 + 13, 10, { bold: true, width: W - 8 }));
+  refs.shade = box(w, root, 'Shade', 0, 0, W - 6, H - 6, hex('#000000', 150), { active: false });
+  refs.status = lab(w, label(w, root, 'Status', '', 0, 6, 13, { bold: true, width: W - 8, color: '#ffe27a' }));
+  save(w, 'items/SkillCard', root, 'SkillCardView', 'items', refs);
 }
 
 function levelTagItem() {
@@ -504,12 +529,24 @@ function outCastleScreen() {
   refs.pauseButton = pauseButton(w, root);
   refs.speedButton = button(w, root, 'SpeedButton', 'x1', -SCREEN_W / 2 + 102, -SCREEN_H / 2 + 30, 56, 40, C.button, 17, 'game', { widget: { left: 74, bottom: 10 } });
   // Temporary: casts the skills of skills.json one after another (testing); << and >> pick the previous / next one.
-  refs.skillBackButton = button(w, root, 'SkillBackButton', '<<', -SCREEN_W / 2 + 160, -SCREEN_H / 2 + 30, 44, 40, C.button, 16, 'game', { widget: { left: 138, bottom: 10 }, active: false });
-  refs.skillTestButton = button(w, root, 'SkillTestButton', 'Skill', -SCREEN_W / 2 + 288, -SCREEN_H / 2 + 30, 200, 40, C.buttonOk, 15, 'game', { widget: { left: 188, bottom: 10 }, active: false });
-  refs.skillSkipButton = button(w, root, 'SkillSkipButton', '>>', -SCREEN_W / 2 + 416, -SCREEN_H / 2 + 30, 44, 40, C.button, 16, 'game', { widget: { left: 394, bottom: 10 }, active: false });
+  refs.skillBackButton = button(w, root, 'SkillBackButton', '<<', -SCREEN_W / 2 + 32, -SCREEN_H / 2 + 140, 44, 40, C.button, 16, 'game', { widget: { left: 10, bottom: 120 }, active: false });
+  refs.skillTestButton = button(w, root, 'SkillTestButton', 'Skill', -SCREEN_W / 2 + 160, -SCREEN_H / 2 + 140, 200, 40, C.buttonOk, 15, 'game', { widget: { left: 60, bottom: 120 }, active: false });
+  refs.skillSkipButton = button(w, root, 'SkillSkipButton', '>>', -SCREEN_W / 2 + 288, -SCREEN_H / 2 + 140, 44, 40, C.button, 16, 'game', { widget: { left: 266, bottom: 120 }, active: false });
   refs.cancelButton = button(w, root, 'CancelButton', 'Cancel placement', 0, -SCREEN_H / 2 + 30, 200, 40, C.buttonDanger, 16, 'game', { widget: { bottom: 10 }, active: false });
   refs.buildBar = w.node('BuildBar', root, { x: 20, y: -SCREEN_H / 2 + 30, w: 520, h: 44 });
   w.widget(refs.buildBar, { bottom: 8 });
+  // Battle: hero skill cards in place of the build buttons (filled by OutCastleScreen), and the
+  // description of the selected card on the right.
+  refs.heroSkillBar = w.node('HeroSkillBar', root, { x: 40, y: -SCREEN_H / 2 + 62, w: 560, h: 110, active: false });
+  w.widget(refs.heroSkillBar, { bottom: 7 });
+  const skillInfo = w.node('SkillInfo', root, { x: SCREEN_W / 2 - 148, y: -40, w: 280, h: 190, active: false });
+  w.widget(skillInfo, { right: 8 });
+  sliced(w, skillInfo, 'Frame', UI.listBg, 0, 0, 280, 190);
+  box(w, skillInfo, 'Backing', 0, 0, 250, 160, hex('#1d1830', 235));
+  refs.skillInfo = skillInfo;
+  refs.skillInfoTitle = lab(w, label(w, skillInfo, 'Title', 'Skill', 0, 66, 17, { bold: true, color: C.accent, width: 240 }));
+  refs.skillInfoType = lab(w, label(w, skillInfo, 'Type', 'Hero', 0, 44, 12, { color: '#9fe8ff', width: 240 }));
+  refs.skillInfoText = lab(w, label(w, skillInfo, 'Text', 'Description', 0, 30, 13, { width: 236, ay: 1, align: 1, color: '#e6e0f0' }));
   save(w, 'screens/OutCastle', root, 'OutCastleView', 'screens', refs);
 }
 
@@ -578,15 +615,35 @@ function tradeScreen() {
   refs.rateLabel = lab(w, label(w, mid, 'Rate', '1 gold = 0.7 food', 0, -16, 17, { bold: true }));
   // Top-anchored: 2-3 lines growing downwards.
   refs.infoLabel = lab(w, label(w, mid, 'Info', 'Market fee 20%', 0, -32, 14, { width: 290, ay: 1, align: 1, bold: true, color: '#d8d0e6' }));
+  refs.header = head;
+  refs.marketPanel = area;
+  // Skill Books tab (hidden at first): books owned on the left, books for sale this wave on the right,
+  // laid out like the hero recruitment.
+  const listW = 470, listTop = SCREEN_H / 2 - 126, listBottom = -SCREEN_H / 2 + 72, listH = listTop - listBottom;
+  [['OwnedBooks', -1, 'Skill books (0)'], ['Shop', 1, 'For sale this wave']].forEach(([name, side, title]) => {
+    const a = w.node(name + 'Area', root, { x: side * SCREEN_W / 4, y: (listTop + listBottom) / 2, w: listW, h: listH, active: false });
+    w.widget(a, { top: 126, hc: side * 0.25, hcPct: true });
+    sliced(w, a, 'Frame', UI.listBg, 0, 0, listW + 36, listH + 36);
+    const key = name.charAt(0).toLowerCase() + name.slice(1);
+    refs[key + 'Area'] = a;
+    const h = w.node(name + 'Header', root, { x: side * SCREEN_W / 4, y: SCREEN_H / 2 - 84, w: 280, h: 48, active: false });
+    w.widget(h, { top: 60, hc: side * 0.25, hcPct: true });
+    sliced(w, h, 'Scroll', Object.assign({}, UI.popupHeader, { scale: 1.5 }), 0, 0, 280, 48);
+    refs[key + 'Header'] = h;
+    refs[key + 'Title'] = lab(w, label(w, h, 'Title', title, 0, 0, 18, { bold: true, color: '#5a2a1a' }));
+  });
   refs.backButton = button(w, root, 'BackButton', '< Back', -SCREEN_W / 2 + 70, -SCREEN_H / 2 + 30, 120, 40, C.buttonAlt, 17, 'game', { widget: { left: 10, bottom: 10 } });
   refs.tradeButton = button(w, root, 'TradeButton', 'Trade', 0, -SCREEN_H / 2 + 30, 220, 42, C.buttonOk, 18, 'game', { widget: { bottom: 9 } });
+  // Tabs (bottom right): resource Market / Skill Books.
+  refs.marketTab = button(w, root, 'MarketTab', 'Market', SCREEN_W / 2 - 215, -SCREEN_H / 2 + 30, 120, 40, C.buttonOk, 16, 'game', { widget: { right: 155, bottom: 10 } });
+  refs.booksTab = button(w, root, 'BooksTab', 'Skill Books', SCREEN_W / 2 - 80, -SCREEN_H / 2 + 30, 140, 40, C.button, 16, 'game', { widget: { right: 10, bottom: 10 } });
   save(w, 'screens/Trade', root, 'TradeView', 'screens', refs);
 }
 
 // ------------------------------------------------------------------ run
 
 [pausePopup, settingsPopup, saveLoadPopup, researchPopup, confirmPopup, messagePopup, infoPopup, buildPopup, newHeroPopup,
-  topBarItem, defTabItem, saveSlotItem, researchRowItem, buildRowItem, heroCardItem, levelTagItem, arcButtonItem, towerButtonItem, toastItem,
+  topBarItem, defTabItem, saveSlotItem, researchRowItem, buildRowItem, heroCardItem, skillCardItem, levelTagItem, arcButtonItem, towerButtonItem, toastItem,
   loadingScreen, mainMenuScreen, inCastleScreen, outCastleScreen, heroRecruitScreen, tradeScreen].forEach(f => f());
 viewScript('PopupView', 'popups');
 for (const cls in VIEW_DIRS) write(`assets/scripts/views/${VIEW_DIRS[cls]}/${cls}.ts.meta`, scriptMeta(uuid('script:' + cls)));

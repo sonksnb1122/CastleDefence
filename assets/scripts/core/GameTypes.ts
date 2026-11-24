@@ -4,7 +4,9 @@ export type Cost = { [resource: string]: number };
 export type DamageType = 'physic' | 'magic';
 export type GameState = 'Preparation' | 'Combat';
 
-export const RESOURCE_KEYS = ['food', 'material', 'gold'];
+export const RESOURCE_KEYS = ['food', 'material', 'gold', 'core'];
+/** Resources that the Market trades (Energy Core is not traded). */
+export const TRADE_KEYS = ['food', 'material', 'gold'];
 export const SAVE_VERSION = 4;
 
 export interface BuffEntry { key: string; value: number; towerId?: string; }
@@ -19,7 +21,8 @@ export interface SaveData {
     configVersion: number;
     savedAt: number;
     state: GameState;
-    resources: { food: number; material: number; gold: number };
+    /** core = Energy Core, dropped by bosses (special research, hero skills). */
+    resources: { food: number; material: number; gold: number; core: number };
     /** Wave number that will be played next (1-based). */
     currentWave: number;
     highestWave: number;
@@ -36,6 +39,14 @@ export interface SaveData {
     marketSeed?: number;
     /** Active skills: wave from which each skill can be cast again (cooldown in waves). */
     skillReady?: { [skillId: string]: number };
+    /** Skills learned by each hero (skills.json ids: active skills and passives). */
+    heroSkills?: { [heroId: string]: string[] };
+    /** Skill books owned (skill id -> count). */
+    books?: { [skillId: string]: number };
+    /** Hero skill uses since the skill was last ready (Twin Cast allows more than one). */
+    skillUses?: { [heroId: string]: number };
+    /** Skill book offers already bought in the Market this wave (offer indexes). */
+    bookShop?: { wave: number; bought: number[] };
 }
 
 /** Result of one damage calculation (see CombatManager). */

@@ -328,7 +328,8 @@
     "size": 64,
     "food": "sprites/ui/icon_food",
     "material": "sprites/ui/icon_material",
-    "gold": "sprites/ui/icon_gold"
+    "gold": "sprites/ui/icon_gold",
+    "core": "sprites/ui/icon_core"
   },
   "uiIcons": {
     "size": 96,

@@ -2,6 +2,7 @@ import { BuffEntry, BuildingSave, Cost, DamageType, RESOURCE_KEYS, SaveData, Tow
 import { BuffService } from './services/BuffService';
 import { BuildingService } from './services/BuildingService';
 import { HeroService } from './services/HeroService';
+import { HeroSkillService } from './services/HeroSkillService';
 import { ResearchService } from './services/ResearchService';
 import { TowerService } from './services/TowerService';
 import { TradeService } from './services/TradeService';
@@ -12,7 +13,7 @@ import { SaveCodec } from './state/SaveCodec';
 /**
  * Singleton that owns the player progress (`data`, which is what gets saved),
  * the resource wallet and the change events. The rules live in small services:
- *   buildings, towers, wall, research, heroes, buffs, trade  (core/services)
+ *   buildings, towers, wall, research, heroes, buffs, trade, hero skills  (core/services)
  *   placement geometry and save validation           (core/state)
  * The methods below keep the old API by forwarding to those services.
  */
@@ -33,6 +34,8 @@ export class ResourceMgr {
     readonly research = new ResearchService(this);
     readonly heroes = new HeroService(this);
     readonly trade = new TradeService(this);
+    /** Hero skills, skill books and their Market offers. */
+    readonly skills = new HeroSkillService(this);
 
     // ------------------------------------------------------------------ events
     /** Register a callback fired whenever progress data changes. Returns an unsubscribe function. */

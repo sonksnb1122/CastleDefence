@@ -455,7 +455,7 @@
     {
       "id": "r_fx_shockwave",
       "name": "Shockwave",
-      "description": "Catapult: +5% chance to stun enemies hit; immune ones take 4% max HP (max 50%)",
+      "description": "Catapult: +5% chance stun; immune: 4% max HP (max 50%)",
       "buffKey": "effect:shockwave",
       "valuePerLevel": 5,
       "maxLevel": 10,
@@ -519,6 +519,78 @@
         "food": 20000
       },
       "costGrowth": 1
+    },
+    {
+      "id": "r_sp_skill_cd",
+      "name": "Battle Tactics",
+      "description": "Special: hero skills recharge 1 wave faster (5 -> 4 waves)",
+      "buffKey": "skillCooldown",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "special": true,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 20000,
+        "material": 8000,
+        "food": 8000,
+        "core": 4
+      },
+      "costGrowth": 1.5,
+      "growthKeys": [
+        "gold",
+        "material",
+        "food"
+      ]
+    },
+    {
+      "id": "r_sp_twin_cast",
+      "name": "Twin Cast",
+      "description": "Special: every hero skill can be used one more time before it recharges",
+      "buffKey": "skillCharges",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "special": true,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 25000,
+        "material": 10000,
+        "food": 10000,
+        "core": 5
+      },
+      "costGrowth": 1.5,
+      "growthKeys": [
+        "gold",
+        "material",
+        "food"
+      ]
+    },
+    {
+      "id": "r_sp_skill_power",
+      "name": "Arcane Amplifier",
+      "description": "Special: +10% skill damage per level",
+      "buffKey": "skillDamage",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "special": true,
+      "requires": {
+        "labLevel": 3
+      },
+      "baseCost": {
+        "gold": 6000,
+        "material": 2500,
+        "food": 2500,
+        "core": 1
+      },
+      "costGrowth": 1.35,
+      "growthKeys": [
+        "gold",
+        "material",
+        "food"
+      ]
     }
   ]
 }

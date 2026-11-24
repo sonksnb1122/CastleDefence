@@ -47,5 +47,7 @@
   "prefab:screens/HeroRecruit": "0d605196-dc47-4ca9-9a86-a3fe23c7c3bb",
   "script:PopupView": "98f4e7eb-7a74-4816-8759-b61afddb9503",
   "script:TradeView": "bc8a25c7-c95e-4b88-8f39-891dcf4e96ce",
-  "prefab:screens/Trade": "b5cc9166-c0cb-45cc-a0e0-4ec158102820"
+  "prefab:screens/Trade": "b5cc9166-c0cb-45cc-a0e0-4ec158102820",
+  "script:SkillCardView": "ea9f01e8-b828-41d0-831d-476f6232115e",
+  "prefab:items/SkillCard": "c4762983-d026-4ca2-aabb-f06fb9ceb83a"
 }

@@ -37,7 +37,7 @@ const PREFABS = [
     'popups/Pause', 'popups/Settings', 'popups/SaveLoad', 'popups/Research', 'popups/Confirm', 'popups/Message',
     'popups/Info', 'popups/Build', 'popups/NewHero',
     'items/TopBar', 'items/DefTab', 'items/SaveSlot', 'items/ResearchRow', 'items/BuildRow', 'items/HeroCard',
-    'items/LevelTag', 'items/ArcButton', 'items/Toast', 'items/TowerButton',
+    'items/LevelTag', 'items/ArcButton', 'items/Toast', 'items/TowerButton', 'items/SkillCard',
 ];
 const SAVE_KEY = 'castle_defense_save_';
 const SETTINGS_KEY = 'castle_defense_settings';

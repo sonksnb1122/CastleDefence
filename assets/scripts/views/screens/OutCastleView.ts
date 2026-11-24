@@ -16,6 +16,12 @@ export class OutCastleView extends Component {
     @property(Node) pauseButton: Node | null = null;
     @property(Node) speedButton: Node | null = null;
     @property(Node) cancelButton: Node | null = null;
+    /** Battle: hero skill cards (in place of the build buttons) and the description of the selected one. */
+    @property(Node) heroSkillBar: Node | null = null;
+    @property(Node) skillInfo: Node | null = null;
+    @property(Label) skillInfoTitle: Label | null = null;
+    @property(Label) skillInfoType: Label | null = null;
+    @property(Label) skillInfoText: Label | null = null;
     /** Temporary skill test buttons (previous skill / cast the skill / next skill). */
     @property(Node) skillBackButton: Node | null = null;
     @property(Node) skillTestButton: Node | null = null;

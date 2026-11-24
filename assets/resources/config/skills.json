@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_doc": "Active skills. The skill circle has the diameter of the enemy lane (tower.json battlefield.enemyLaneY); \"areaScale\" is the zone diameter as a share of it. Damage is a share of the max HP of each enemy, \"bossDamageMul\" on bosses. vfx: sheet of cellW x cellH frames (8 per row), \"hitFrame\" = frame when the effect lands; placement: wall | path | area | towers | towerFront | contact; anchorX / anchorY: point of the sheet placed on the target (default 0.5); size: px width of one sprite (area: share of the zone diameter); extra: more sprites at [dx, dy] x zone diameter from the center.",
+  "_doc": "Active skills. The skill circle has the diameter of the enemy lane (tower.json battlefield.enemyLaneY); \"areaScale\" is the zone diameter as a share of it. Damage is a share of the max HP of each enemy, \"bossDamageMul\" on bosses. vfx: sheet of cellW x cellH frames (8 per row), \"hitFrame\" = frame when the effect lands; placement: wall | path | area | towers | towerFront | contact; anchorX / anchorY: point of the sheet placed on the target (default 0.5); size: px width of one sprite (area: share of the zone diameter); extra: more sprites at [dx, dy] x zone diameter from the center. Passives (\"passives\"): skills that only give buffs ({key, value} like hero buffs) while the hero has learned them.",
   "bossDamageMul": 0.5,
   "skills": [
     {
@@ -23,7 +23,8 @@
         "hitFrame": 3,
         "placement": "wall",
         "size": 120,
-        "spacing": 0.75
+        "spacing": 0.75,
+        "iconFrame": 6
       }
     },
     {
@@ -45,7 +46,8 @@
         "frameTime": 0.06,
         "hitFrame": 1,
         "placement": "path",
-        "size": 140
+        "size": 140,
+        "iconFrame": 3
       }
     },
     {
@@ -68,7 +70,8 @@
         "hitFrame": 8,
         "placement": "area",
         "count": 1,
-        "size": 1.38
+        "size": 1.38,
+        "iconFrame": 8
       }
     },
     {
@@ -91,7 +94,8 @@
         "hitFrame": 8,
         "placement": "area",
         "count": 1,
-        "size": 1.38
+        "size": 1.38,
+        "iconFrame": 8
       }
     },
     {
@@ -114,7 +118,8 @@
         "hitFrame": 8,
         "placement": "area",
         "count": 1,
-        "size": 1.38
+        "size": 1.38,
+        "iconFrame": 8
       }
     },
     {
@@ -137,7 +142,8 @@
         "hitFrame": 6,
         "placement": "area",
         "count": 1,
-        "size": 1.38
+        "size": 1.38,
+        "iconFrame": 1
       }
     },
     {
@@ -160,7 +166,8 @@
         "hitFrame": 6,
         "placement": "area",
         "count": 1,
-        "size": 1.38
+        "size": 1.38,
+        "iconFrame": 6
       }
     },
     {
@@ -183,7 +190,8 @@
         "hitFrame": 6,
         "placement": "area",
         "count": 1,
-        "size": 1.38
+        "size": 1.38,
+        "iconFrame": 6
       }
     },
     {
@@ -205,7 +213,8 @@
         "hitFrame": 3,
         "placement": "path",
         "size": 120,
-        "anchorY": 0.05
+        "anchorY": 0.05,
+        "iconFrame": 3
       }
     },
     {
@@ -229,7 +238,8 @@
         "placement": "area",
         "count": 1,
         "size": 1.55,
-        "anchorY": 0.06
+        "anchorY": 0.06,
+        "iconFrame": 4
       }
     },
     {
@@ -253,7 +263,8 @@
         "placement": "area",
         "count": 1,
         "size": 1.3,
-        "anchorY": 0.139
+        "anchorY": 0.139,
+        "iconFrame": 2
       }
     },
     {
@@ -277,7 +288,8 @@
         "placement": "area",
         "count": 1,
         "size": 1.3,
-        "anchorY": 0.139
+        "anchorY": 0.139,
+        "iconFrame": 2
       }
     },
     {
@@ -301,7 +313,8 @@
         "placement": "area",
         "count": 1,
         "size": 1.3,
-        "anchorY": 0.139
+        "anchorY": 0.139,
+        "iconFrame": 2
       }
     },
     {
@@ -325,7 +338,8 @@
         "placement": "area",
         "count": 1,
         "size": 1.3,
-        "anchorY": 0.139
+        "anchorY": 0.139,
+        "iconFrame": 2
       }
     },
     {
@@ -350,7 +364,8 @@
         "count": 1,
         "size": 1.44,
         "anchorY": 0.26,
-        "anchorX": 0.44
+        "anchorX": 0.44,
+        "iconFrame": 9
       }
     },
     {
@@ -374,7 +389,8 @@
         "hitFrame": 0,
         "placement": "towers",
         "size": 56,
-        "loop": true
+        "loop": true,
+        "iconFrame": 3
       }
     },
     {
@@ -400,7 +416,8 @@
         "placement": "area",
         "count": 1,
         "size": 1.1,
-        "layer": "ground"
+        "layer": "ground",
+        "iconFrame": 15
       }
     },
     {
@@ -422,7 +439,8 @@
         "hitFrame": 3,
         "placement": "path",
         "size": 80,
-        "anchorY": 0.05
+        "anchorY": 0.05,
+        "iconFrame": 14
       }
     },
     {
@@ -446,7 +464,8 @@
         "hitFrame": 0,
         "placement": "towerFront",
         "size": 40,
-        "loop": true
+        "loop": true,
+        "iconFrame": 6
       }
     },
     {
@@ -468,7 +487,8 @@
         "placement": "wall",
         "size": 80,
         "spacing": 0.8,
-        "anchorY": 0.1
+        "anchorY": 0.1,
+        "iconFrame": 9
       }
     },
     {
@@ -489,7 +509,8 @@
         "frameTime": 0.05,
         "hitFrame": 0,
         "placement": "contact",
-        "size": 48
+        "size": 48,
+        "iconFrame": 1
       }
     },
     {
@@ -524,7 +545,8 @@
             0.22,
             -0.4
           ]
-        ]
+        ],
+        "iconFrame": 2
       }
     },
     {
@@ -559,7 +581,8 @@
             0.22,
             -0.4
           ]
-        ]
+        ],
+        "iconFrame": 12
       }
     },
     {
@@ -584,8 +607,59 @@
         "count": 7,
         "size": 0.3,
         "anchorY": 0.5,
-        "spread": 0.35
+        "spread": 0.35,
+        "iconFrame": 12
       }
+    }
+  ],
+  "heroSkills": {
+    "_doc": "Hero skills: an active skill (the skills above) can be used once every cooldownWaves waves (research lowers it). 5-star heroes learn 1 active + 1 passive skill, the others 1 skill of any type. Learning uses one skill book and learnCost.",
+    "cooldownWaves": 5,
+    "learnCost": {
+      "core": 1
+    }
+  },
+  "bookShop": {
+    "_doc": "Skill books sold in the Market (Skill Books tab): a new random choice of offersMin..offersMax books every wave. Gold price = priceBase * (1 + wave * pricePerWave) * bookPriceMul of the skill, +/- fluctuation %.",
+    "offersMin": 4,
+    "offersMax": 6,
+    "priceBase": 2000,
+    "pricePerWave": 0.05,
+    "fluctuation": 20
+  },
+  "passives": [
+    {
+      "id": "p_eagle_eye",
+      "name": "Eagle Eye",
+      "description": "Passive: towers get +10% critical chance.",
+      "buffs": [
+        {
+          "key": "critRate",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "p_war_chest",
+      "name": "War Chest",
+      "description": "Passive: +30% gold from killed enemies.",
+      "buffs": [
+        {
+          "key": "killGold",
+          "value": 30
+        }
+      ]
+    },
+    {
+      "id": "p_master_gunner",
+      "name": "Master Gunner",
+      "description": "Passive: towers deal +20% damage.",
+      "buffs": [
+        {
+          "key": "damage",
+          "value": 20
+        }
+      ]
     }
   ]
 }

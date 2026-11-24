@@ -59,6 +59,10 @@ export class ConfigMgr {
     static statusDef(id: string): any { return ConfigMgr.find(ConfigMgr.effects.statusEffects, id); }
     static towerEffectDef(id: string): any { return ConfigMgr.find(ConfigMgr.effects.towerEffects, id); }
     static skillDef(id: string): any { return ConfigMgr.find((ConfigMgr.skills && ConfigMgr.skills.skills) || [], id); }
+    /** Passive hero skill (skills.json "passives"). */
+    static passiveDef(id: string): any { return ConfigMgr.find((ConfigMgr.skills && ConfigMgr.skills.passives) || [], id); }
+    /** Active skill or passive. */
+    static anySkillDef(id: string): any { return ConfigMgr.skillDef(id) || ConfigMgr.passiveDef(id); }
     /** Animated card sheet layout shared by every hero (heroes.json "card"). */
     static get heroCard(): { cellW: number; cellH: number; frames: number; frameTime: number } {
         return ConfigMgr.heroes.card || { cellW: 576, cellH: 816, frames: 1, frameTime: 0.1 };
@@ -136,7 +140,7 @@ export class ConfigMgr {
 
     static resourceIconPaths(): string[] {
         const cfg = ConfigMgr.building.resourceIcons || {};
-        return ['food', 'material', 'gold'].filter(k => !!cfg[k]).map(k => cfg[k]);
+        return ['food', 'material', 'gold', 'core'].filter(k => !!cfg[k]).map(k => cfg[k]);
     }
 
     /** 9-slice frame config from heroes.json "ui" (cardFrame, popupBg, popupHeader), or null. */

@@ -4,6 +4,7 @@ const { ccclass, property } = _decorator;
 /**
  * prefabs/screens/Trade: the Market of the Base. Left: "Trade Amount" (resource to give),
  * right: "Receive Amount" (what each resource would give; one is picked), middle: amount steps and rate.
+ * Second tab: skill books (owned / for sale).
  */
 @ccclass('TradeView')
 export class TradeView extends Component {
@@ -24,4 +25,16 @@ export class TradeView extends Component {
     @property(Label) infoLabel: Label | null = null;
     @property(Node) backButton: Node | null = null;
     @property(Node) tradeButton: Node | null = null;
+    /** Resource market parts (hidden in the Skill Books tab). */
+    @property(Node) header: Node | null = null;
+    @property(Node) marketPanel: Node | null = null;
+    /** Skill Books tab: books owned (left) and books for sale this wave (right). */
+    @property(Node) ownedBooksArea: Node | null = null;
+    @property(Node) ownedBooksHeader: Node | null = null;
+    @property(Label) ownedBooksTitle: Label | null = null;
+    @property(Node) shopArea: Node | null = null;
+    @property(Node) shopHeader: Node | null = null;
+    @property(Label) shopTitle: Label | null = null;
+    @property(Node) marketTab: Node | null = null;
+    @property(Node) booksTab: Node | null = null;
 }

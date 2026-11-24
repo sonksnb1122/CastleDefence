@@ -9,6 +9,9 @@ import { HeroCardView } from './items/HeroCardView';
 import { NewHeroView } from './popups/NewHeroView';
 import { HeroRecruitView } from './screens/HeroRecruitView';
 import { toast } from './common/Popups';
+import { InfoView } from './popups/InfoView';
+import { bookCard, skillName } from './SkillCards';
+import { HeroSkillService } from '../core/services/HeroSkillService';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, ScrollList, costRow, hex, sprite, text } from './common/UIKit';
 
@@ -19,7 +22,7 @@ const CARD_H = 190;
  * its texture while it is visible and gives the memory back as soon as it is
  * scrolled away or the screen closes.
  */
-class CardArt {
+export class CardArt {
     private tex: Texture2D | null = null;
     private frames: SpriteFrame[] = [];
     private anim: SpriteAnim | null = null;
@@ -147,10 +150,12 @@ export class HeroRecruitScreen {
     }
 
     private buffLines(heroId: string): string[] {
-        return this.rm.heroBuffs(heroId).map(b => {
+        // Learned skills first, then the buffs (passive skill buffs are part of them).
+        const skills = this.rm.skills.learned(heroId).map(id => `Skill: ${skillName(id)} (${HeroSkillService.isPassive(id) ? 'passive' : 'active'})`);
+        return skills.concat(this.rm.heroBuffs(heroId).map(b => {
             const info = ConfigMgr.buffInfo(b.key);
             return `${info.name}${b.towerId ? ' (' + b.towerId + ')' : ''} +${b.value}${info.unit}`;
-        });
+        }));
     }
 
     /** One hero card (prefabs/items/HeroCard): animated image on the left, buffs listed vertically on the right. */
@@ -178,6 +183,44 @@ export class HeroRecruitScreen {
         b.node.setPosition(b.node.position.x, v.heroName!.node.position.y - (hero.passive ? 36 : 22) + 8, 0);
         b.string = this.buffLines(hero.id).slice(0, 8).join('\n');
         b.color = hex(owned ? '#bfe8b0' : COLORS.textDim);
+        // "+": learn a skill from a skill book (owned heroes with a free skill slot).
+        if (v.learnButton) {
+            v.learnButton.active = owned && this.rm.skills.canLearnMore(String(hero.id));
+            if (v.learnButton.active) new PrefabButton(v.learnButton, () => this.openLearn(String(hero.id)));
+        }
+    }
+
+    /** Popup (prefabs/popups/Info) listing the skill books this hero can learn. */
+    private openLearn(heroId: string) {
+        const hero = ConfigMgr.heroDef(heroId);
+        const sk = this.rm.skills;
+        const W = Math.min(760, G.main.W - 60), H = G.main.H - 50;
+        const v = PrefabUi.view('popups/Info', this.root, InfoView);
+        v.setTitle('Learn a skill');
+        v.resize(W, H);
+        const list = new ScrollList(v.content!, 0, 4, W - 40, H - 128, false);
+        const host = list.content;
+        const slots = sk.freeSlots(heroId);
+        const rule = (hero.stars || 0) >= 5 ? '5-star hero: 1 active + 1 passive skill.' : 'Can learn 1 skill (active or passive).';
+        const open = slots.length === 2 ? 'active or passive' : slots[0] || '-';
+        text(host, `${hero.name} - ${rule} Free slot: ${open}.`, 15, 0, -14, { width: W - 70 });
+        costRow(host, sk.learnCost, -(W - 70) / 2, -40, { label: 'Learning cost:', size: 18, fontSize: 14 });
+        const books = sk.learnableBooks(heroId);
+        const cw = W - 70, ch = 162, top = 60;
+        books.forEach((id, i) => bookCard(host, id, 0, -top - i * (ch + 8) - ch / 2, cw, ch, {
+            count: sk.bookCount(id), price: sk.learnCost, buttonText: 'Learn',
+            onBuy: () => {
+                const err = sk.learn(heroId, id);
+                if (err) { toast(this.root, err); return; }
+                G.main.playSfx('upgrade');
+                toast(this.root, `${hero.name} learned ${skillName(id)}`, true);
+                v.close();
+                this.rebuild();
+            },
+        }));
+        if (books.length === 0) text(host, 'No skill book this hero can learn.\nBuy skill books in the Market of the Base (Skill Books tab).', 15, 0, -top - 40, { color: COLORS.textDim });
+        list.setContentHeight(top + Math.max(1, books.length) * (ch + 8) + 10);
+        new PrefabButton(v.closeButton, () => v.close());
     }
 
     private recruit() {

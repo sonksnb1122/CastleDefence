@@ -3,6 +3,9 @@ import { Node, Graphics, EventTouch, EventMouse, Vec3, Label, UITransform } from
 import { CombatEvents, CombatManager } from '../combat/CombatManager';
 import { TowerUnit } from '../combat/TowerUnit';
 import { SkillManager } from '../combat/SkillManager';
+import { CardArt } from './HeroRecruitScreen';
+import { SkillCardView } from './items/SkillCardView';
+import { skillDescription, skillName } from './SkillCards';
 import { WaveMgr } from '../combat/WaveMgr';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
@@ -72,11 +75,16 @@ export class OutCastleScreen implements CombatEvents {
     private skillIndex = 0;
     /** Targeted skill waiting for a tap on the battlefield. */
     private skillAiming: any = null;
+    // Hero skill cards of the battle (prefabs/items/SkillCard in the HeroSkillBar).
+    private view: OutCastleView;
+    private heroCards: Array<{ heroId: string; skillId: string; v: SkillCardView; art: CardArt; x: number; y: number }> = [];
+    private selectedHero = '';
 
     constructor(parent: Node) {
         const W = G.main.W, H = G.main.H;
         const bf = this.bf;
         const v = PrefabUi.view('screens/OutCastle', parent, OutCastleView);
+        this.view = v;
         this.root = v.node;
 
         // ---- scrolling world (origin = bottom-left corner of the battlefield)
@@ -417,6 +425,124 @@ export class OutCastleScreen implements CombatEvents {
         this.skillBtn.setText(this.skillAiming ? 'Tap the field: ' + def.name : `${i}/${n} ${def.name}`);
     }
 
+    // ------------------------------------------------------------------ hero skill cards (battle)
+    /**
+     * During a wave the build buttons are replaced by small cards of the heroes that learned an active
+     * skill. Tap a card: it lights up and its skill is described on the right. Drag it up out of the
+     * card bar: the skill is cast (targeted skills land where the card is released).
+     */
+    private showHeroCards() {
+        this.hideHeroCards();
+        const bar = this.view.heroSkillBar!;
+        const list = this.rm.skills.castable();
+        bar.active = list.length > 0;
+        const step = 84;
+        list.forEach((c, i) => {
+            const v = PrefabUi.view('items/SkillCard', bar, SkillCardView);
+            const x = (i - (list.length - 1) / 2) * step, y = 0;
+            v.node.setPosition(x, y, 0);
+            const hero = ConfigMgr.heroDef(c.heroId);
+            if (v.placeholder) v.placeholder.string = hero.name.split(' ')[0];
+            const a = PrefabUi.size(v.art!);
+            const art = new CardArt(v.art!, hero.imagePath, a.width + 4, a.height + 4);
+            art.setWanted(true);
+            v.skillName!.string = skillName(c.skillId);
+            const card = { heroId: c.heroId, skillId: c.skillId, v, art, x, y };
+            this.heroCards.push(card);
+            this.bindCard(card);
+        });
+        this.refreshHeroCards();
+    }
+
+    private hideHeroCards() {
+        for (const c of this.heroCards) { c.art.free(); c.v.node.destroy(); }
+        this.heroCards.length = 0;
+        this.selectedHero = '';
+        if (this.view.heroSkillBar) this.view.heroSkillBar.active = false;
+        if (this.view.skillInfo) this.view.skillInfo.active = false;
+    }
+
+    private refreshHeroCards() {
+        const sk = this.rm.skills;
+        for (const c of this.heroCards) {
+            const ready = sk.isReady(c.heroId), uses = sk.usesLeft(c.heroId);
+            c.v.shade!.active = !ready || uses <= 0;
+            c.v.status!.string = !ready ? `Ready on\nwave ${sk.readyWave(c.heroId)}` : uses > 1 ? `x${uses}` : '';
+            c.v.glow!.active = c.heroId === this.selectedHero;
+        }
+    }
+
+    private selectHeroCard(heroId: string) {
+        this.selectedHero = heroId;
+        const c = this.heroCards.find(x => x.heroId === heroId);
+        const v = this.view;
+        if (c && v.skillInfo) {
+            const hero = ConfigMgr.heroDef(heroId), sk = this.rm.skills;
+            v.skillInfo.active = true;
+            v.skillInfoTitle!.string = skillName(c.skillId);
+            v.skillInfoType!.string = `${hero.name} - active skill`;
+            const when = sk.isReady(heroId) ? 'Drag the card up to cast it.' : `Ready again on wave ${sk.readyWave(heroId)}.`;
+            v.skillInfoText!.string = `${skillDescription(c.skillId)}\n\n${when}`;
+        }
+        this.refreshHeroCards();
+    }
+
+    private bindCard(card: { heroId: string; skillId: string; v: SkillCardView; x: number; y: number }) {
+        const n = card.v.node;
+        let startY = 0, lifted = false;
+        const canCast = () => this.combat.active && !this.finished && this.rm.skills.usesLeft(card.heroId) > 0;
+        n.on(Node.EventType.TOUCH_START, (e: EventTouch) => {
+            e.propagationStopped = true;
+            startY = e.getUILocation().y;
+            lifted = false;
+            this.selectHeroCard(card.heroId);
+        }, this);
+        n.on(Node.EventType.TOUCH_MOVE, (e: EventTouch) => {
+            e.propagationStopped = true;
+            if (!canCast()) return;
+            const p = e.getUILocation();
+            const dy = p.y - startY;
+            // The card follows the finger; past its own height it is "out of the bar" and will cast.
+            n.setPosition(card.x + e.getUIDelta().x + (n.position.x - card.x), card.y + Math.max(0, dy), 0);
+            lifted = dy > 110;
+            n.setScale(lifted ? 1.12 : 1, lifted ? 1.12 : 1, 1);
+            const def = ConfigMgr.skillDef(card.skillId);
+            if (lifted && def && def.target === 'area') {
+                this.skillAiming = def;
+                toLocal(this.world, p.x, p.y, this.tmp);
+                this.drawSkillZone(this.tmp.x, this.tmp.y);
+            } else if (this.skillAiming === def) { this.skillAiming = null; this.ghostG.clear(); this.ghost.active = false; }
+        }, this);
+        const release = (e: EventTouch) => {
+            e.propagationStopped = true;
+            n.setPosition(card.x, card.y, 0);
+            n.setScale(1, 1, 1);
+            const def = ConfigMgr.skillDef(card.skillId);
+            if (this.skillAiming === def) { this.skillAiming = null; this.ghostG.clear(); this.ghost.active = false; this.refreshSkillButton(); }
+            if (!lifted || !canCast() || !def) return;
+            lifted = false;
+            const p = e.getUILocation();
+            this.castHeroSkill(card.heroId, def, p.x, p.y);
+        };
+        n.on(Node.EventType.TOUCH_END, release, this);
+        n.on(Node.EventType.TOUCH_CANCEL, release, this);
+    }
+
+    /** Cast a hero skill (released at UI point uiX, uiY for targeted skills). */
+    castHeroSkill(heroId: string, def: any, uiX: number, uiY: number) {
+        let x = 0, y = 0;
+        if (def.target === 'area') {
+            toLocal(this.world, uiX, uiY, this.tmp);
+            if (this.tmp.x < this.combat.wallRightX + 10) { toast(this.root, 'Release the card over the enemy path', false); return; }
+            x = this.tmp.x;
+            y = Math.max(this.bf.enemyLaneY[0], Math.min(this.bf.enemyLaneY[1], this.tmp.y));
+        }
+        this.combat.skills.cast(def, x, y);
+        this.rm.skills.use(heroId);
+        toast(this.root, `${ConfigMgr.heroDef(heroId).name}: ${def.name}!`, true);
+        this.selectHeroCard(heroId);
+    }
+
     private startWave() {
         if (!this.rm.isPreparation || this.placing) return;
         if (this.rm.data.towers.length === 0) {
@@ -432,6 +558,7 @@ export class OutCastleScreen implements CombatEvents {
         this.combat.startWave(this.rm.data.currentWave);
         this.showMenu();
         this.refreshSkillButton();
+        this.showHeroCards();
         toast(this.root, this.combat.plan!.name, true);
         G.main.playSfx('wave_start');
         // Boss waves have their own music until the wave is over.
@@ -443,6 +570,7 @@ export class OutCastleScreen implements CombatEvents {
     onWaveCleared(wave: number, goldFromKills: number) {
         this.skillAiming = null;
         this.refreshSkillButton();
+        this.hideHeroCards();
         const gained = this.rm.completeWave(wave);
         G.main.autoSave();
         G.main.playSfx('win');
@@ -450,6 +578,7 @@ export class OutCastleScreen implements CombatEvents {
         this.showMenu();
         // Rewards and the statistics of the wave (damage per tower, hit rate, effects).
         const rewards: InfoLine[] = [{ label: 'Gold from kills:', cost: { gold: goldFromKills } }];
+        if (this.combat.coresFromKills > 0) rewards.push({ label: 'Energy Cores from bosses:', cost: { core: this.combat.coresFromKills } });
         rewards.push(Object.keys(gained).length > 0 ? { label: 'Production:', cost: gained } : 'Production: nothing');
         rewards.push('Progress saved automatically.');
         waveStatsWindow(this.root, `Wave ${wave} cleared!`, rewards, this.combat.stats);
@@ -459,6 +588,7 @@ export class OutCastleScreen implements CombatEvents {
         this.finished = true;
         this.skillAiming = null;
         this.refreshSkillButton();
+        this.hideHeroCards();
         G.main.playSfx('lose');
         message(this.root, 'GAME OVER', `The castle wall was destroyed on wave ${wave}.\n\nHighest wave cleared: ${this.rm.data.highestWave}`, () => G.main.goto('menu'), 440, 260);
     }
@@ -490,9 +620,11 @@ export class OutCastleScreen implements CombatEvents {
             if (this.finished) break;
         }
         if (this.combat.active) this.waveInfo.string = `Enemies left: ${this.combat.enemiesLeft}`;
+        for (const c of this.heroCards) c.art.update(dt);
     }
 
     destroy() {
+        this.hideHeroCards();
         this.unsubscribe();
         this.topBar.destroy();
         this.defTab.destroy();

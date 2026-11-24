@@ -49,6 +49,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     wave = 0;
     plan: WavePlan | null = null;
     goldFromKills = 0;
+    /** Energy Cores dropped by the bosses of this wave (waves.json "bossCoreDrop"). */
+    coresFromKills = 0;
     /** Statistics of the running (or last) wave, see WaveStats. */
     stats = new WaveStats();
     /** Active skills (skills.json). */
@@ -108,6 +110,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         this.queue = this.plan.entries.slice();
         this.elapsed = 0;
         this.goldFromKills = 0;
+        this.coresFromKills = 0;
         this.gameOver = false;
         this.active = true;
         this.barrierCharges = 0;
@@ -534,6 +537,17 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         if (this.demo) return;
         this.goldFromKills += gold;
         this.rm.add({ gold });
+        if (e.boss) {
+            // Bosses drop Energy Cores.
+            // waves.json "bossCoreDrop": base + floor(wave / perWaves) cores per boss (more in the later waves).
+            const drop = ConfigMgr.waves.bossCoreDrop || {};
+            const cores = typeof drop === 'number' ? drop : (drop.base || 0) + (drop.perWaves > 0 ? Math.floor(this.wave / drop.perWaves) : 0);
+            if (cores > 0) {
+                this.coresFromKills += cores;
+                this.rm.add({ core: cores });
+                this.float('+' + cores, e.x + 8, e.y + 18, '#7fd8ff', 18, true, 'core');
+            }
+        }
         G.main.playSfx('die_' + e.def.id);
         G.main.playSfx('coin');
     }

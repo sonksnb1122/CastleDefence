@@ -1,5 +1,5 @@
 import { ConfigMgr } from '../ConfigMgr';
-import { RESOURCE_KEYS } from '../GameTypes';
+import { TRADE_KEYS as RESOURCE_KEYS } from '../GameTypes';
 import type { ResourceMgr } from '../ResourceMgr';
 
 /**

@@ -1,4 +1,9 @@
 {
+  "bossCoreDrop": {
+    "_doc": "Energy Cores dropped by each boss: base + floor(wave / perWaves)",
+    "base": 2,
+    "perWaves": 50
+  },
   "version": 2,
   "enemyCountBase": 24,
   "enemyCountPerWave": 2,

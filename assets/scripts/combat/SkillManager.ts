@@ -122,11 +122,12 @@ export class SkillManager {
             }
             case 'towerBuff': {
                 const stat = ef.stat === 'attackSpeed' ? 'attackSpeed' : 'damage';
+                const duration = ef.duration || 15;
                 // A new cast of the same buff replaces the old one (the time restarts).
                 for (const b of this.buffs.filter(b => b.stat === stat)) this.endBuff(b);
                 this.buffs = this.buffs.filter(b => b.stat !== stat);
-                const fx = this.placeFx(def, x, y, ef.duration || 15);
-                this.buffs.push({ stat, mul: ef.mul || 2, time: ef.duration || 15, fx });
+                const fx = this.placeFx(def, x, y, duration);
+                this.buffs.push({ stat, mul: ef.mul || 2, time: duration, fx });
                 this.applyBuffs();
                 this.host.float(def.name + '!', this.host.wallRightX - 120, 470, '#ffe27a', 18, true);
                 break;
@@ -221,7 +222,9 @@ export class SkillManager {
     private damage(e: Enemy, def: any, pct: number) {
         if (!e.alive || !(pct > 0)) return;
         const bossMul = e.boss ? (ConfigMgr.skills.bossDamageMul || 0.5) : 1;
-        this.host.skillHit(e, Math.max(1, Math.floor(e.maxHp * pct / 100 * bossMul)), def);
+        // Research "Arcane Amplifier": +skillDamage %.
+        const power = 1 + (this.host.demo ? 0 : ResourceMgr.inst.buff('skillDamage')) / 100;
+        this.host.skillHit(e, Math.max(1, Math.floor(e.maxHp * pct / 100 * bossMul * power)), def);
     }
 
     private applyBuffs() {
