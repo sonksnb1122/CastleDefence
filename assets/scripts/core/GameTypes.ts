@@ -45,8 +45,8 @@ export interface SaveData {
     books?: { [skillId: string]: number };
     /** Hero skill uses since the skill was last ready (Twin Cast allows more than one). */
     skillUses?: { [heroId: string]: number };
-    /** Skill book offers already bought in the Market this wave (offer indexes). */
-    bookShop?: { wave: number; bought: number[] };
+    /** Skill books bought in the Market (skill id -> wave): a bought skill is never offered again. */
+    boughtBooks?: { [skillId: string]: number };
 }
 
 /** Result of one damage calculation (see CombatManager). */

@@ -494,8 +494,10 @@ Thanks to the artists whose free assets are used in this game. All packs were do
 | Asset | Author | Used for | License |
 |---|---|---|---|
 | [Spire Tower Pack 1](https://foozlecc.itch.io/spire-tower-pack-1) and [Spire Tower Pack 2](https://foozlecc.itch.io/spire-tower-pack-2) | Baldur / [Foozle](https://foozlecc.itch.io) | Defense tower sprites | CC0 |
+| Monster sprites | Baldur / [Foozle](https://foozlecc.itch.io) (same source as the towers) | Monsters | CC0 |
 | PVFX Foundry 1.0.0 | Pixel VFX Studio (made with the [pixelfx](https://github.com/patch-gg/pixelfx) toolkit, MIT) | Active skill effects (`sprites/skills`) | CC0 |
-| Monsters, castle buildings, maps, heroes, UI | Project author | Everything else | Project-owned |
+| Hero cards | AI generated | Hero pictures | AI generated |
+| Castle buildings, maps, UI | Project author | Everything else | Project-owned |
 
 ### Music
 

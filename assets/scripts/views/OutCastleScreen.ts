@@ -79,6 +79,8 @@ export class OutCastleScreen implements CombatEvents {
     private view: OutCastleView;
     private heroCards: Array<{ heroId: string; skillId: string; v: SkillCardView; art: CardArt; x: number; y: number }> = [];
     private selectedHero = '';
+    /** Hero whose area skill is being aimed (card dragged out of the bar, waiting for a tap on the field). */
+    private heroAim = '';
 
     constructor(parent: Node) {
         const W = G.main.W, H = G.main.H;
@@ -141,6 +143,9 @@ export class OutCastleScreen implements CombatEvents {
             costRow(node.getChildByName('Cost'), t.buildCost, 0, 0, { align: 'center', size: 16, fontSize: 12, bold: true });
             this.buildBtns.push({ id: t.id, btn });
         });
+
+        // A touch anywhere but on a hero card hides the skill description (capture phase: buttons stop the event).
+        this.root.on(Node.EventType.TOUCH_START, (e: EventTouch) => this.touchOutsideCards(e), this, true);
 
         this.rebuildTowers();
         this.unsubscribe = this.rm.onChange(() => this.refreshHud());
@@ -302,6 +307,7 @@ export class OutCastleScreen implements CombatEvents {
         this.dragDist += Math.abs(d.x) + Math.abs(d.y);
         if (this.placing) { this.onHover(e.getUILocation().x, e.getUILocation().y); return; }
         this.setCamera(this.camX - d.x);
+        if (this.skillAiming) this.onHover(e.getUILocation().x, e.getUILocation().y);
     }
 
     private onHover(uiX: number, uiY: number) {
@@ -383,6 +389,7 @@ export class OutCastleScreen implements CombatEvents {
     private castAimed(x: number, y: number) {
         const def = this.skillAiming;
         const bf = this.bf;
+        if (this.heroAim) { this.castHeroSkill(this.heroAim, def, x, y); return; }
         // Only on the enemy path (right of the wall); the zone center stays inside the lane.
         if (x < this.combat.wallRightX + 10) { toast(this.root, 'Choose a spot on the enemy path', false); return; }
         const cy = Math.max(bf.enemyLaneY[0], Math.min(bf.enemyLaneY[1], y));
@@ -393,6 +400,7 @@ export class OutCastleScreen implements CombatEvents {
 
     private stopAiming() {
         this.skillAiming = null;
+        this.heroAim = '';
         if (!this.placing) { this.ghostG.clear(); this.ghost.active = false; }
         this.refreshSkillButton();
     }
@@ -421,6 +429,7 @@ export class OutCastleScreen implements CombatEvents {
         const def = this.testSkillDef;
         const n = SkillManager.list.length;
         if (!def) { this.skillBtn.setText('No skills'); return; }
+        if (this.heroAim) { this.skillBtn.setText(`${n} skills`); return; }
         const i = (this.skillIndex % n) + 1;
         this.skillBtn.setText(this.skillAiming ? 'Tap the field: ' + def.name : `${i}/${n} ${def.name}`);
     }
@@ -429,7 +438,9 @@ export class OutCastleScreen implements CombatEvents {
     /**
      * During a wave the build buttons are replaced by small cards of the heroes that learned an active
      * skill. Tap a card: it lights up and its skill is described on the right. Drag it up out of the
-     * card bar: the skill is cast (targeted skills land where the card is released).
+     * card bar: a skill without target is cast when the card is released; for an area skill the card
+     * goes back to its place at once and the player taps the enemy path to choose where it lands
+     * (tap the card again to cancel).
      */
     private showHeroCards() {
         this.hideHeroCards();
@@ -458,6 +469,7 @@ export class OutCastleScreen implements CombatEvents {
         for (const c of this.heroCards) { c.art.free(); c.v.node.destroy(); }
         this.heroCards.length = 0;
         this.selectedHero = '';
+        if (this.heroAim) this.stopAiming();
         if (this.view.heroSkillBar) this.view.heroSkillBar.active = false;
         if (this.view.skillInfo) this.view.skillInfo.active = false;
     }
@@ -468,7 +480,7 @@ export class OutCastleScreen implements CombatEvents {
             const ready = sk.isReady(c.heroId), uses = sk.usesLeft(c.heroId);
             c.v.shade!.active = !ready || uses <= 0;
             c.v.status!.string = !ready ? `Ready on\nwave ${sk.readyWave(c.heroId)}` : uses > 1 ? `x${uses}` : '';
-            c.v.glow!.active = c.heroId === this.selectedHero;
+            c.v.glow!.active = c.heroId === this.selectedHero || c.heroId === this.heroAim;
         }
     }
 
@@ -481,66 +493,100 @@ export class OutCastleScreen implements CombatEvents {
             v.skillInfo.active = true;
             v.skillInfoTitle!.string = skillName(c.skillId);
             v.skillInfoType!.string = `${hero.name} - active skill`;
-            const when = sk.isReady(heroId) ? 'Drag the card up to cast it.' : `Ready again on wave ${sk.readyWave(heroId)}.`;
+            const area = (ConfigMgr.skillDef(c.skillId) || {}).target === 'area';
+            const when = !sk.isReady(heroId) ? `Ready again on wave ${sk.readyWave(heroId)}.`
+                : this.heroAim === heroId ? 'Tap the enemy path to cast it. Tap the card again to cancel.'
+                : area ? 'Drag the card up, then tap the enemy path to cast it.' : 'Drag the card up to cast it.';
             v.skillInfoText!.string = `${skillDescription(c.skillId)}\n\n${when}`;
         }
         this.refreshHeroCards();
     }
 
+    private deselectHeroCard() {
+        this.selectedHero = '';
+        if (this.view.skillInfo) this.view.skillInfo.active = false;
+        this.refreshHeroCards();
+    }
+
+    private touchOutsideCards(e: EventTouch) {
+        if (!this.selectedHero || this.heroAim) return;   // while aiming, the tap on the field casts the skill
+        for (let n: Node | null = e.target as Node; n; n = n.parent) if (this.heroCards.some(c => c.v.node === n)) return;
+        this.deselectHeroCard();
+    }
+
     private bindCard(card: { heroId: string; skillId: string; v: SkillCardView; x: number; y: number }) {
         const n = card.v.node;
-        let startY = 0, lifted = false;
+        let startY = 0, lifted = false, done = false, wasSelected = false;
         const canCast = () => this.combat.active && !this.finished && this.rm.skills.usesLeft(card.heroId) > 0;
+        const back = () => { n.setPosition(card.x, card.y, 0); n.setScale(1, 1, 1); };
         n.on(Node.EventType.TOUCH_START, (e: EventTouch) => {
             e.propagationStopped = true;
             startY = e.getUILocation().y;
             lifted = false;
+            done = false;
+            // Tapping the card being aimed cancels the aim and hides the description.
+            if (this.heroAim === card.heroId) { this.stopAiming(); this.deselectHeroCard(); done = true; return; }
+            // Tapping the selected card again hides its description (on release, if it was not dragged out).
+            wasSelected = this.selectedHero === card.heroId;
             this.selectHeroCard(card.heroId);
         }, this);
         n.on(Node.EventType.TOUCH_MOVE, (e: EventTouch) => {
             e.propagationStopped = true;
-            if (!canCast()) return;
+            if (done || !canCast()) return;
             const p = e.getUILocation();
             const dy = p.y - startY;
-            // The card follows the finger; past its own height it is "out of the bar" and will cast.
-            n.setPosition(card.x + e.getUIDelta().x + (n.position.x - card.x), card.y + Math.max(0, dy), 0);
+            // The card follows the finger; past its own height it is "out of the bar".
+            n.setPosition(n.position.x + e.getUIDelta().x, card.y + Math.max(0, dy), 0);
             lifted = dy > 110;
             n.setScale(lifted ? 1.12 : 1, lifted ? 1.12 : 1, 1);
             const def = ConfigMgr.skillDef(card.skillId);
             if (lifted && def && def.target === 'area') {
-                this.skillAiming = def;
-                toLocal(this.world, p.x, p.y, this.tmp);
-                this.drawSkillZone(this.tmp.x, this.tmp.y);
-            } else if (this.skillAiming === def) { this.skillAiming = null; this.ghostG.clear(); this.ghost.active = false; }
+                // Area skill: the card goes back at once, the player now picks the spot with a tap.
+                done = true;
+                back();
+                this.startHeroAim(card.heroId, def);
+            }
         }, this);
         const release = (e: EventTouch) => {
             e.propagationStopped = true;
-            n.setPosition(card.x, card.y, 0);
-            n.setScale(1, 1, 1);
+            back();
+            if (done) return;
+            if (!lifted && wasSelected) { this.deselectHeroCard(); return; }
             const def = ConfigMgr.skillDef(card.skillId);
-            if (this.skillAiming === def) { this.skillAiming = null; this.ghostG.clear(); this.ghost.active = false; this.refreshSkillButton(); }
             if (!lifted || !canCast() || !def) return;
             lifted = false;
-            const p = e.getUILocation();
-            this.castHeroSkill(card.heroId, def, p.x, p.y);
+            this.castHeroSkill(card.heroId, def, 0, 0);
         };
         n.on(Node.EventType.TOUCH_END, release, this);
         n.on(Node.EventType.TOUCH_CANCEL, release, this);
     }
 
-    /** Cast a hero skill (released at UI point uiX, uiY for targeted skills). */
-    castHeroSkill(heroId: string, def: any, uiX: number, uiY: number) {
+    /** An area hero skill waits for a tap on the enemy path. */
+    private startHeroAim(heroId: string, def: any) {
+        this.skillAiming = def;
+        this.heroAim = heroId;
+        this.ghostG.clear();
+        this.ghost.active = false;
+        this.selectHeroCard(heroId);
+        this.refreshSkillButton();
+        toast(this.root, `Tap the enemy path to cast ${def.name}`, true);
+    }
+
+    /** Cast a hero skill (area skills: at battlefield point wx, wy). */
+    castHeroSkill(heroId: string, def: any, wx: number, wy: number) {
         let x = 0, y = 0;
         if (def.target === 'area') {
-            toLocal(this.world, uiX, uiY, this.tmp);
-            if (this.tmp.x < this.combat.wallRightX + 10) { toast(this.root, 'Release the card over the enemy path', false); return; }
-            x = this.tmp.x;
-            y = Math.max(this.bf.enemyLaneY[0], Math.min(this.bf.enemyLaneY[1], this.tmp.y));
+            if (wx < this.combat.wallRightX + 10) { toast(this.root, 'Choose a spot on the enemy path', false); return; }
+            x = wx;
+            y = Math.max(this.bf.enemyLaneY[0], Math.min(this.bf.enemyLaneY[1], wy));
         }
+        if (this.rm.skills.usesLeft(heroId) <= 0) { this.stopAiming(); return; }
         this.combat.skills.cast(def, x, y);
         this.rm.skills.use(heroId);
+        if (this.heroAim) this.stopAiming();
         toast(this.root, `${ConfigMgr.heroDef(heroId).name}: ${def.name}!`, true);
-        this.selectHeroCard(heroId);
+        // An area skill was cast by a tap on the field (outside the cards): the description closes.
+        if (def.target === 'area') this.deselectHeroCard(); else this.selectHeroCard(heroId);
     }
 
     private startWave() {
@@ -569,6 +615,7 @@ export class OutCastleScreen implements CombatEvents {
 
     onWaveCleared(wave: number, goldFromKills: number) {
         this.skillAiming = null;
+        this.heroAim = '';
         this.refreshSkillButton();
         this.hideHeroCards();
         const gained = this.rm.completeWave(wave);
@@ -587,6 +634,7 @@ export class OutCastleScreen implements CombatEvents {
     onGameOver(wave: number) {
         this.finished = true;
         this.skillAiming = null;
+        this.heroAim = '';
         this.refreshSkillButton();
         this.hideHeroCards();
         G.main.playSfx('lose');

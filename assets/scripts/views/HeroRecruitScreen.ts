@@ -10,7 +10,7 @@ import { NewHeroView } from './popups/NewHeroView';
 import { HeroRecruitView } from './screens/HeroRecruitView';
 import { toast } from './common/Popups';
 import { InfoView } from './popups/InfoView';
-import { bookCard, skillName } from './SkillCards';
+import { bookCard, skillName, updateSkillArts } from './SkillCards';
 import { HeroSkillService } from '../core/services/HeroSkillService';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, ScrollList, costRow, hex, sprite, text } from './common/UIKit';
@@ -208,7 +208,7 @@ export class HeroRecruitScreen {
         const books = sk.learnableBooks(heroId);
         const cw = W - 70, ch = 162, top = 60;
         books.forEach((id, i) => bookCard(host, id, 0, -top - i * (ch + 8) - ch / 2, cw, ch, {
-            count: sk.bookCount(id), price: sk.learnCost, buttonText: 'Learn',
+            count: sk.bookCount(id), price: sk.learnCost,
             onBuy: () => {
                 const err = sk.learn(heroId, id);
                 if (err) { toast(this.root, err); return; }
@@ -252,6 +252,7 @@ export class HeroRecruitScreen {
             c.art.update(dt);
         }
         if (this.popupArt) this.popupArt.update(dt);
+        updateSkillArts(dt);
     }
 
     destroy() {

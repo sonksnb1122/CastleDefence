@@ -1,4 +1,5 @@
-import { Node, Label, UITransform, Color } from 'cc';
+import { Node, Label, UITransform, Sprite, SpriteFrame, isValid } from 'cc';
+import { SpriteAnim } from '../combat/SpriteAnim';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { Cost } from '../core/GameTypes';
@@ -8,16 +9,40 @@ import { HeroCardView } from './items/HeroCardView';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, costRow, hex, sprite, text } from './common/UIKit';
 
-/** Picture of a skill: the frame of its VFX where the effect lands, fitted in w x h. Passives get a label. */
+/** Skill pictures playing their VFX (updated by the screens that show them, see updateSkillArts). */
+const playing: Array<{ node: Node; sprite: Sprite; anim: SpriteAnim; frames: SpriteFrame[]; frameTime: number; wait: number }> = [];
+/** Pause between two plays of a skill VFX on a card (seconds). */
+const LOOP_PAUSE = 1;
+
+/** Advance the VFX of the skill cards on screen (call from the screen's update). */
+export function updateSkillArts(dt: number) {
+    for (let i = playing.length - 1; i >= 0; i--) {
+        const p = playing[i];
+        if (!isValid(p.node)) { playing.splice(i, 1); continue; }
+        if (p.wait > 0) {
+            // Hidden for a moment after each play, then it starts again.
+            p.wait -= dt;
+            if (p.wait <= 0) { p.sprite.enabled = true; p.anim.play(p.frames, p.frameTime, false); }
+            continue;
+        }
+        if (p.anim.update(dt) || p.anim.finished) { p.wait = LOOP_PAUSE; p.sprite.enabled = false; }
+    }
+}
+
+/** Picture of a skill: its VFX played again and again (with a short pause), fitted in w x h. Passives get a label. */
 export function skillArt(holder: Node, skillId: string, w: number, h: number): Node {
     const def = ConfigMgr.skillDef(skillId);
     const v = def && def.vfx;
     if (v) {
-        const frames = Assets.frames(v.path, v.cellW, v.cellH);
-        const f = frames[Math.min(frames.length - 1, Math.max(0, v.iconFrame !== undefined ? v.iconFrame : (v.hitFrame || 0) + 1))];
-        if (f) {
+        const frames = Assets.frames(v.path, v.cellW, v.cellH).slice(0, v.frames || 9999);
+        if (frames.length > 0) {
             const k = Math.min(w / v.cellW, h / v.cellH);
-            return sprite(holder, f, v.cellW * k, v.cellH * k).node;
+            const sp = sprite(holder, frames[0], v.cellW * k, v.cellH * k);
+            const anim = new SpriteAnim(sp);
+            const frameTime = v.frameTime || 0.06;
+            anim.play(frames, frameTime, false);
+            playing.push({ node: sp.node, sprite: sp, anim, frames, frameTime, wait: 0 });
+            return sp.node;
         }
     }
     return text(holder, HeroSkillService.isPassive(skillId) ? 'PASSIVE' : 'SKILL', 13, 0, 0, { bold: true, color: COLORS.accent }).node;
@@ -35,11 +60,10 @@ export function skillDescription(skillId: string): string { const d = ConfigMgr.
 export interface BookCardOpts {
     /** Books owned (shown after the name). */
     count?: number;
-    /** Price and Buy button (Market offers), or the cost of the action button. */
+    /** Price button (Market offers: only the price), or the cost of the action button. */
     price?: Cost;
-    bought?: boolean;
     onBuy?: () => void;
-    /** Text of the action button (default "Buy"). */
+    /** Text of the action button (none: the button only shows the price). */
     buttonText?: string;
     /** Action allowed (default: price affordable during preparation). */
     enabled?: boolean;
@@ -59,6 +83,8 @@ export function bookCard(parent: Node, skillId: string, x: number, y: number, cw
     if (v.placeholder) v.placeholder.node.active = false;
     const a = PrefabUi.size(holder);
     skillArt(holder, skillId, a.width - 6, a.height - 6);
+    // Texts a little lower than on the hero cards, clear of the top of the frame.
+    for (const l of [v.heroName!, v.passive!]) l.node.setPosition(l.node.position.x, l.node.position.y - 10, 0);
     v.heroName!.string = skillName(skillId) + (o.count && o.count > 1 ? `  x${o.count}` : '');
     v.passive!.node.active = true;
     v.passive!.string = skillTypeLine(skillId);
@@ -74,19 +100,16 @@ export function bookCard(parent: Node, skillId: string, x: number, y: number, cw
     b.string = skillDescription(skillId);
     b.color = hex('#e6e0f0');
     if (o.price) {
-        // Price + Buy button at the bottom right of the card.
+        // Small button at the bottom right of the card: the price only (or a text above the cost).
         const node = PrefabUi.create('items/TowerButton', v.node);
-        node.setPosition(cw / 2 - 98, -ch / 2 + 34, 0);
+        node.setScale(0.78, 0.78, 1);
+        node.setPosition(cw / 2 - 86, -ch / 2 + 30, 0);
         const btn = new PrefabButton(node, () => { if (o.onBuy) o.onBuy(); });
-        if (o.bought) {
-            btn.setText('Bought');
-            btn.setEnabled(false);
-        } else {
-            btn.setText(o.buttonText || 'Buy');
-            costRow(node.getChildByName('Cost'), o.price, 0, 0, { align: 'center', size: 16, fontSize: 12, bold: true });
-            btn.setEnabled(o.enabled !== undefined ? o.enabled : ResourceMgr.inst.canAfford(o.price) && ResourceMgr.inst.isPreparation);
-        }
-        if (o.bought && v.frame) v.frame.color = new Color(150, 150, 165, 255);
+        btn.setText(o.buttonText || '');
+        const cost = node.getChildByName('Cost');
+        if (cost && !o.buttonText) cost.setPosition(0, 0, 0);
+        costRow(cost, o.price, 0, 0, { align: 'center', size: o.buttonText ? 16 : 20, fontSize: o.buttonText ? 12 : 16, bold: true });
+        btn.setEnabled(o.enabled !== undefined ? o.enabled : ResourceMgr.inst.canAfford(o.price) && ResourceMgr.inst.isPreparation);
     }
     return v;
 }

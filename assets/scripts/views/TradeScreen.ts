@@ -7,7 +7,7 @@ import { TradeView } from './screens/TradeView';
 import { toast } from './common/Popups';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, ScrollList, hex, resIcon, text } from './common/UIKit';
-import { bookCard } from './SkillCards';
+import { bookCard, updateSkillArts } from './SkillCards';
 
 const KEYS = ['gold', 'material', 'food'];
 const NAMES: { [k: string]: string } = { gold: 'Gold', material: 'Material', food: 'Food' };
@@ -144,8 +144,9 @@ export class TradeScreen {
         v.shopTitle!.string = `For sale - wave ${this.rm.data.currentWave}`;
         sl.clear();
         offers.forEach((o, i) => bookCard(sl.content, o.skillId, 0, -4 - i * BOOK_H - BOOK_H / 2 + 4, cw, ch, {
-            price: o.price, bought: o.bought, onBuy: () => this.buyBook(o.index),
+            price: o.price, onBuy: () => this.buyBook(o.index),
         }));
+        if (offers.length === 0) text(sl.content, 'Every skill book has been bought.', 15, 0, -60, { color: COLORS.textDim });
         sl.setContentHeight(offers.length * BOOK_H + 8);
         sl.scrollBy(keepS);
     }
@@ -215,7 +216,7 @@ export class TradeScreen {
         this.setAmount(this.amount);
     }
 
-    update(_dt: number) { }
+    update(dt: number) { updateSkillArts(dt); }
 
     destroy() {
         this.unsubscribe();

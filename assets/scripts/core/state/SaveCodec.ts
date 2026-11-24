@@ -78,7 +78,7 @@ export class SaveCodec {
             heroSkills: {},
             books: {},
             skillUses: {},
-            bookShop: { wave: 0, bought: [] },
+            boughtBooks: {},
         };
         // Skill cooldowns: only skills that still exist in skills.json.
         const ready = raw.skillReady && typeof raw.skillReady === 'object' ? raw.skillReady : {};
@@ -91,8 +91,8 @@ export class SaveCodec {
         for (const id in books) if (known(id) && n(books[id], 0) > 0) d.books![id] = Math.floor(n(books[id], 0));
         const uses = raw.skillUses && typeof raw.skillUses === 'object' ? raw.skillUses : {};
         for (const h in uses) if (ConfigMgr.heroDef(h)) d.skillUses![h] = Math.floor(n(uses[h], 0));
-        const shop = raw.bookShop || {};
-        d.bookShop = { wave: Math.floor(n(shop.wave, 0)), bought: Array.isArray(shop.bought) ? shop.bought.filter((x: any) => typeof x === 'number') : [] };
+        const bought = raw.boughtBooks && typeof raw.boughtBooks === 'object' ? raw.boughtBooks : {};
+        for (const id in bought) if (known(id)) d.boughtBooks![id] = Math.floor(n(bought[id], 0));
         let maxUid = 1;
         const center = Placement.castleCenter();
         for (const b of (Array.isArray(raw.buildings) ? raw.buildings : [])) {

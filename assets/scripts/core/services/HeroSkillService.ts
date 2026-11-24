@@ -3,11 +3,12 @@ import { BuffEntry, Cost } from '../GameTypes';
 import type { ResourceMgr } from '../ResourceMgr';
 
 /** One skill book offer of the Market this wave. */
-export interface BookOffer { index: number; skillId: string; price: Cost; bought: boolean; }
+export interface BookOffer { index: number; skillId: string; price: Cost; }
 
 /**
  * Hero skills (skills.json "heroSkills", "passives", "bookShop"):
  *  - skill books are bought in the Market (a new random choice every wave, gold price +/- a few %);
+ *    a skill that was bought is never offered again;
  *  - a hero learns a skill from a book for "learnCost" (1 Energy Core). 5-star heroes learn
  *    1 active + 1 passive skill, the others 1 skill of any type;
  *  - an active skill is cast from the hero card during a wave, then recharges for "cooldownWaves"
@@ -151,21 +152,26 @@ export class HeroSkillService {
         return (c.priceBase || 2000) * (1 + this.rm.data.currentWave * (c.pricePerWave || 0)) * (def.bookPriceMul || 1);
     }
 
-    /** This wave's book offers (the same every time the Market is opened during the wave). */
+    /** Wave in which a skill book was bought, or 0. */
+    boughtWave(id: string): number { return (this.rm.data.boughtBooks && this.rm.data.boughtBooks[id]) || 0; }
+
+    /**
+     * This wave's book offers (the same every time the Market is opened during the wave). Skills bought
+     * in an earlier wave are left out of the draw; the ones bought this wave just disappear from the list.
+     */
     offers(): BookOffer[] {
         const c = this.shopCfg;
-        const pool = HeroSkillService.allIds();
+        const wave = this.rm.data.currentWave;
+        const pool = HeroSkillService.allIds().filter(id => { const w = this.boughtWave(id); return !w || w >= wave; });
         const min = c.offersMin || 4, max = Math.max(min, c.offersMax || 6);
         const count = Math.min(pool.length, min + Math.floor(this.rand(1) * (max - min + 1)));
-        const shop = this.rm.data.bookShop;
-        const bought = shop && shop.wave === this.rm.data.currentWave ? shop.bought : [];
         const out: BookOffer[] = [];
         const left = pool.slice();
         for (let i = 0; i < count; i++) {
             const id = left.splice(Math.floor(this.rand(10 + i) * left.length), 1)[0];
             const f = (c.fluctuation || 0) / 100;
             const gold = Math.round(this.basePrice(id) * (1 + f * (2 * this.rand(100 + i) - 1)) / 10) * 10;
-            out.push({ index: i, skillId: id, price: { gold }, bought: bought.indexOf(i) >= 0 });
+            if (!this.boughtWave(id)) out.push({ index: i, skillId: id, price: { gold } });
         }
         return out;
     }
@@ -176,11 +182,10 @@ export class HeroSkillService {
         if (!rm.isPreparation) return 'Cannot buy during combat';
         const o = this.offers().find(x => x.index === index);
         if (!o) return 'Offer not found';
-        if (o.bought) return 'Already bought';
         if (!rm.spend(o.price)) return 'Not enough gold';
         const d = rm.data;
-        if (!d.bookShop || d.bookShop.wave !== d.currentWave) d.bookShop = { wave: d.currentWave, bought: [] };
-        d.bookShop.bought.push(index);
+        if (!d.boughtBooks) d.boughtBooks = {};
+        d.boughtBooks[o.skillId] = d.currentWave;
         if (!d.books) d.books = {};
         d.books[o.skillId] = this.bookCount(o.skillId) + 1;
         rm.notify();
