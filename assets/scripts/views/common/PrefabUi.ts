@@ -51,6 +51,22 @@ export class PrefabUi {
 
     static setSize(node: Node, w: number, h: number) { node.getComponent(UITransform)!.setContentSize(w, h); }
 
+    /**
+     * Height of a wrapped label (Overflow RESIZE_HEIGHT) after its string was set: the engine lays the
+     * text out at once (updateRenderData); without it (tests) the lines are estimated from the text length.
+     */
+    static labelHeight(l: Label): number {
+        const ui = l.node.getComponent(UITransform)!;
+        const r = l as any;
+        if (typeof r.updateRenderData === 'function') {
+            r.updateRenderData(true);
+            return Math.max(l.lineHeight, ui.height);
+        }
+        const perLine = Math.max(8, Math.floor(ui.width / (l.fontSize * 0.52)));
+        const lines = l.string.split('\n').reduce((a, part) => a + Math.max(1, Math.ceil(part.length / perLine)), 0);
+        return lines * l.lineHeight;
+    }
+
     /** Swallow taps on a node so the map behind it never reacts. */
     static blockTaps(node: Node) {
         node.on(Node.EventType.TOUCH_START, (e: EventTouch) => { e.propagationStopped = true; }, node);

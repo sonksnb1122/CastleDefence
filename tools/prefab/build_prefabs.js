@@ -13,6 +13,7 @@ const frames = JSON.parse(fs.readFileSync(framesFile, 'utf8'));
 const cfgDir = path.join(proj, 'assets/resources/config');
 const heroesCfg = JSON.parse(fs.readFileSync(path.join(cfgDir, 'heroes.json'), 'utf8'));
 const buildingCfg = JSON.parse(fs.readFileSync(path.join(cfgDir, 'building.json'), 'utf8'));
+const researchCfg = JSON.parse(fs.readFileSync(path.join(cfgDir, 'research.json'), 'utf8'));
 const UI = heroesCfg.ui;
 
 // Stable uuids: generated once, then reused so the editor keeps its references.
@@ -210,18 +211,60 @@ function saveLoadPopup() {
   save(w, 'popups/SaveLoad', p.root, 'SaveLoadView', 'popups', refs);
 }
 
-function researchPopup() {
-  const W = 900, H = SCREEN_H - 150;
-  const w = new PrefabWriter('Research');
-  const p = popup(w, 'Research', 'Research', W, H);
+/**
+ * Research tree window (views/ResearchTree.ts draws the tree in TreeArea): one button per branch
+ * (research.json "branches") to jump to it, zoom buttons and Close.
+ */
+function researchTreePopup() {
+  const W = SCREEN_W - 24, H = SCREEN_H - 46;
+  const w = new PrefabWriter('ResearchTree');
+  const p = popup(w, 'ResearchTree', 'Research Tree', W, H);
   const refs = p.refs;
-  const cap = label(w, p.box, 'CapLabel', 'Research Lab Lv 1: technologies up to level 2.', -W / 2 + 36, H / 2 - 64, 14, { ax: 0, color: C.textDim });
+  const cap = label(w, p.box, 'CapLabel', 'Research Lab Lv 1: tier 1 open.', -W / 2 + 36, H / 2 - 64, 14, { ax: 0, color: C.textDim });
   w.widget(cap, { left: 36, top: 55 });
   refs.capLabel = lab(w, cap);
-  refs.listArea = w.node('ListArea', p.box, { y: -10, w: W - 64, h: H - 160 });
-  w.widget(refs.listArea, { left: 32, right: 32, top: 90, bottom: 70 });
+  // Branch buttons, right-aligned on the line of the Lab text.
+  const TW = 104, TG = 6, branches = researchCfg.branches || [];
+  const tabs = w.node('Tabs', p.box, { x: W / 2 - 34 - (branches.length * (TW + TG) - TG) / 2, y: H / 2 - 64, w: branches.length * (TW + TG) - TG, h: 30 });
+  w.widget(tabs, { right: 34, top: 49 });
+  branches.forEach((b, i) => {
+    const x = -tabs_w(branches.length, TW, TG) / 2 + TW / 2 + i * (TW + TG);
+    button(w, tabs, 'Tab_' + b.id, b.name, x, 0, TW, 30, b.color, 13);
+  });
+  refs.tabs = tabs;
+  refs.treeArea = w.node('TreeArea', p.box, { y: -12, w: W - 56, h: H - 160 });
+  w.widget(refs.treeArea, { left: 28, right: 28, top: 86, bottom: 66 });
   refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 0, -H / 2 + 40, 160, 42, C.button, 18, 'game', { widget: { bottom: 19 } });
-  save(w, 'popups/Research', p.root, 'ResearchView', 'popups', refs);
+  refs.zoomOutButton = button(w, p.box, 'ZoomOutButton', '-', W / 2 - 120, -H / 2 + 40, 50, 42, C.buttonAlt, 22, 'game', { widget: { right: 95, bottom: 19 } });
+  refs.zoomInButton = button(w, p.box, 'ZoomInButton', '+', W / 2 - 64, -H / 2 + 40, 50, 42, C.buttonAlt, 22, 'game', { widget: { right: 39, bottom: 19 } });
+  save(w, 'popups/ResearchTree', p.root, 'ResearchTreeView', 'popups', refs);
+}
+const tabs_w = (n, tw, tg) => n * (tw + tg) - tg;
+
+/**
+ * Hero window (tap a hero card): animated card on the left, texts in InfoArea (code stacks them in a
+ * scroll list), icon buttons Learn skill / Promote under the texts. No Close button: a tap on the
+ * veil closes it.
+ */
+function heroInfoPopup() {
+  const W = 680, H = 500;
+  const w = new PrefabWriter('HeroInfo');
+  const p = popup(w, 'HeroInfo', 'Hero', W, H);
+  const refs = p.refs;
+  const c = heroesCfg.card, imgH = 320, imgW = Math.round(imgH * c.cellW / c.cellH);
+  refs.art = panel(w, p.box, 'Art', -W / 2 + 34 + imgW / 2, 4, imgW - 8, imgH - 8, '#1c1826');
+  const x0 = -W / 2 + 34 + imgW + 24, colW = W / 2 - 30 - x0, top = 62, bottom = 118;
+  refs.infoArea = w.node('InfoArea', p.box, { x: x0 + colW / 2, y: (bottom - top) / 2, w: colW, h: H - top - bottom });
+  w.widget(refs.infoArea, { left: x0 + W / 2, right: 30, top, bottom });
+  const iconBtn = (name, caption, x) => {
+    const n = w.node(name, p.box, { x, y: -H / 2 + 78, w: 60, h: 60 });
+    w.sprite(w.node('Icon', n, { w: 56, h: 56 }), null);
+    refs[name.charAt(0).toLowerCase() + name.slice(1) + 'Caption'] = lab(w, label(w, n, 'Caption', caption, 0, -38, 12, { bold: true }));
+    return n;
+  };
+  refs.learnButton = iconBtn('LearnButton', 'Learn skill', x0 + colW / 2 - 60);
+  refs.promoteButton = iconBtn('PromoteButton', 'Promote', x0 + colW / 2 + 60);
+  save(w, 'popups/HeroInfo', p.root, 'HeroInfoView', 'popups', refs);
 }
 
 function confirmPopup() {
@@ -349,25 +392,6 @@ function saveSlotItem() {
   refs.actionButton = button(w, root, 'ActionButton', 'Load', 140, 0, 100, 38, C.buttonOk, 16, 'menu');
   refs.deleteButton = button(w, root, 'DeleteButton', 'X', 225, 0, 38, 38, C.buttonDanger, 16, 'menu');
   save(w, 'items/SaveSlot', root, 'SaveSlotView', 'items', refs);
-}
-
-function researchRowItem() {
-  const W = 840, H = 56;
-  const w = new PrefabWriter('ResearchRow');
-  const root = w.node('ResearchRow', null, { w: W, h: H });
-  const bg = panel(w, root, 'Panel', 0, 0, W, H, C.panelLight);
-  w.widget(bg, { left: 0, right: 0, top: 0, bottom: 0 });
-  const refs = {};
-  const name = label(w, root, 'TechName', 'Technology', -W / 2 + 20, 13, 17, { ax: 0, bold: true });
-  w.widget(name, { left: 20 });
-  refs.techName = lab(w, name);
-  const desc = label(w, root, 'Desc', 'Description', -W / 2 + 20, -11, 13, { ax: 0, color: C.textDim });
-  w.widget(desc, { left: 20 });
-  refs.desc = lab(w, desc);
-  refs.level = lab(w, label(w, root, 'Level', 'Lv 0/2', 40, 13, 15, { ax: 0, color: C.accent }));
-  refs.cost = w.node('Cost', root, { x: 40, y: -11 });
-  refs.researchButton = button(w, root, 'ResearchButton', 'Research', W / 2 - 80, 0, 110, 38, C.buttonOk, 15, 'game', { widget: { right: 25 } });
-  save(w, 'items/ResearchRow', root, 'ResearchRowView', 'items', refs);
 }
 
 function buildRowItem() {
@@ -642,8 +666,8 @@ function tradeScreen() {
 
 // ------------------------------------------------------------------ run
 
-[pausePopup, settingsPopup, saveLoadPopup, researchPopup, confirmPopup, messagePopup, infoPopup, buildPopup, newHeroPopup,
-  topBarItem, defTabItem, saveSlotItem, researchRowItem, buildRowItem, heroCardItem, skillCardItem, levelTagItem, arcButtonItem, towerButtonItem, toastItem,
+[pausePopup, settingsPopup, saveLoadPopup, researchTreePopup, heroInfoPopup, confirmPopup, messagePopup, infoPopup, buildPopup, newHeroPopup,
+  topBarItem, defTabItem, saveSlotItem, buildRowItem, heroCardItem, skillCardItem, levelTagItem, arcButtonItem, towerButtonItem, toastItem,
   loadingScreen, mainMenuScreen, inCastleScreen, outCastleScreen, heroRecruitScreen, tradeScreen].forEach(f => f());
 viewScript('PopupView', 'popups');
 for (const cls in VIEW_DIRS) write(`assets/scripts/views/${VIEW_DIRS[cls]}/${cls}.ts.meta`, scriptMeta(uuid('script:' + cls)));

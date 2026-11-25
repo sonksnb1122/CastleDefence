@@ -1,4 +1,4 @@
-import { Node, Texture2D, SpriteFrame, Label, Color, isValid, EventTouch, BlockInputEvents } from 'cc';
+import { Node, Texture2D, Sprite, SpriteFrame, Label, Color, isValid, EventTouch, BlockInputEvents } from 'cc';
 import { SpriteAnim } from '../combat/SpriteAnim';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
@@ -7,6 +7,7 @@ import { ResourceMgr } from '../core/ResourceMgr';
 import { TopBar } from './common/TopBar';
 import { HeroCardView } from './items/HeroCardView';
 import { NewHeroView } from './popups/NewHeroView';
+import { HeroInfoView } from './popups/HeroInfoView';
 import { HeroRecruitView } from './screens/HeroRecruitView';
 import { confirm, toast } from './common/Popups';
 import { InfoView } from './popups/InfoView';
@@ -118,7 +119,7 @@ export class HeroRecruitScreen {
     private cards: CardEntry[] = [];
     private popupArt: CardArt | null = null;
     /** Hero window opened by tapping a card (see openHero). */
-    private heroWin: { v: NewHeroView; art: CardArt; heroId: string } | null = null;
+    private heroWin: { v: HeroInfoView; art: CardArt; heroId: string } | null = null;
 
     constructor(parent: Node) {
         const W = G.main.W;
@@ -231,82 +232,83 @@ export class HeroRecruitScreen {
         this.closeHero();
         const hero = ConfigMgr.heroDef(heroId);
         const owned = this.rm.ownsHero(heroId);
-        const v = PrefabUi.view('popups/NewHero', this.root, NewHeroView);
-        const W = Math.min(680, G.main.W - 40), H = Math.min(G.main.H - 30, 500);
-        v.resize(W, H);
+        const v = PrefabUi.view('popups/HeroInfo', this.root, HeroInfoView);
+        const pw = PrefabUi.size(v.node);
+        if (pw.width > G.main.W - 40 || pw.height > G.main.H - 30) {
+            v.resize(Math.min(pw.width, G.main.W - 40), Math.min(pw.height, G.main.H - 30));
+            PrefabUi.align(v.node);
+        }
         v.setTitle(hero.name);
-        if (v.closeButton) v.closeButton.active = false;
         // The window keeps its taps; a tap on the dark veil around it closes it.
         if (v.backing) v.backing.addComponent(BlockInputEvents);
         const veil = v.node.getChildByName('Veil');
         if (veil) veil.on(Node.EventType.TOUCH_END, () => this.closeHero(), this);
 
-        // Card on the left.
-        const c = ConfigMgr.heroCard, imgH = Math.min(320, H - 120), imgW = Math.round(imgH * c.cellW / c.cellH);
-        const art = v.art!;
-        PrefabUi.setSize(art, imgW - 8, imgH - 8);
-        art.setPosition(-W / 2 + 34 + imgW / 2, 12, 0);
-        const ca = new CardArt(art, hero.imagePath, imgW, imgH);
+        // Card on the left (the prefab "Art" panel).
+        const a = PrefabUi.size(v.art!);
+        const ca = new CardArt(v.art!, hero.imagePath, a.width + 8, a.height + 8);
         ca.stars = this.promotedStars(heroId);
         ca.setWanted(true);
 
-        // Texts on the right: name, passive, buffs, then the skills with their description.
-        const x0 = -W / 2 + 34 + imgW + 24, tw = W / 2 - 30 - x0;
-        let y = H / 2 - 62;
+        // Texts in the prefab "InfoArea", stacked from the top in a scroll list (long skill lists scroll).
+        const area = PrefabUi.size(v.infoArea!);
+        const list = new ScrollList(v.infoArea!, 0, 0, area.width, area.height, false);
+        const tw = area.width - 16, left = -tw / 2;
+        let y = -4;
         const put = (str: string, size: number, color: string, bold = false, gap = 4) => {
-            const l = text(v.box!, str, size, x0, y, { ax: 0, ay: 1, width: tw, color, bold });
-            // Height of the wrapped text (label sizes are only known after rendering).
-            const perLine = Math.max(8, Math.floor(tw / (size * 0.52)));
-            const lines = str.split('\n').reduce((a, part) => a + Math.max(1, Math.ceil(part.length / perLine)), 0);
-            y -= lines * l.lineHeight + gap;
+            const l = text(list.content, str, size, left, y, { ax: 0, ay: 1, width: tw, color, bold });
+            y -= PrefabUi.labelHeight(l) + gap;
             return l;
         };
-        v.heroName!.node.active = false;
-        v.passive!.node.active = false;
-        v.buffs!.node.active = false;
-        put(owned ? 'Recruited' : 'Not recruited yet', 13, owned ? COLORS.good : COLORS.textDim, false, 6);
-        if (hero.passive) put(`[${hero.passive.name}]`, 14, COLORS.accent, true);
+        put(owned ? 'Recruited' : 'Not recruited yet', 13, owned ? COLORS.good : COLORS.textDim, false, 8);
+        if (hero.passive) put(`[${hero.passive.name}]`, 15, COLORS.accent, true, 4);
         // Rolled buffs (one per star) and the card passive; passive skills are listed with the skills.
         const buffs = (this.rm.data.heroRolls[heroId] || []).concat(hero.passive ? hero.passive.buffs : []);
-        put(buffs.map(b => { const i = ConfigMgr.buffInfo(b.key); return `${i.name}${b.towerId ? ' (' + b.towerId + ')' : ''} +${b.value}${i.unit}`; }).join('\n') || 'No buff', 14, '#bfe8b0', false, 10);
+        put(buffs.map(b => { const i = ConfigMgr.buffInfo(b.key); return `${i.name}${b.towerId ? ' (' + b.towerId + ')' : ''} +${b.value}${i.unit}`; }).join('\n') || 'No buff', 14, '#bfe8b0', false, 14);
         const learned = this.rm.skills.learned(heroId);
-        put('Skills', 15, COLORS.text, true);
+        put('Skills', 16, COLORS.text, true, 6);
         if (learned.length === 0) put('No skill learned yet.', 13, COLORS.textDim);
         for (const id of learned) {
             put(`${skillName(id)}  (${HeroSkillService.isPassive(id) ? 'passive' : 'active'})`, 14, HeroSkillService.isPassive(id) ? '#9fe8ff' : COLORS.accent, true, 2);
-            put(skillDescription(id), 12, '#e6e0f0', false, 8);
+            put(skillDescription(id), 13, '#e6e0f0', false, 10);
         }
+        list.setContentHeight(-y + 4);
 
-        // Icon buttons under the texts, centered on them: learn a skill, promote (its cost is in the confirm popup).
+        // Icon buttons pinned under the texts (prefab "LearnButton" / "PromoteButton").
+        const sk = this.rm.skills, hs = this.rm.heroes;
+        v.learnButton!.active = v.promoteButton!.active = owned;
         if (owned) {
-            const sk = this.rm.skills, hs = this.rm.heroes;
-            const by = -H / 2 + 78, bx = x0 + tw / 2;
             const learnWhy = !sk.learnUnlocked ? 'Research "Hero Scholarship" first (Research Lab Lv 2)'
                 : !sk.canLearnMore(heroId) ? 'No free skill slot' : !this.rm.isPreparation ? 'Cannot learn skills during combat' : null;
-            this.iconButton(v.box!, 'learn_skill', 'Learn skill', bx - 60, by, learnWhy, () => this.openLearn(heroId));
+            this.iconButton(v.learnButton!, 'learn_skill', learnWhy, () => this.openLearn(heroId));
             const promoteWhy = hs.promoteBlock(heroId) || (!this.rm.isPreparation ? 'Cannot promote during combat' : null);
-            this.iconButton(v.box!, 'star_up', hs.stars(heroId) >= 5 ? 'Max stars' : 'Promote', bx + 60, by, promoteWhy, () => this.promote(heroId));
+            this.iconButton(v.promoteButton!, 'star_up', promoteWhy, () => this.promote(heroId));
+            if (hs.stars(heroId) >= 5) v.promoteButtonCaption!.string = 'Max stars';
+            if (learnWhy) v.learnButtonCaption!.color = hex(COLORS.textDim);
+            if (promoteWhy) v.promoteButtonCaption!.color = hex(COLORS.textDim);
         }
         this.heroWin = { v, art: ca, heroId };
     }
 
-    /** Picture button (building.json "uiIcons") with a caption; a disabled one tells why when tapped. */
-    private iconButton(parent: Node, icon: string, caption: string, x: number, y: number, why: string | null, onTap: () => void): Node {
-        const n = mk('Icon_' + icon, parent, x, y, 60, 60);
+    /**
+     * Icon button of the hero window: picture from building.json "uiIcons" on the prefab "Icon" sprite.
+     * A disabled one is greyed out and tells why when tapped.
+     */
+    private iconButton(n: Node, icon: string, why: string | null, onTap: () => void) {
         const cfg = ConfigMgr.uiIcon(icon);
         const frames = cfg ? Assets.frames(cfg.path, cfg.size, cfg.size) : [];
-        if (frames.length) {
-            const sp = sprite(n, frames[0], 56, 56);
-            if (why) sp.color = new Color(110, 110, 120, 200);
-        } else text(n, caption, 12, 0, 0, { bold: true });
-        text(n, caption, 12, 0, -36, { bold: true, color: why ? COLORS.textDim : COLORS.text });
+        const sp = n.getChildByName('Icon') ? n.getChildByName('Icon')!.getComponent(Sprite) : null;
+        if (sp && frames.length) {
+            sp.sizeMode = Sprite.SizeMode.CUSTOM;
+            sp.spriteFrame = frames[0];
+            sp.color = why ? new Color(110, 110, 120, 200) : Color.WHITE;
+        }
         n.addComponent(BlockInputEvents);
         n.on(Node.EventType.TOUCH_END, () => {
             if (why) { toast(this.root, why); return; }
             G.main.playSfx('click');
             onTap();
         }, this);
-        return n;
     }
 
     private promote(heroId: string) {

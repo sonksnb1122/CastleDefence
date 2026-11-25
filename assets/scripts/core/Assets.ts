@@ -28,7 +28,9 @@ export class Assets {
             if (!m || !m.image || !m.regions || !resources.getInfoWithPath(m.image + '/texture', Texture2D)) { done(); return; }
             resources.load(m.image + '/texture', Texture2D, (e2: any, tex: Texture2D) => {
                 if (!e2 && tex) {
-                    tex.setFilters(Texture2D.Filter.NEAREST, Texture2D.Filter.NEAREST);
+                    // "linear": smooth art (the research icons); otherwise pixel art keeps hard edges.
+                    const f = m.linear ? Texture2D.Filter.LINEAR : Texture2D.Filter.NEAREST;
+                    tex.setFilters(f, f);
                     tex.setMipFilter(Texture2D.Filter.NONE);
                     for (const k in m.regions) {
                         const r = m.regions[k];
@@ -202,6 +204,27 @@ export class Assets {
      * Whole texture as one 9-slice frame: the four borders keep their size, the
      * middle stretches. Returns null if the texture is missing.
      */
+    /**
+     * A part of a picture as a 9-sliced frame (cached by path and rect), for example only the bottom strip of a
+     * frame. rect is in pixels from the top-left corner of the picture.
+     */
+    static slicedPart(path: string, rect: { x: number; y: number; w: number; h: number }, insets: { left: number; right: number; top: number; bottom: number }): SpriteFrame | null {
+        const key = `${path}#${rect.x},${rect.y},${rect.w},${rect.h}`;
+        const cached = Assets.slicedCache.get(key);
+        if (cached) return cached;
+        const tex = Assets.textures.get(path);
+        if (!tex) return null;
+        const sf = new SpriteFrame();
+        sf.reset({
+            texture: tex, rect: new Rect(rect.x, rect.y, rect.w, rect.h), originalSize: new Size(rect.w, rect.h), offset: new Vec2(0, 0),
+            borderLeft: insets.left, borderRight: insets.right, borderTop: insets.top, borderBottom: insets.bottom,
+        } as any);
+        sf.insetLeft = insets.left; sf.insetRight = insets.right; sf.insetTop = insets.top; sf.insetBottom = insets.bottom;
+        sf.packable = false;
+        Assets.slicedCache.set(key, sf);
+        return sf;
+    }
+
     static slicedFrame(path: string, width: number, height: number, insets: { left: number; right: number; top: number; bottom: number }): SpriteFrame | null {
         const cached = Assets.slicedCache.get(path);
         if (cached) return cached;

@@ -233,9 +233,10 @@ Heroes are recruited at the Base. Each recruit is a random pick among the heroes
   - *Siege Commander*
   - *Treasurer*
 - **Limits:** the Base level limits how many heroes you can own (3 / 7 / 12).
-- **Hero window:** tap a hero card to open it: animated card, stars, buffs and learned skills with their
-  description. Two icon buttons: *Learn skill* and *Promote*. A locked button says why when tapped. Tap outside
-  the window to close it.
+- **Hero window** (`prefabs/popups/HeroInfo`): tap a hero card to open it: animated card on the left; on the right
+  the buffs and the learned skills with their description, stacked from the top in a scroll area; under them two icon
+  buttons, *Learn skill* and *Promote*. A locked button is grey and says why when tapped. Tap outside the window to
+  close it.
 - **Promotion** (research *Ascension*, Research Lab Lv 3): a hero below 5 stars goes straight to 5 stars and gets
   1 random buff it does not have yet per star gained: **2 buffs from 3 stars, 1 buff from 4 stars**. Cost (`heroes.json`
   "promotion"): from 3 stars 28,000 gold + 21,000 material + 21,000 food + 6 Energy Cores; from 4 stars 20,000 gold
@@ -267,12 +268,16 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 - **A node needs its parent** (the node above it in the same branch) **at max level.**
 - Some tier 2 nodes give only **half of their levels** until the Lab reaches Lv 3 (`"halfCap"`).
   *Armor Piercing* and *Spell Piercing* keep their old limits: 2 / 5 / 10 levels at Lab Lv 1 / 2 / 3 (`"labCaps"`).
-- The tree window: drag to move around. Tap a node: a confirm window shows what it does, its level and its
-  cost (*Research* / *Cancel*); a locked or finished node shows an info window with the reason. Lines light up in
-  the branch color once the parent is done.
+- The tree window (`prefabs/popups/ResearchTree`): the whole height of the tree fits on screen at first. Drag to
+  move around; zoom with the **- / +** buttons, the mouse wheel or two fingers; the branch buttons at the top jump to
+  a branch. Tap a node: a confirm window shows what it does, its level and its cost (*Research* / *Cancel*); a locked
+  or finished node shows an info window with the reason. Lines light up in the branch color once the parent is done.
+- Layout: tiers are well apart (dashed line between two tiers), nodes of a branch 34 px apart, and two branches twice
+  as far (68 px) with a frame bar (the top bar frame, standing up) between them.
 - Nodes: the branch color as a dark-to-bright band gradient (like the hero card backgrounds) with a darker frame of
   the same color; open nodes are a little darker than finished ones, locked nodes are grey. Pictures come from
-  `"icon"` (96 x 96, `sprites/research/`); nodes without a picture yet show a short text (`"label"`).
+  `"icon"` (`sprites/research/<name>`, served by the research atlas, see Tools); nodes without a picture show a short
+  text (`"label"`).
 
 | Branch | Tier 1 (Lab Lv 1) | Tier 2 (Lab Lv 2) | Tier 3 (Lab Lv 3) |
 |---|---|---|---|
@@ -455,11 +460,15 @@ assets/
       screens/ popups/ items/ view components of the prefabs (references to their nodes)
       common/                 PrefabUi, Popups (confirm, message, toast, info), TopBar, DefTab, UIKit
   prefabs/                    asset bundle "prefabs": screens/, popups/, items/
-  bundles/heroes/             asset bundle "heroes": hero card sheets, loaded only when shown
+  bundles/heroes/             asset bundle "heroes": hero card sheets (256-color PNG), loaded only when shown
   resources/
     config/                   all balancing data (.json)
-    sprites/                  sprite sheets; sprites/atlas/combat packs every enemy and tower sheet
+    sprites/                  sprite sheets; sprites/atlas/combat packs every enemy, tower and status sheet,
+                              sprites/atlas/research the research tree icons; sprites/map/map.jpg the castle map
     audio/                    music and sound effects (MP3, built by tools/audio)
+art/                          picture sources that are not shipped as they are (packed into the atlases)
+  combat/                     enemies/, towers/, status/: sources of sprites/atlas/combat
+  research/                   research icons (96 x 96 PNG): sources of sprites/atlas/research
 ```
 
 ### Main ideas
@@ -490,6 +499,9 @@ assets/
     on the same texture. Damage numbers use the CHAR label cache.
   - **Loading on demand:** the 27 large hero card sheets are in a separate bundle. A card only
     keeps its texture while it is visible on screen.
+  - **Smaller files:** the hero card sheets are 256-color PNGs (about 11 MB instead of 38 MB), the
+    castle map is a JPG (about 0.95 MB instead of 7.2 MB), and the atlas sources stay out of
+    `resources` so the build only ships the atlases.
 - **Free placement.** Buildings and towers are placed at any position inside their area,
   with overlap and spacing checks, and their exact position is saved.
 - **Saves.** Saves are JSON in local storage, with a version number and validation, so a
@@ -500,8 +512,16 @@ assets/
 ## Tools
 
 The `tools/` folder is outside the game assets.
-- `tools/atlas/pack_atlas.py`: packs every enemy and tower sheet into
-  `sprites/atlas/combat`. Run it again after changing a sheet. Needs Python + Pillow.
+- `tools/atlas/pack_atlas.py`: packs the enemy, tower and status sheets of `art/combat/` into
+  `sprites/atlas/combat`, and the research icons of `art/research/` into `sprites/atlas/research` (2048 x 512,
+  256 colors, about 250 KB instead of 1.4 MB in 70 files). The configs keep the old paths
+  (`sprites/towers/base_t1`, `sprites/research/off_damage`), which are looked up in the atlas manifests.
+  Run it again after changing a sheet or an icon: `python tools/atlas/pack_atlas.py assets/resources
+  [combat|research|all]`. Needs Python + Pillow.
+- `tools/atlas/quantize_cards.py`: turns a full-color hero card sheet into a 256-color PNG (ordered dither,
+  exact alpha), about 4x smaller: `python tools/atlas/quantize_cards.py <in.png> <out.png>`, or a folder to
+  convert every `*_card_sheet.png` in place. Run it on the full-color source only, not on a sheet that is
+  already converted. Needs Python + Pillow + NumPy.
 - `tools/audio/build_audio.py`: builds `resources/audio` from the downloaded sound packs.
   - Keeps one loop of each music track and cuts silence.
   - Converts everything to small MP3 files: about 3.8 MB in total, against about 115 MB of original WAV files.

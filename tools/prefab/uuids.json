@@ -49,5 +49,9 @@
   "script:TradeView": "bc8a25c7-c95e-4b88-8f39-891dcf4e96ce",
   "prefab:screens/Trade": "b5cc9166-c0cb-45cc-a0e0-4ec158102820",
   "script:SkillCardView": "ea9f01e8-b828-41d0-831d-476f6232115e",
-  "prefab:items/SkillCard": "c4762983-d026-4ca2-aabb-f06fb9ceb83a"
+  "prefab:items/SkillCard": "c4762983-d026-4ca2-aabb-f06fb9ceb83a",
+  "script:ResearchTreeView": "8c277010-32dd-492f-b843-bdd82584d344",
+  "prefab:popups/ResearchTree": "6c8528ae-ccf2-4b77-ab22-b369136abe64",
+  "script:HeroInfoView": "78970820-9d67-43dd-9972-065bdcb6bc02",
+  "prefab:popups/HeroInfo": "6e1fd885-0831-4fe4-b4d0-c3158e9530d7"
 }
