@@ -103,6 +103,7 @@ export class ConfigMgr {
         for (const p of ConfigMgr.uiStylePaths()) out.push(p);
         for (const s of ConfigMgr.effects.statusEffects) if (s.visual && s.visual.icon) out.push(s.visual.icon);
         for (const s of ((ConfigMgr.skills && ConfigMgr.skills.skills) || [])) if (s.vfx && s.vfx.path) out.push(s.vfx.path);
+        for (const t of ((ConfigMgr.research && ConfigMgr.research.techs) || [])) if (t.icon) out.push(t.icon);
         return out;
     }
 

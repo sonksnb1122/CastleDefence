@@ -1,4 +1,4 @@
-import { Node, Label, Graphics, Mask, EventTouch, EventMouse, Vec3, UITransform } from 'cc';
+import { Node, Label, Graphics, Mask, EventTouch, EventMouse, Vec3, Sprite, Color } from 'cc';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
@@ -6,7 +6,8 @@ import { ResearchView } from './popups/ResearchView';
 import { IOverlay } from './Overlays';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
 import { confirm, infoWindow, toast } from './common/Popups';
-import { COLORS, drawBox, hex, mk, registerRedraw, text, toLocal } from './common/UIKit';
+import { COLORS, drawBox, hex, mk, registerRedraw, sprite, text, toLocal } from './common/UIKit';
+import { Assets } from '../core/Assets';
 
 /** Size of a node square, distance between two columns / two rows, gap between two branches. */
 const NODE = 44;
@@ -17,7 +18,21 @@ const BRANCH_GAP = 40;
 const HEAD = 26;
 const GUTTER = 56;
 
-interface TreeNode { id: string; t: any; x: number; y: number; g: Graphics; label: Label; level: Label; color: string; }
+interface TreeNode { id: string; t: any; x: number; y: number; g: Graphics; label: Label; level: Label; color: string; icon: Sprite | null; }
+
+/** "#rrggbb" scaled by k (0 = black, 1 = same color). */
+function shade(c: string, k: number): string {
+    const v = parseInt(c.slice(1, 7), 16);
+    const f = (x: number) => Math.max(0, Math.min(255, Math.round(x * k))).toString(16).padStart(2, '0');
+    return '#' + f((v >> 16) & 255) + f((v >> 8) & 255) + f(v & 255);
+}
+
+/** Blend of two "#rrggbb" colors (t = 0: a, 1: b). */
+function mix(a: string, b: string, t: number): string {
+    const va = parseInt(a.slice(1, 7), 16), vb = parseInt(b.slice(1, 7), 16);
+    const ch = (sh: number) => Math.round(((va >> sh) & 255) * (1 - t) + ((vb >> sh) & 255) * t).toString(16).padStart(2, '0');
+    return '#' + ch(16) + ch(8) + ch(0);
+}
 
 /**
  * Research tree (prefabs/popups/Research). Tap a node: confirm window with its cost (or an info window when locked).
@@ -149,10 +164,19 @@ export class ResearchOverlay implements IOverlay {
     private makeNode(t: any, x: number, y: number, color: string) {
         const n = mk('Tech_' + t.id, this.content, x, y, NODE, NODE);
         const g = n.addComponent(Graphics);
-        // Placeholder picture: a short text (research.json "label"), the level inside the square.
+        // Picture: the node icon (research.json "icon"), or a short text for now ("label").
+        const size = ConfigMgr.research.iconSize || 96;
+        const frames = t.icon ? Assets.frames(t.icon, size, size) : [];
+        const icon = frames.length ? sprite(n, frames[0], NODE - 6, NODE - 6) : null;
         const label = text(n, t.label || t.name.slice(0, 5), 11, 0, 7, { bold: true });
-        const level = text(n, '', 10, 0, -12, { color: COLORS.textDim });
-        const node: TreeNode = { id: t.id, t, x, y, g, label, level, color };
+        label.node.active = !icon;
+        // Level on a dark strip at the bottom of the square.
+        const strip = mk('LevelStrip', n, 0, -NODE / 2 + 7, NODE - 4, 12).addComponent(Graphics);
+        strip.fillColor = hex('#000000', 150);
+        strip.rect(-(NODE - 4) / 2, -6, NODE - 4, 12);
+        strip.fill();
+        const level = text(n, '', 10, 0, -NODE / 2 + 7, { color: COLORS.textDim, bold: true });
+        const node: TreeNode = { id: t.id, t, x, y, g, label, level, color, icon };
         registerRedraw(n, () => this.drawNode(node));
         this.nodes.push(node);
         this.byId[t.id] = node;
@@ -170,19 +194,26 @@ export class ResearchOverlay implements IOverlay {
         const st = this.state(n.id);
         const g = n.g;
         g.clear();
-        const fill = st === 'locked' ? '#2b2834' : n.color;
-        const alpha = st === 'max' ? 255 : st === 'open' ? 150 : 255;
-        g.fillColor = hex(fill, alpha);
-        g.rect(-NODE / 2, -NODE / 2, NODE, NODE);
-        g.fill();
-        g.lineWidth = n.id === this.selected ? 4 : 2;
-        g.strokeColor = hex(n.id === this.selected ? '#ffffff' : st === 'max' ? '#ffe08a' : st === 'open' ? '#d8d0e8' : '#4a4658');
+        // Background: bands from a dark shade at the top to the branch color at the bottom (like the hero
+        // card backgrounds). Finished nodes are brightest, open ones a little darker, locked ones grey.
+        const base = st === 'locked' ? '#4a4656' : st === 'open' ? shade(n.color, 0.75) : n.color;
+        const top = shade(base, 0.22);
+        const BANDS = 11, bh = NODE / BANDS;
+        for (let i = 0; i < BANDS; i++) {
+            g.fillColor = hex(mix(top, base, i / (BANDS - 1)));
+            g.rect(-NODE / 2, NODE / 2 - (i + 1) * bh, NODE, bh + 0.5);
+            g.fill();
+        }
+        // Frame: the branch color, darker (white when selected).
+        g.lineWidth = n.id === this.selected ? 4 : 3;
+        g.strokeColor = hex(n.id === this.selected ? '#ffffff' : st === 'locked' ? '#2e2b36' : shade(n.color, 0.5));
         g.rect(-NODE / 2, -NODE / 2, NODE, NODE);
         g.stroke();
-        n.label.color = hex(st === 'locked' ? '#6f6a7c' : st === 'max' ? '#2a1a08' : '#ffffff');
+        if (n.icon) n.icon.color = st === 'locked' ? new Color(110, 110, 120, 255) : Color.WHITE;
+        n.label.color = hex(st === 'locked' ? '#8a8598' : '#ffffff');
         const lv = this.rm.techLevel(n.id);
         n.level.string = n.t.maxLevel ? `${lv}/${n.t.maxLevel}` : `${lv}`;
-        n.level.color = hex(st === 'max' ? '#3a2408' : st === 'locked' ? '#6f6a7c' : '#ffffff');
+        n.level.color = hex(st === 'max' ? '#ffe08a' : st === 'locked' ? '#8a8598' : '#ffffff');
     }
 
     private drawLines() {

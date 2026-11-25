@@ -24,7 +24,7 @@
     {
       "id": "heroes",
       "name": "Heroes",
-      "color": "#e0c050"
+      "color": "#e8892e"
     },
     {
       "id": "curses",
@@ -71,7 +71,8 @@
         "material": 80,
         "food": 80
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/off_dmg_flat"
     },
     {
       "id": "r_damage",
@@ -89,7 +90,8 @@
         "material": 146,
         "food": 146
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_damage"
     },
     {
       "id": "r_damage_inf",
@@ -107,7 +109,8 @@
         "material": 1750,
         "food": 1750
       },
-      "costGrowth": 1.08
+      "costGrowth": 1.08,
+      "icon": "sprites/research/off_damage_inf"
     },
     {
       "id": "r_aspd_flat",
@@ -124,7 +127,8 @@
         "material": 80,
         "food": 80
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/off_aspd_flat"
     },
     {
       "id": "r_aspd",
@@ -142,7 +146,8 @@
         "material": 146,
         "food": 146
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_aspd"
     },
     {
       "id": "r_projspeed",
@@ -160,7 +165,8 @@
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.12
+      "costGrowth": 1.12,
+      "icon": "sprites/research/off_projspeed"
     },
     {
       "id": "r_crit",
@@ -178,7 +184,8 @@
         "material": 146,
         "food": 146
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_crit"
     },
     {
       "id": "r_critdmg",
@@ -196,7 +203,8 @@
         "material": 146,
         "food": 146
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_critdmg"
     },
     {
       "id": "r_range_flat",
@@ -213,7 +221,8 @@
         "material": 80,
         "food": 80
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/off_range_flat"
     },
     {
       "id": "r_range",
@@ -231,7 +240,8 @@
         "material": 146,
         "food": 146
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_range"
     },
     {
       "id": "r_smart",
@@ -249,7 +259,8 @@
         "material": 20000,
         "food": 20000
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/off_smart"
     },
     {
       "id": "r_expl",
@@ -267,7 +278,8 @@
         "material": 195,
         "food": 195
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_expl"
     },
     {
       "id": "r_pdef",
@@ -289,7 +301,8 @@
         2,
         5,
         10
-      ]
+      ],
+      "icon": "sprites/research/off_pdef"
     },
     {
       "id": "r_mdef",
@@ -311,7 +324,8 @@
         2,
         5,
         10
-      ]
+      ],
+      "icon": "sprites/research/off_mdef"
     },
     {
       "id": "r_food_flat",
@@ -328,7 +342,8 @@
         "material": 80,
         "food": 80
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/eco_food_1"
     },
     {
       "id": "r_food",
@@ -346,7 +361,8 @@
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_food_2"
     },
     {
       "id": "r_food_2",
@@ -364,7 +380,8 @@
         "material": 1800,
         "food": 1800
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_food_3"
     },
     {
       "id": "r_material_flat",
@@ -381,7 +398,8 @@
         "material": 80,
         "food": 80
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/eco_material_1"
     },
     {
       "id": "r_material",
@@ -399,7 +417,8 @@
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_material_2"
     },
     {
       "id": "r_material_2",
@@ -417,7 +436,8 @@
         "material": 1800,
         "food": 1800
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_material_3"
     },
     {
       "id": "r_gold_flat",
@@ -434,7 +454,8 @@
         "material": 80,
         "food": 80
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/eco_gold_1"
     },
     {
       "id": "r_gold",
@@ -452,7 +473,8 @@
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_gold_2"
     },
     {
       "id": "r_gold_2",
@@ -470,7 +492,8 @@
         "material": 1800,
         "food": 1800
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_gold_3"
     },
     {
       "id": "r_research_cost",
@@ -488,7 +511,8 @@
         "material": 2500,
         "food": 2500
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_research_cost"
     },
     {
       "id": "r_killgold_flat",
@@ -505,7 +529,8 @@
         "material": 80,
         "food": 80
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/eco_killgold"
     },
     {
       "id": "r_killgold",
@@ -523,7 +548,8 @@
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_killgold_2"
     },
     {
       "id": "r_killgold_2",
@@ -541,7 +567,8 @@
         "material": 1800,
         "food": 1800
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/eco_killgold_3"
     },
     {
       "id": "r_wallhp_flat",
@@ -558,7 +585,8 @@
         "material": 110,
         "food": 110
       },
-      "costGrowth": 1.25
+      "costGrowth": 1.25,
+      "icon": "sprites/research/wall_hp_flat"
     },
     {
       "id": "r_wallhp",
@@ -576,7 +604,8 @@
         "material": 195,
         "food": 195
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/wall_hp"
     },
     {
       "id": "r_wallhp_inf",
@@ -594,7 +623,8 @@
         "material": 1750,
         "food": 1750
       },
-      "costGrowth": 1.08
+      "costGrowth": 1.08,
+      "icon": "sprites/research/wall_hp_inf"
     },
     {
       "id": "r_walldef",
@@ -613,7 +643,8 @@
         "food": 195
       },
       "costGrowth": 1.42,
-      "halfCap": true
+      "halfCap": true,
+      "icon": "sprites/research/wall_def"
     },
     {
       "id": "r_wallregen",
@@ -631,7 +662,8 @@
         "material": 5000,
         "food": 4000
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/wall_regen"
     },
     {
       "id": "r_repaircost",
@@ -649,7 +681,8 @@
         "material": 4000,
         "food": 3000
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/wall_repair"
     },
     {
       "id": "r_fxu_piercing_bolt",
@@ -666,7 +699,8 @@
         "material": 115,
         "food": 115
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_piercing_bolt_1"
     },
     {
       "id": "r_fx_piercing_bolt",
@@ -684,7 +718,8 @@
         "material": 115,
         "food": 115
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_piercing_bolt_2"
     },
     {
       "id": "r_fx_piercing_bolt_2",
@@ -702,7 +737,8 @@
         "material": 664,
         "food": 664
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_piercing_bolt_3"
     },
     {
       "id": "r_fxu_bleeding_bolt",
@@ -719,7 +755,8 @@
         "material": 115,
         "food": 115
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_bleeding_bolt_1"
     },
     {
       "id": "r_fx_bleeding_bolt",
@@ -737,7 +774,8 @@
         "material": 115,
         "food": 115
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_bleeding_bolt_2"
     },
     {
       "id": "r_fx_bleeding_bolt_2",
@@ -755,7 +793,8 @@
         "material": 664,
         "food": 664
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_bleeding_bolt_3"
     },
     {
       "id": "r_fxu_hunters_mark",
@@ -772,7 +811,8 @@
         "material": 115,
         "food": 115
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_hunters_mark_1"
     },
     {
       "id": "r_fx_hunters_mark",
@@ -790,7 +830,8 @@
         "material": 115,
         "food": 115
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_hunters_mark_2"
     },
     {
       "id": "r_fx_hunters_mark_2",
@@ -808,7 +849,8 @@
         "material": 664,
         "food": 664
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_hunters_mark_3"
     },
     {
       "id": "r_fxu_frost_explosion",
@@ -825,7 +867,8 @@
         "material": 500,
         "food": 500
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_frost_explosion_1"
     },
     {
       "id": "r_fx_frost_explosion",
@@ -843,7 +886,8 @@
         "material": 500,
         "food": 500
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_frost_explosion_2"
     },
     {
       "id": "r_fx_frost_explosion_2",
@@ -861,7 +905,8 @@
         "material": 2887,
         "food": 2887
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_frost_explosion_3"
     },
     {
       "id": "r_fxu_chain_lightning",
@@ -878,7 +923,8 @@
         "material": 280,
         "food": 280
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_chain_lightning_1"
     },
     {
       "id": "r_fx_chain_lightning",
@@ -896,7 +942,8 @@
         "material": 280,
         "food": 280
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_chain_lightning_2"
     },
     {
       "id": "r_fx_chain_lightning_2",
@@ -914,7 +961,8 @@
         "material": 1617,
         "food": 1617
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_chain_lightning_3"
     },
     {
       "id": "r_fxu_arcane_vulnerability",
@@ -931,7 +979,8 @@
         "material": 280,
         "food": 280
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_arcane_vulnerability_1"
     },
     {
       "id": "r_fx_arcane_vulnerability",
@@ -949,7 +998,8 @@
         "material": 280,
         "food": 280
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_arcane_vulnerability_2"
     },
     {
       "id": "r_fx_arcane_vulnerability_2",
@@ -967,7 +1017,8 @@
         "material": 1617,
         "food": 1617
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_arcane_vulnerability_3"
     },
     {
       "id": "r_fxu_shockwave",
@@ -984,7 +1035,8 @@
         "material": 675,
         "food": 675
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_shockwave_1"
     },
     {
       "id": "r_fx_shockwave",
@@ -1002,7 +1054,8 @@
         "material": 675,
         "food": 675
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_shockwave_2"
     },
     {
       "id": "r_fx_shockwave_2",
@@ -1020,7 +1073,8 @@
         "material": 3897,
         "food": 3897
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_shockwave_3"
     },
     {
       "id": "r_fxu_heavy_impact",
@@ -1037,7 +1091,8 @@
         "material": 280,
         "food": 280
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_heavy_impact_1"
     },
     {
       "id": "r_fx_heavy_impact",
@@ -1055,7 +1110,8 @@
         "material": 280,
         "food": 280
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_heavy_impact_2"
     },
     {
       "id": "r_fx_heavy_impact_2",
@@ -1073,7 +1129,8 @@
         "material": 1617,
         "food": 1617
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_heavy_impact_3"
     },
     {
       "id": "r_fxu_armor_break",
@@ -1090,7 +1147,8 @@
         "material": 500,
         "food": 500
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/research/fx_armor_break_1"
     },
     {
       "id": "r_fx_armor_break",
@@ -1108,7 +1166,8 @@
         "material": 500,
         "food": 500
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_armor_break_2"
     },
     {
       "id": "r_fx_armor_break_2",
@@ -1126,7 +1185,8 @@
         "material": 2887,
         "food": 2887
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_armor_break_3"
     },
     {
       "id": "r_effect",
@@ -1143,7 +1203,8 @@
         "material": 195,
         "food": 195
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/research/fx_effect"
     },
     {
       "id": "r_hero_skill",
@@ -1160,7 +1221,8 @@
         "material": 4000,
         "food": 4000
       },
-      "costGrowth": 1.42
+      "costGrowth": 1.42,
+      "icon": "sprites/ui/icon_learn_skill"
     },
     {
       "id": "r_hero_star",
@@ -1179,7 +1241,8 @@
         "food": 12000,
         "core": 3
       },
-      "costGrowth": 1
+      "costGrowth": 1,
+      "icon": "sprites/ui/icon_star_up"
     },
     {
       "id": "r_sp_skill_cd",
@@ -1204,7 +1267,8 @@
         "gold",
         "material",
         "food"
-      ]
+      ],
+      "icon": "sprites/research/hero_skill_cd"
     },
     {
       "id": "r_sp_twin_cast",
@@ -1229,7 +1293,8 @@
         "gold",
         "material",
         "food"
-      ]
+      ],
+      "icon": "sprites/research/hero_twin_cast"
     },
     {
       "id": "r_sp_skill_power",
@@ -1254,7 +1319,8 @@
         "gold",
         "material",
         "food"
-      ]
+      ],
+      "icon": "sprites/research/hero_skill_power"
     },
     {
       "id": "r_edmg",
@@ -1272,7 +1338,8 @@
         "food": 195
       },
       "costGrowth": 1.42,
-      "halfCap": true
+      "halfCap": true,
+      "icon": "sprites/research/curse_edmg"
     },
     {
       "id": "r_ehp",
@@ -1290,7 +1357,8 @@
         "food": 195
       },
       "costGrowth": 1.42,
-      "halfCap": true
+      "halfCap": true,
+      "icon": "sprites/research/curse_ehp"
     },
     {
       "id": "r_slowdur",
@@ -1308,7 +1376,8 @@
         "food": 110
       },
       "costGrowth": 1.42,
-      "halfCap": true
+      "halfCap": true,
+      "icon": "sprites/research/curse_slow"
     },
     {
       "id": "r_stundur",
@@ -1326,7 +1395,8 @@
         "food": 110
       },
       "costGrowth": 1.42,
-      "halfCap": true
+      "halfCap": true,
+      "icon": "sprites/research/curse_stun"
     },
     {
       "id": "r_bleed",
@@ -1344,7 +1414,8 @@
         "food": 110
       },
       "costGrowth": 1.42,
-      "halfCap": true
+      "halfCap": true,
+      "icon": "sprites/research/curse_bleed"
     },
     {
       "id": "r_burn",
@@ -1362,7 +1433,9 @@
         "food": 110
       },
       "costGrowth": 1.42,
-      "halfCap": true
+      "halfCap": true,
+      "icon": "sprites/research/curse_burn"
     }
-  ]
+  ],
+  "iconSize": 96
 }

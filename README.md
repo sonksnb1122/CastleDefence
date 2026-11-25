@@ -268,8 +268,11 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 - Some tier 2 nodes give only **half of their levels** until the Lab reaches Lv 3 (`"halfCap"`).
   *Armor Piercing* and *Spell Piercing* keep their old limits: 2 / 5 / 10 levels at Lab Lv 1 / 2 / 3 (`"labCaps"`).
 - The tree window: drag to move around. Tap a node: a confirm window shows what it does, its level and its
-  cost (*Research* / *Cancel*); a locked or finished node shows an info window with the reason. Lines light up in the branch color once the parent is done; locked nodes are grey. Node pictures are
-  short texts for now (`"label"`).
+  cost (*Research* / *Cancel*); a locked or finished node shows an info window with the reason. Lines light up in
+  the branch color once the parent is done.
+- Nodes: the branch color as a dark-to-bright band gradient (like the hero card backgrounds) with a darker frame of
+  the same color; open nodes are a little darker than finished ones, locked nodes are grey. Pictures come from
+  `"icon"` (96 x 96, `sprites/research/`); nodes without a picture yet show a short text (`"label"`).
 
 | Branch | Tier 1 (Lab Lv 1) | Tier 2 (Lab Lv 2) | Tier 3 (Lab Lv 3) |
 |---|---|---|---|
