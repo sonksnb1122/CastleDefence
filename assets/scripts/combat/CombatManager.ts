@@ -136,7 +136,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         this.spawn({ time: 0, enemyId, hpMul, damageMul: 1, speedMul, goldMul: 1, scale: 1, boss: false, defAdd: 0 });
     }
 
-    private spawn(entry: SpawnEntry) {
+    private spawn(entry: SpawnEntry, at?: { x: number; y: number }) {
         const def = ConfigMgr.enemyDef(entry.enemyId);
         const bf = ConfigMgr.tower.battlefield;
         const defMax = entry.defMax || WaveMgr.defCaps().normal;
@@ -152,9 +152,9 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             magicDef: Math.min(defMax, def.magicDef + entry.defAdd),
             statusResist: this.demo ? undefined : WaveMgr.statusResist(this.wave, entry.boss),
         };
-        const y = bf.enemyLaneY[0] + Math.random() * (bf.enemyLaneY[1] - bf.enemyLaneY[0]);
+        const y = at ? at.y : bf.enemyLaneY[0] + Math.random() * (bf.enemyLaneY[1] - bf.enemyLaneY[0]);
         const e = this.enemyPool.pop() || new Enemy(this.enemyLayer);
-        e.spawn(def, stats, bf.spawnX, y);
+        e.spawn(def, stats, at ? at.x : bf.spawnX, y);
         e.serial = ++this.serialSeq;
         this.enemies.push(e);
         if (entry.boss && !this.demo) G.main.playSfx('boss');
@@ -189,6 +189,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         for (const e of this.enemies) e.update(dt, this);
 
         this.updateEnemyShots(dt);
+        this.updateSummons(dt);
 
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
@@ -232,6 +233,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ground, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
         for (const sh of this.enemyShots) all.push(sh.f.node);
         this.enemyShots.length = 0;
+        this.summons.length = 0;
         for (const t of this.floats.concat(this.textPool)) all.push(t.node);
         for (const n of all) if (isValid(n)) n.destroy();
         this.enemies.length = 0; this.projectiles.length = 0; this.fx.length = 0; this.floats.length = 0;
@@ -499,9 +501,11 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         if (!e.alive) return;
         if (res.dodged) { this.enemyFloat(e, 'MISS', '#cccccc', 13); return; }
         if (!this.demo && this.ctxTower) this.recordHit(e, res);
+        const shielded = e.shieldHp > 0;
         const died = e.takeDamage(res.amount);
-        // Crits: red, bigger, with a thick outline so they look bold.
-        if (res.crit) this.enemyFloat(e, res.amount + '!', '#ff3030', 19, 3);
+        // Crits: red, bigger, with a thick outline so they look bold. Light blue: absorbed by a spell shield.
+        if (shielded) this.enemyFloat(e, res.amount + (res.crit ? '!' : ''), '#8fd8ff', res.crit ? 17 : 14);
+        else if (res.crit) this.enemyFloat(e, res.amount + '!', '#ff3030', 19, 3);
         else this.enemyFloat(e, String(res.amount), '#ffffff', 15);
         if (died) this.onEnemyKilled(e);
     }
@@ -1070,11 +1074,94 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         const ui = f.node.getComponent(UITransform)!;
         ui.setContentSize(pc.cellW, pc.cellH);
         ui.setAnchorPoint(0.5, 0.5);
-        const x = e.x + (pc.offsetX || 0), y = e.y + (pc.offsetY || 0);
+        const x = e.x + (pc.offsetX || 0) * e.scale, y = e.y + (pc.offsetY || 0) * e.scale;
         f.node.setPosition(x, y, 0);
         f.anim!.play(Assets.frames(pc.path, pc.cellW, pc.cellH).slice(0, pc.frames || 99), pc.frameTime || 0.06, true);
         this.enemyShots.push({ f, x, y, tx: this.wallRightX + 6, tipX: pc.tipX || 0, speed: pc.speed || 300, damage: e.wallDamage(), type: e.def.damageType, impact: rg.impact });
         if (!this.demo) G.main.playSfx('shoot_' + e.def.id, e.def.sfx && e.def.sfx.shoot);
+    }
+
+    // ------------------------------------------------------------------ boss spells
+    /** Minions waiting for their summoning circle (spawn a moment after the cast). */
+    private summons: Array<{ t: number; x: number; y: number; spell: any }> = [];
+
+    /**
+     * A boss spell takes effect (enemy.json "spells", at the cast frame of its animation):
+     *  - "shield": a shield that absorbs "hpPct" % of the boss max HP for "duration" s;
+     *  - "summon": "count" minions around the boss ("enemyIds", stats of the current wave), and every enemy
+     *    within "haste.radius" gets "haste.speedPct" % more speed for "haste.duration" s.
+     * The spell's "vfx" plays at the boss's feet.
+     */
+    bossSpell(e: Enemy, sp: any) {
+        this.groundFx(e, sp.vfx);
+        if (sp.type === 'shield' && sp.shield) {
+            const sh = sp.shield;
+            e.raiseShield(e.maxHp * (sh.hpPct || 20) / 100, sh.duration || 10, sh.loop, sh.collapse);
+            this.enemyFloat(e, 'SHIELD', '#8fd8ff', 16);
+        }
+        if (sp.type === 'summon') {
+            const feet = this.feet(e);
+            this.summons.push({ t: sp.spawnDelay || 0, x: feet.x, y: e.y, spell: sp });
+            const h = sp.haste;
+            if (h) {
+                const r2 = (h.radius || 250) * (h.radius || 250);
+                for (const o of this.enemies) {
+                    if (o === e || !o.alive) continue;
+                    if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) > r2) continue;
+                    o.hastePct = Math.max(o.hastePct, h.speedPct || 30);
+                    o.hasteTime = Math.max(o.hasteTime, h.duration || 5);
+                }
+                this.enemyFloat(e, 'HASTE', '#ffe08a', 16);
+            }
+        }
+        if (!this.demo && sp.sfx) G.main.playSfx(sp.sfx);
+    }
+
+    private updateSummons(dt: number) {
+        for (let i = this.summons.length - 1; i >= 0; i--) {
+            const m = this.summons[i];
+            m.t -= dt;
+            if (m.t > 0) continue;
+            this.summons.splice(i, 1);
+            const sm = m.spell.summon || {};
+            const ids: string[] = (sm.enemyIds || []).filter((id: string) => ConfigMgr.enemyDef(id));
+            if (ids.length === 0) continue;
+            // Stats of a normal enemy of this wave (the first normal entry of the wave plan).
+            const tpl = (this.plan && this.plan.entries.find(x => !x.boss)) || { hpMul: 1, damageMul: 1, speedMul: 1, goldMul: 1, defAdd: 0 } as any;
+            const bf = ConfigMgr.tower.battlefield;
+            const r = sm.radius || 80;
+            for (let k = 0; k < (sm.count || 3); k++) {
+                const id = ids[Math.floor(Math.random() * ids.length)];
+                const x = Math.min(bf.spawnX, m.x + 20 + Math.random() * r);
+                const y = Math.max(bf.enemyLaneY[0], Math.min(bf.enemyLaneY[1], m.y + (Math.random() * 2 - 1) * r));
+                this.spawn(Object.assign({}, tpl, { time: 0, enemyId: id, boss: false, scale: 1, goldMul: tpl.goldMul * (sm.goldMul === undefined ? 1 : sm.goldMul) }), { x, y });
+                const n = this.enemies[this.enemies.length - 1];
+                if (m.spell.haste) { n.hastePct = m.spell.haste.speedPct || 30; n.hasteTime = m.spell.haste.duration || 5; }
+            }
+        }
+    }
+
+    /** Ground point under an enemy (enemy.json "feetY": px below the enemy position, x scale). */
+    private feet(e: Enemy): { x: number; y: number } {
+        const k = e.scale;
+        return { x: e.x, y: e.y - (e.def.feetY || 0) * k };
+    }
+
+    /** An effect at the feet of an enemy (boss spells): "anchor" = the point of the cell on the ground. */
+    private groundFx(e: Enemy, v: any) {
+        if (!v || !Display.effects) return;
+        const frames = Assets.frames(v.path, v.cellW, v.cellH).slice(0, v.frames || 99);
+        if (frames.length === 0) return;
+        const f = this.takeFx('impact');
+        const k = (v.scale || 1) * e.scale;
+        const ui = f.node.getComponent(UITransform)!;
+        ui.setContentSize(v.cellW * k, v.cellH * k);
+        const a = v.anchor || [0.5, 0.5];
+        ui.setAnchorPoint(a[0], a[1]);
+        const p = this.feet(e);
+        f.node.setPosition(p.x + (v.offsetX || 0) * e.scale, p.y + (v.offsetY || 0) * e.scale, 0);
+        f.anim!.play(frames, v.frameTime || 0.07, false);
+        this.fx.push(f);
     }
 
     private updateEnemyShots(dt: number) {

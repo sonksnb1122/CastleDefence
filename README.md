@@ -150,11 +150,27 @@ Where a Mastery level gives a share of the hit, the effect uses that share or th
 | **Clampbeetle** (Tank) | High HP and physical defense, resists stun | 240 | 25 physical | 12.5 | 20 / 5 | 12 |
 | **Magma Crab** (Juggernaut) | Slow, tough, resists stun and slow | 210 | 50 magic | 10 | 15 / 15 | 25 |
 | **Flying Demon** (Caster) | Flies, fast, attacks from range | 110 | 18 magic per fireball | 34 | 6 / 22 | 14 |
+| **Lich King** (boss from wave 70) | Floats, very slow, Soul Bolt from anywhere, spells below 30% HP | 300 (x4 as boss) | 40 magic per Soul Bolt (x2) | 5 | 25 / 25 | 30 (x8) |
 
 Values are for wave 1. All stats grow with the wave number.
 
 **Flying enemies** (enemy.json `"flying"`): towers with `"hitsFlying": false` in tower.json (the Catapult) never aim
 at them, and their explosions pass under them. Crossbows, Crystals and hero skills hit them normally.
+
+**Lich King** (boss from wave 70; enemy.json `"lich"`): it floats a little above the ground but is not a flying
+enemy (Catapult stones hit it). It is half size at wave 70 and grows at every boss wave after it (+0.1, up to 1.2;
+waves.json `bossRule.byWave` "scale", "scaleGrowth", "maxScale"). It moves very slowly and walks to the wall like
+the other bosses (it hits the wall when it gets there), but:
+- **Soul Bolt** every 20 s (first after 3 s), from anywhere on the field: the bolt always reaches the wall
+  (enemy.json `"ranged"."anyRange"`).
+- **Teleport** every 9 s (first after 5 s): it vanishes and appears 150 px closer to the wall.
+- Below **30% HP**, once each (enemy.json spell `"hpBelowPct"`), the boss stops and casts:
+  - **Spell shield**: a frost burst at its feet, then a magic shield that absorbs damage equal to 20% of its max HP
+    for 12 s (light blue damage numbers, light blue HP bar). When it breaks or ends it collapses with dust.
+  - **Summoning circle** (right after the shield): a circle at its feet, 4 minions (Firebug, Scorpion,
+    Clampbeetle or Flying Demon, with the stats of the wave and half gold) appear around it, and every enemy
+    within 280 px (the minions too) moves 40% faster for 6 s.
+A stun pauses its casting.
 
 **Ranged enemies** (enemy.json `"ranged"`): the Flying Demon stops about 230 px in front of the wall (each one a bit
 closer or farther) and attacks every 2.6 s: attack animation, then a fireball flies to the wall and deals the
@@ -178,7 +194,8 @@ files of its own, it uses the Firebug death sound and the Catapult shot sound (e
   | from 12 | Flying Demons join |
 
 - **Wave 5, "Swarm":** a special wave with many weak Firebugs and Scorpions.
-- **Bosses:** every 10th wave adds a giant Magma Crab boss with ×4 HP, ×3 damage and ×8 gold.
+- **Bosses:** every 10th wave adds a giant Magma Crab boss with ×4 HP, ×3 damage and ×8 gold. From wave 70 the
+  boss is the **Lich King** instead (×4 HP, ×2 damage, ×8 gold; waves.json `bossRule.byWave`).
 - **Milestones:** waves 10, 30 and 70 are sieges with more enemies and extra bosses.
   - Wave 10: **Siege**
   - Wave 30: **Great Siege**
@@ -521,6 +538,7 @@ assets/
     audio/                    music and sound effects (MP3, built by tools/audio)
 art/                          picture sources that are not shipped as they are (packed into the atlases)
   combat/                     enemies/, towers/, status/: sources of sprites/atlas/combat
+  boss/                       one folder per boss (lich/): sources of sprites/atlas/boss
   research/                   research icons (96 x 96 PNG): sources of sprites/atlas/research
 ```
 
@@ -566,11 +584,15 @@ art/                          picture sources that are not shipped as they are (
 
 The `tools/` folder is outside the game assets.
 - `tools/atlas/pack_atlas.py`: packs the enemy, tower and status sheets of `art/combat/` into
-  `sprites/atlas/combat`, and the research icons of `art/research/` into `sprites/atlas/research` (2048 x 512,
+  `sprites/atlas/combat`, the boss sheets of `art/boss/` into `sprites/atlas/boss` (full color), and the research icons of `art/research/` into `sprites/atlas/research` (2048 x 512,
   256 colors, about 250 KB instead of 1.4 MB in 70 files). The configs keep the old paths
   (`sprites/towers/base_t1`, `sprites/research/off_damage`), which are looked up in the atlas manifests.
   Run it again after changing a sheet or an icon: `python tools/atlas/pack_atlas.py assets/resources
-  [combat|research|all]`. Needs Python + Pillow.
+  [combat|boss|research|all]`. Needs Python + Pillow.
+- `tools/boss/prepare_lich.py`: makes `art/boss/lich/` from the "AW - Lich King" pack and the two shield sheets:
+  mirrors every frame (the pack faces right), crops each animation to what its frames use and prints the
+  `"anchor"` of each animation for enemy.json (the ground pivot stays at the same place in every animation; the
+  enemy position is 55 px above it, enemy.json `"feetY"`). The shield is scaled to 40%.
 - `tools/atlas/quantize_cards.py`: turns a full-color hero card sheet into a 256-color PNG (ordered dither,
   exact alpha), about 4x smaller: `python tools/atlas/quantize_cards.py <in.png> <out.png>`, or a folder to
   convert every `*_card_sheet.png` in place. Run it on the full-color source only, not on a sheet that is
@@ -595,6 +617,8 @@ Thanks to the artists whose free assets are used in this game. All packs were do
 | [Spire Tower Pack 1](https://foozlecc.itch.io/spire-tower-pack-1) and [Spire Tower Pack 2](https://foozlecc.itch.io/spire-tower-pack-2) | Baldur / [Foozle](https://foozlecc.itch.io) | Defense tower sprites | CC0 |
 | Monster sprites | Baldur / [Foozle](https://foozlecc.itch.io) (same source as the towers) | Monsters | CC0 |
 | Flying Demon | [luizmelo](https://luizmelo.itch.io) | Flying Demon (fly, attack, fall + death) | CC0 |
+| AW - Lich King 1.0 | [artistworld](https://artistworld.itch.io) | Lich King boss (Frost palette): body animations, Soul Bolt, impact, summoning circle | artistworld license (games and edits allowed, credit appreciated; no resale or redistribution as assets) |
+| Shield Elliptic Magic (Blue) | (pack sent by the owner) | Lich King spell shield: loop and collapse | to be confirmed |
 | PVFX Foundry 1.0.0 | Pixel VFX Studio (made with the [pixelfx](https://github.com/patch-gg/pixelfx) toolkit, MIT) | Active skill effects (`sprites/skills`), Flying Demon fireball and fire impact | CC0 |
 | Hero cards | AI generated | Hero pictures | AI generated |
 | Castle buildings, maps, UI | Project author | Everything else | Project-owned |

@@ -26,6 +26,8 @@ export interface IEnemyHost {
     onEnemyReachedWall(e: Enemy): void;
     /** A ranged enemy (enemy.json "ranged") releases its projectile at the wall. */
     enemyShoot(e: Enemy): void;
+    /** A boss spell (enemy.json "spells") takes effect (its cast frame): shield, summon + haste. */
+    bossSpell(e: Enemy, spell: any): void;
     applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid?: number, statusId?: string, currentHpPct?: number): void;
 }
 
@@ -77,9 +79,27 @@ export class Enemy {
     /** Ranged enemy (enemy.json "ranged"): distance in front of the wall where it stops to attack. */
     private stopDist = 0;
     private attackTimer = 0;
-    /** Playing the attack animation; `shotFired` once the projectile left (at "hitFrame"). */
-    private attacking = false;
-    private shotFired = false;
+    /**
+     * What the enemy is doing instead of moving: a ranged attack, a spell or a teleport (one at a time,
+     * with its animation). `fired`: the attack / spell already took effect (at its frame).
+     */
+    private action: { kind: 'attack' | 'spell' | 'tpOut' | 'tpIn'; spell?: any; fired: boolean } | null = null;
+    /** Seconds before each spell of enemy.json "spells" can be cast again. */
+    private spellTimers: number[] = [];
+    /** Spells with "hpBelowPct" are cast once, the first time the HP falls below that share. */
+    private spellsUsed: boolean[] = [];
+    /** Size factor of the sprite (enemy.json "scale" x spawn scale, e.g. bosses). */
+    get scale(): number { return this.spriteComp.node.scale.x; }
+    /** Spell shield (boss): damage it still absorbs, seconds left, and its picture. */
+    shieldHp = 0;
+    shieldMax = 0;
+    shieldTime = 0;
+    private shieldSprite: Sprite | null = null;
+    private shieldAnim: SpriteAnim | null = null;
+    private shieldCollapsing = false;
+    /** Haste from a boss spell: % more speed for `hasteTime` s. */
+    hastePct = 0;
+    hasteTime = 0;
     /** At its attack position (stopped in front of the wall). */
     inPosition = false;
     /** Number given at each spawn: tells a pooled enemy apart from its previous life. */
@@ -130,25 +150,26 @@ export class Enemy {
         this.frostHits = 0; this.aftershock = 0; this.deathStatuses = [];
         this.flying = !!def.flying;
         const rg = def.ranged;
-        this.stopDist = rg ? Math.max(0, (rg.range || 200) + (Math.random() * 2 - 1) * (rg.rangeSpread || 0)) : 0;
+        this.stopDist = rg && !rg.anyRange ? Math.max(0, (rg.range || 200) + (Math.random() * 2 - 1) * (rg.rangeSpread || 0)) : 0;
         this.attackTimer = rg ? (rg.firstAttackDelay || 0) : 0;
-        this.attacking = false; this.shotFired = false; this.inPosition = false;
+        this.action = null; this.inPosition = false;
+        this.spellTimers = (def.spells || []).map((sp: any) => sp.firstDelay || 0);
+        this.spellsUsed = (def.spells || []).map(() => false);
+        this.shieldHp = 0; this.shieldMax = 0; this.shieldTime = 0; this.shieldCollapsing = false;
+        if (this.shieldSprite) this.shieldSprite.node.active = false;
+        this.hastePct = 0; this.hasteTime = 0;
         const scale = (def.scale || 1) * stats.scale;
         this.radius = (def.radius || 22) * scale;
         this.abilities = (def.specialAbilities || []).filter((a: any) => a.enabled);
 
         this.node.name = 'Enemy_' + def.id;
         this.node.setPosition(x, y, 0);
-        const mv = def.animationPaths.move;
-        const frames = Assets.frames(mv.path, mv.cellW, mv.cellH).slice(0, mv.frames);
-        const ui = this.spriteComp.node.getComponent(UITransform)!;
-        ui.setContentSize(mv.cellW, mv.cellH);
         this.spriteComp.node.setScale(scale, scale, 1);
         this.spriteComp.color = Color.WHITE;
-        this.spriteComp.node.active = frames.length > 0;
-        if (frames.length > 0) this.anim.play(frames, mv.frameTime, true);
-        else this.showPlaceholder(def);
-        if (this.placeholder) this.placeholder.active = frames.length === 0;
+        const ok = this.playAnim(def.animationPaths.move, true);
+        this.spriteComp.node.active = ok;
+        if (!ok) this.showPlaceholder(def);
+        if (this.placeholder) this.placeholder.active = !ok;
         this.hpBar.node.active = Display.hpBars;
         this.hpBar.resize(stats.boss ? 70 : 36, stats.boss ? 6 : 4);
         this.hpBar.node.setPosition(0, this.radius + 12, 0);
@@ -424,42 +445,173 @@ export class Enemy {
     /** Subtract HP (never below 0). Returns true when this hit killed the enemy. */
     takeDamage(amount: number): boolean {
         if (!this.alive) return false;
+        // Spell shield: absorbs the damage first.
+        if (this.shieldHp > 0) {
+            const a = Math.min(this.shieldHp, amount);
+            this.shieldHp -= a; amount -= a;
+            if (this.shieldHp <= 0) this.breakShield();
+        }
         this.hp = Math.max(0, this.hp - amount);
-        this.hpBar.set(this.hp / this.maxHp, this.hp / this.maxHp < 0.35 ? '#e05252' : '#6ad66a');
+        this.refreshHpBar();
         this.flash = 0.08;
         this.spriteComp.color = new Color(255, 120, 120, 255);
         if (this.hp <= 0) { this.kill(); return true; }
         return false;
     }
 
-    /**
-     * Ranged attack: at its position, every "attackInterval" s the attack animation plays and the projectile
-     * leaves at its "hitFrame". A stun pauses everything; an attack that started ends even after a knockback.
-     */
-    private updateRanged(dt: number, host: IEnemyHost, rg: any) {
-        if (this.stunned) return;
-        const at = this.def.animationPaths.attack;
-        if (this.attacking) {
-            const ended = this.anim.update(dt) || this.anim.finished;
-            if (!this.shotFired && (this.anim.index >= (at.hitFrame || 0) || ended)) { this.shotFired = true; host.enemyShoot(this); }
-            if (ended) { this.attacking = false; this.playMove(); }
-            return;
-        }
-        this.anim.update(dt);
-        if (!this.inPosition) return;
-        this.attackTimer -= dt;
-        if (this.attackTimer > 0) return;
-        this.attackTimer = rg.attackInterval || 2;
-        const frames = at ? Assets.frames(at.path, at.cellW, at.cellH).slice(0, at.frames) : [];
-        if (frames.length === 0) { host.enemyShoot(this); return; }   // no attack sheet: shoot at once
-        this.attacking = true; this.shotFired = false;
-        this.anim.play(frames, at.frameTime, false);
+    private refreshHpBar() {
+        const f = this.hp / this.maxHp;
+        this.hpBar.set(f, this.shieldHp > 0 ? '#8fd8ff' : f < 0.35 ? '#e05252' : '#6ad66a');
     }
 
-    private playMove() {
-        const mv = this.def.animationPaths.move;
-        const frames = Assets.frames(mv.path, mv.cellW, mv.cellH).slice(0, mv.frames);
-        if (frames.length > 0) this.anim.play(frames, mv.frameTime, true);
+    /**
+     * Plays an animation of enemy.json "animationPaths" (cell size, frames, frame time, and "anchor": the point
+     * of the cell at the enemy position, for sheets whose cells are not centred). False when the sheet is missing.
+     */
+    private playAnim(cfg: any, loop: boolean): boolean {
+        if (!cfg) return false;
+        const frames = Assets.frames(cfg.path, cfg.cellW, cfg.cellH).slice(0, cfg.frames);
+        if (frames.length === 0) return false;
+        const ui = this.spriteComp.node.getComponent(UITransform)!;
+        ui.setContentSize(cfg.cellW, cfg.cellH);
+        const a = cfg.anchor || [0.5, 0.5];
+        ui.setAnchorPoint(a[0], a[1]);
+        this.anim.play(frames, cfg.frameTime, loop);
+        return true;
+    }
+
+    private playMove() { this.playAnim(this.def.animationPaths.move, true); }
+
+    /** Stop point of a ranged enemy (x), or -Infinity. */
+    private stopX(host: IEnemyHost): number {
+        const rg = this.def.ranged;
+        // "anyRange": shoots from anywhere on the field, never stops (it walks on to the wall).
+        return rg && !rg.anyRange ? host.wallRightX + this.radius + this.stopDist : -Infinity;
+    }
+
+    /**
+     * Actions instead of moving (one at a time, each with its animation; a stun pauses them):
+     *  - ranged attack (enemy.json "ranged"): at its position, every "attackInterval" s; the projectile leaves
+     *    at the attack animation's "hitFrame";
+     *  - spells (enemy.json "spells"), each on its own cooldown: "shield" / "summon" take effect at "castFrame"
+     *    (CombatManager.bossSpell); "teleport" jumps "distance" px forward (never past the stop point).
+     * Returns true while an action is playing (the enemy does not move).
+     */
+    private updateActions(dt: number, host: IEnemyHost): boolean {
+        if (this.stunned) return this.action !== null;
+        const anims = this.def.animationPaths;
+        // Spell cooldowns run all the time (also while another action plays).
+        const spells: any[] = this.def.spells || [];
+        for (let i = 0; i < spells.length; i++) if (this.spellTimers[i] > 0) this.spellTimers[i] -= dt;
+        // The attack timer of a ranged enemy that shoots from anywhere runs all the time too (an attack
+        // then starts as soon as the current action ends).
+        const rgAny = this.def.ranged && this.def.ranged.anyRange;
+        if (rgAny && this.attackTimer > 0) this.attackTimer -= dt;
+        const a = this.action;
+        if (a) {
+            const ended = this.anim.update(dt) || this.anim.finished;
+            if (a.kind === 'attack' && !a.fired && (this.anim.index >= (anims.attack.hitFrame || 0) || ended)) { a.fired = true; host.enemyShoot(this); }
+            if (a.kind === 'spell' && !a.fired && (this.anim.index >= (a.spell.castFrame || 0) || ended)) { a.fired = true; host.bossSpell(this, a.spell); }
+            if (!ended) return true;
+            if (a.kind === 'tpOut') {
+                // Gone: reappear `distance` px closer to the wall (not past the stop point of a ranged enemy).
+                const sp = a.spell;
+                this.x = Math.max(this.stopX(host), host.wallRightX + this.radius + 10, this.x - (sp.distance || 120));
+                this.node.setPosition(this.x, this.y, 0);
+                this.action = { kind: 'tpIn', spell: sp, fired: true };
+                if (!this.playAnim(anims.teleportIn, false)) { this.action = null; this.playMove(); }
+                return true;
+            }
+            this.action = null;
+            this.playMove();
+            return false;
+        }
+        // Spells, then the ranged attack.
+        for (let i = 0; i < spells.length; i++) {
+            const sp = spells[i];
+            if (sp.hpBelowPct !== undefined) {
+                // Once, when the HP falls below the share.
+                if (this.spellsUsed[i] || this.hpPercent >= sp.hpBelowPct) continue;
+                this.spellsUsed[i] = true;
+            } else if (this.spellTimers[i] > 0) continue;
+            if (sp.type === 'shield' && this.shieldHp > 0 && sp.hpBelowPct === undefined) continue;
+            if (sp.type === 'teleport' && (this.inPosition || this.x - this.stopX(host) < (sp.distance || 120) * 0.5)) continue;
+            this.spellTimers[i] = sp.cooldown || 10;
+            if (sp.type === 'teleport') {
+                this.action = { kind: 'tpOut', spell: sp, fired: false };
+                if (!this.playAnim(anims.teleportOut, false)) { this.action = { kind: 'tpOut', spell: sp, fired: false }; this.anim.finished = true; }
+            } else {
+                this.action = { kind: 'spell', spell: sp, fired: false };
+                if (!this.playAnim(anims[sp.anim] || anims.attack, false)) { host.bossSpell(this, sp); this.action = null; continue; }
+            }
+            return true;
+        }
+        const rg = this.def.ranged;
+        if (!rg) return false;
+        if (rg.anyRange) {
+            // From anywhere on the field (the projectile always reaches the wall).
+            if (this.x > ConfigMgr.tower.battlefield.worldWidth) return false;
+        } else if (!this.inPosition) return false;
+        if (!rg.anyRange) this.attackTimer -= dt;
+        if (this.attackTimer > 0) return false;
+        this.attackTimer = rg.attackInterval || 2;
+        if (!this.playAnim(anims.attack, false)) { host.enemyShoot(this); return false; }   // no attack sheet: shoot at once
+        this.action = { kind: 'attack', fired: false };
+        return true;
+    }
+
+    /** A spell shield (CombatManager.bossSpell): absorbs `hp` damage for `time` s. */
+    raiseShield(hp: number, time: number, loop: any, collapse: any) {
+        this.shieldHp = this.shieldMax = Math.max(1, Math.round(hp));
+        this.shieldTime = time;
+        this.shieldCollapsing = false;
+        this.shieldCfg = { loop, collapse };
+        if (loop) {
+            const s = this.ensureShieldSprite();
+            const frames = Assets.frames(loop.path, loop.cellW, loop.cellH).slice(0, loop.frames);
+            s.node.active = frames.length > 0;
+            s.node.getComponent(UITransform)!.setContentSize(loop.cellW, loop.cellH);
+            s.node.setPosition(0, loop.offsetY || 0, 0);
+            const k = this.spriteComp.node.scale.x;
+            s.node.setScale(k, k, 1);
+            this.shieldAnim!.play(frames, loop.frameTime || 0.08, true);
+        }
+        this.refreshHpBar();
+    }
+    private shieldCfg: { loop: any; collapse: any } | null = null;
+
+    private ensureShieldSprite(): Sprite {
+        if (!this.shieldSprite) {
+            const n = new Node('Shield');
+            n.layer = this.node.layer;
+            n.addComponent(UITransform);
+            this.node.addChild(n);
+            this.shieldSprite = n.addComponent(Sprite);
+            this.shieldSprite.sizeMode = Sprite.SizeMode.CUSTOM;
+            this.shieldAnim = new SpriteAnim(this.shieldSprite);
+            // above the body, below the HP bar and texts
+            n.setSiblingIndex(this.node.children.indexOf(this.spriteComp.node) + 1);
+        }
+        return this.shieldSprite;
+    }
+
+    /** The shield breaks (no more absorb, or its time ran out): collapse animation, then hidden. */
+    private breakShield() {
+        this.shieldHp = 0; this.shieldTime = 0;
+        this.refreshHpBar();
+        if (!this.shieldSprite || !this.shieldSprite.node.active) return;
+        const c = this.shieldCfg && this.shieldCfg.collapse;
+        const frames = c ? Assets.frames(c.path, c.cellW, c.cellH).slice(0, c.frames) : [];
+        if (frames.length === 0) { this.shieldSprite.node.active = false; return; }
+        this.shieldCollapsing = true;
+        this.shieldAnim!.play(frames, c.frameTime || 0.07, false);
+    }
+
+    private updateShield(dt: number) {
+        if (this.shieldTime > 0) { this.shieldTime -= dt; if (this.shieldTime <= 0 && this.shieldHp > 0) this.breakShield(); }
+        if (!this.shieldSprite || !this.shieldSprite.node.active) return;
+        const ended = this.shieldAnim!.update(dt);
+        if (this.shieldCollapsing && (ended || this.shieldAnim!.finished)) { this.shieldSprite.node.active = false; this.shieldCollapsing = false; }
     }
 
     /** Stop moving, drop every status effect and play the death animation. */
@@ -472,18 +624,20 @@ export class Enemy {
         if (this.statusIcons) this.statusIcons.active = false;
         this.hpBar.node.active = false;
         this.spriteComp.color = Color.WHITE;
-        const d = this.def.animationPaths.dead;
-        const frames = Assets.frames(d.path, d.cellW, d.cellH).slice(0, d.frames);
-        if (frames.length > 0) this.anim.play(frames, d.frameTime, false);
-        else this.removed = true;
+        this.action = null;
+        if (this.shieldHp > 0) this.breakShield();
+        if (!this.playAnim(this.def.animationPaths.dead, false)) this.removed = true;
     }
 
     // ------------------------------------------------------------------ update
     update(dt: number, host: IEnemyHost) {
         if (!this.alive) {
+            this.updateShield(dt);
             if (!this.removed && (this.anim.update(dt) || this.anim.finished)) this.removed = true;
             return;
         }
+        this.updateShield(dt);
+        if (this.hasteTime > 0) { this.hasteTime -= dt; if (this.hasteTime <= 0) this.hastePct = 0; }
         if (this.flash > 0) {
             this.flash -= dt;
             if (this.flash <= 0) this.refreshStatusLabel();
@@ -520,12 +674,16 @@ export class Enemy {
             if (this.sprintLeft > 0) { this.sprintLeft -= dt; speed *= 1 + sprint.value / 100; }
             else { this.sprintTimer += dt; if (this.sprintTimer >= sprint.interval) { this.sprintTimer = 0; this.sprintLeft = sprint.duration; } }
         }
+        if (this.hasteTime > 0) speed *= 1 + this.hastePct / 100;
         speed *= 1 - this.slowPercent() / 100;
         if (this.stunned) speed = 0;
+        // Attacking, casting or teleporting: no walking.
+        const acting = this.action !== null;
+        if (acting) speed = 0;
         speed = Math.max(0, speed);
         // Ranged enemies stop in front of the wall and attack from there.
         const rg = this.def.ranged;
-        const stopX = rg ? host.wallRightX + this.radius + this.stopDist : -Infinity;
+        const stopX = this.stopX(host);
         if (rg && this.x - speed * dt <= stopX) { this.x = Math.min(this.x, stopX); speed = 0; this.inPosition = this.x <= stopX + 0.5; }
         else { this.x -= speed * dt; this.inPosition = false; }
         if (this.pushTime > 0) {
@@ -536,9 +694,10 @@ export class Enemy {
             this.y = Math.max(bf.enemyLaneY[0], Math.min(bf.enemyLaneY[1], this.y + this.pushVY * t));
         }
         this.node.setPosition(this.x, this.y, 0);
-        if (rg) this.updateRanged(dt, host, rg);
-        // Flying enemies keep flapping while they stand still.
-        else if (speed > 0 || this.flying) this.anim.update(dt);
+        const busy = (rg || this.def.spells) ? this.updateActions(dt, host) : false;
+        if (!this.alive) return;
+        // Flying / floating / ranged enemies keep their move animation while they stand still.
+        if (!busy && !acting && (speed > 0 || this.flying || rg || this.def.spells) && !this.stunned) this.anim.update(dt);
 
         // Contact with the wall: handled exactly once.
         if (!this.reachedWall && this.x - this.radius <= host.wallRightX) {

@@ -163,9 +163,9 @@ export class Main extends Component implements IMain {
             const paths = ConfigMgr.texturePaths();
             for (const p of ConfigMgr.linearTexturePaths()) Assets.linear.add(p);
             loading.set(0.1, 'Loading sprites...');
-            // Combat sheets and research icons come from packed atlases (one file each, fewer draw calls);
+            // Combat sheets, boss sheets and research icons come from packed atlases (one file each, fewer draw calls);
             // everything else is loaded one by one.
-            Assets.loadAtlas('sprites/atlas/combat', () => Assets.loadAtlas('sprites/atlas/research', () => Assets.loadPrefabs(PREFABS, () => Assets.loadTextures(paths, () => {
+            Assets.loadAtlas('sprites/atlas/combat', () => Assets.loadAtlas('sprites/atlas/boss', () => Assets.loadAtlas('sprites/atlas/research', () => Assets.loadPrefabs(PREFABS, () => Assets.loadTextures(paths, () => {
                 ConfigMgr.checkAssets();
                 loading.set(0.9, 'Loading audio...');
                 this.loadTestSaves(() => this.loadAudio(() => {
@@ -177,7 +177,7 @@ export class Main extends Component implements IMain {
                         this.goto('menu');
                     });
                 }));
-            }, (loaded, total) => loading.set(0.1 + 0.8 * loaded / total, `Loading sprites... ${loaded}/${total}`)))));
+            }, (loaded, total) => loading.set(0.1 + 0.8 * loaded / total, `Loading sprites... ${loaded}/${total}`))))));
         });
     }
 

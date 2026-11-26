@@ -3,12 +3,14 @@ Pack sprite sheets into atlas textures so they load as one file and draw in a fe
 
   combat:   the combat sheets (enemies, towers, projectiles, impacts, status icons). Sources live in
             art/combat/<enemies|towers|status> at the project root and keep the key "sprites/<folder>/<name>".
+  boss:     the boss sheets (body animations, spell effects, shield). Sources live in art/boss/<boss>/
+            at the project root and keep the key "sprites/bosses/<name>". Full color (the shield has soft alpha).
   research: the research tree icons. Their sources live OUTSIDE assets/resources (art/research at the
             project root, 96 x 96 PNG named after the icon) so the build only ships the atlas. The atlas
             is reduced to 256 colors and drawn with smooth filtering.
 
 Usage (from the project root):
-    python tools/atlas/pack_atlas.py assets/resources [combat|research|all]   (default: all)
+    python tools/atlas/pack_atlas.py assets/resources [combat|boss|research|all]   (default: all)
 
 Writes assets/resources/sprites/atlas/<name>.png and <name>.json:
     { "image": "sprites/atlas/<name>", "regions": { "sprites/enemies/x_move": [x, y, w, h], ... } }
@@ -32,6 +34,18 @@ def combat(res):
                 items.append(('sprites/' + folder + '/' + f[:-4], Image.open(os.path.join(d, f)).convert('RGBA')))
     items.append(('white', Image.new('RGBA', (WHITE, WHITE), (255, 255, 255, 255))))
     pack(res, 'combat', items)
+
+def boss(res):
+    # Sources: <project>/art/boss/<boss>/*.png, served under the path "sprites/bosses/<name>".
+    root = os.path.join(res, '..', '..', 'art', 'boss')
+    items = []
+    for b in sorted(os.listdir(root)):
+        d = os.path.join(root, b)
+        if not os.path.isdir(d): continue
+        for f in sorted(os.listdir(d)):
+            if f.endswith('.png'):
+                items.append(('sprites/bosses/' + f[:-4], Image.open(os.path.join(d, f)).convert('RGBA')))
+    pack(res, 'boss', items)
 
 def research(res):
     # Sources: <project>/art/research/*.png, served under the path "sprites/research/<name>".
@@ -78,4 +92,5 @@ if __name__ == '__main__':
     res = sys.argv[1] if len(sys.argv) > 1 else 'assets/resources'
     which = sys.argv[2] if len(sys.argv) > 2 else 'all'
     if which in ('combat', 'all'): combat(res)
+    if which in ('boss', 'all'): boss(res)
     if which in ('research', 'all'): research(res)

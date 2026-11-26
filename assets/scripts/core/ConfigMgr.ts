@@ -90,10 +90,15 @@ export class ConfigMgr {
             for (const lv of t.levels) out.push(lv.sprite.weapon.path, lv.sprite.projectile.path, lv.sprite.impact.path);
         }
         for (const e of ConfigMgr.enemy.enemies) {
-            out.push(e.animationPaths.move.path, e.animationPaths.dead.path);
-            if (e.animationPaths.attack) out.push(e.animationPaths.attack.path);
+            // Every animation (move, dead, attack, boss spells...), projectiles, spell effects and shields.
+            for (const k in e.animationPaths) if (e.animationPaths[k] && e.animationPaths[k].path) out.push(e.animationPaths[k].path);
             if (e.ranged && e.ranged.projectile) out.push(e.ranged.projectile.path);
             if (e.ranged && e.ranged.impact) out.push(e.ranged.impact.path);
+            for (const sp of (e.spells || [])) {
+                if (sp.vfx) out.push(sp.vfx.path);
+                if (sp.shield && sp.shield.loop) out.push(sp.shield.loop.path);
+                if (sp.shield && sp.shield.collapse) out.push(sp.shield.collapse.path);
+            }
         }
         for (const b of ConfigMgr.building.buildings) for (const lv of b.levels) if (lv.sprite) out.push(lv.sprite.path);
         if (ConfigMgr.building.map.path) out.push(ConfigMgr.building.map.path);
@@ -266,8 +271,15 @@ export class ConfigMgr {
                 num('enemy.json', e, 'physicDef', e.id); num('enemy.json', e, 'magicDef', e.id);
                 num('enemy.json', e, 'goldReward', e.id); num('enemy.json', e, 'spawnWeight', e.id);
                 if (!e.animationPaths || !e.animationPaths.move || !e.animationPaths.dead) E.push(`enemy.json: "${e.id}" needs animationPaths.move and animationPaths.dead`);
+                for (const sp of (e.spells || [])) {
+                    if (['shield', 'summon', 'teleport'].indexOf(sp.type) < 0) E.push(`enemy.json: "${e.id}" spell type "${sp.type}" is unknown (shield, summon, teleport)`);
+                    if (sp.anim && !e.animationPaths[sp.anim]) E.push(`enemy.json: "${e.id}" spell "${sp.type}" uses missing animation "${sp.anim}"`);
+                    if (sp.type === 'teleport' && (!e.animationPaths.teleportOut || !e.animationPaths.teleportIn)) E.push(`enemy.json: "${e.id}" teleport needs animationPaths.teleportOut and teleportIn`);
+                    for (const id of ((sp.summon && sp.summon.enemyIds) || [])) if (!ConfigMgr.enemyDef(id)) E.push(`enemy.json: "${e.id}" summons unknown enemy "${id}"`);
+                }
                 if (e.ranged) {
-                    num('enemy.json', e.ranged, 'range', e.id + '.ranged', 0); num('enemy.json', e.ranged, 'attackInterval', e.id + '.ranged', 0.1);
+                    if (!e.ranged.anyRange) num('enemy.json', e.ranged, 'range', e.id + '.ranged', 0);
+                    num('enemy.json', e.ranged, 'attackInterval', e.id + '.ranged', 0.1);
                     if (!e.ranged.projectile) E.push(`enemy.json: "${e.id}" ranged needs a projectile`);
                     if (!e.animationPaths || !e.animationPaths.attack) E.push(`enemy.json: "${e.id}" ranged needs animationPaths.attack`);
                 }
@@ -281,7 +293,10 @@ export class ConfigMgr {
         if (!Array.isArray(wv.tiers) || wv.tiers.length === 0) E.push('waves.json: "tiers" must be a non-empty array');
         else for (const t of wv.tiers) for (const id in t.weights) checkEnemy(id, `tier ${t.fromWave}-${t.toWave}`);
         for (const o of (wv.overrides || [])) for (const g of (o.groups || [])) checkEnemy(g.enemyId, `override wave ${o.wave}`);
-        if (wv.bossRule) checkEnemy(wv.bossRule.enemyId, 'bossRule');
+        if (wv.bossRule) {
+            checkEnemy(wv.bossRule.enemyId, 'bossRule');
+            for (const b of (wv.bossRule.byWave || [])) checkEnemy(b.enemyId, 'bossRule.byWave');
+        }
 
         // building.json
         const bd = ConfigMgr.building;

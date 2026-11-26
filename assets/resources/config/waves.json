@@ -77,7 +77,22 @@
       "goldReward": 8
     },
     "scale": 1.7,
-    "keepNormalEnemies": true
+    "keepNormalEnemies": true,
+    "byWave": [
+      {
+        "_doc": "From 'fromWave' the boss waves use this boss instead (its own multipliers). Scale 'scale' at its first wave, + 'scaleGrowth' at every later boss wave, up to 'maxScale'.",
+        "fromWave": 70,
+        "enemyId": "lich",
+        "statMul": {
+          "hp": 4.0,
+          "damage": 2,
+          "goldReward": 8
+        },
+        "scale": 0.5,
+        "scaleGrowth": 0.1,
+        "maxScale": 1.2
+      }
+    ]
   },
   "overrides": [
     {

@@ -1,0 +1,77 @@
+{
+ "image": "sprites/atlas/boss",
+ "regions": {
+  "sprites/bosses/lich_attack": [
+   0,
+   368,
+   2268,
+   139
+  ],
+  "sprites/bosses/lich_dead": [
+   0,
+   509,
+   3611,
+   132
+  ],
+  "sprites/bosses/lich_impact": [
+   3231,
+   643,
+   290,
+   58
+  ],
+  "sprites/bosses/lich_move": [
+   965,
+   643,
+   726,
+   126
+  ],
+  "sprites/bosses/lich_shield_collapse": [
+   1542,
+   0,
+   1232,
+   205
+  ],
+  "sprites/bosses/lich_shield_loop": [
+   0,
+   0,
+   1540,
+   205
+  ],
+  "sprites/bosses/lich_soulbolt": [
+   3523,
+   643,
+   306,
+   33
+  ],
+  "sprites/bosses/lich_summon": [
+   0,
+   207,
+   1404,
+   159
+  ],
+  "sprites/bosses/lich_summoncircle": [
+   1693,
+   643,
+   1536,
+   80
+  ],
+  "sprites/bosses/lich_taunt": [
+   1406,
+   207,
+   1859,
+   146
+  ],
+  "sprites/bosses/lich_teleportIn": [
+   0,
+   643,
+   963,
+   129
+  ],
+  "sprites/bosses/lich_teleportOut": [
+   2270,
+   368,
+   963,
+   137
+  ]
+ }
+}

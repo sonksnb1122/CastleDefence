@@ -83,7 +83,7 @@ export class WaveMgr {
             out.physic = Math.max(out.physic, Math.min(caps.normal, d.physicDef + add));
             out.magic = Math.max(out.magic, Math.min(caps.normal, d.magicDef + add));
         }
-        const boss = ConfigMgr.waves.bossRule;
+        const boss = WaveMgr.bossRule(wave);
         const bd = boss && ConfigMgr.enemyDef(boss.enemyId);
         if (bd) {
             out.hasBoss = wave % boss.every === 0;
@@ -115,6 +115,26 @@ export class WaveMgr {
     static enemyCount(wave: number): number {
         const cfg = ConfigMgr.waves;
         return cfg.enemyCountBase + cfg.enemyCountPerWave * (wave - 1);
+    }
+
+    /**
+     * The boss rule of a wave: waves.json "bossRule", with the last of its "byWave" entries whose "fromWave"
+     * is reached (other boss enemy, multipliers, scale), e.g. the Lich King from wave 70.
+     */
+    static bossRule(wave: number): any {
+        const r = ConfigMgr.waves.bossRule;
+        if (!r) return null;
+        let out = r;
+        for (const b of (r.byWave || [])) {
+            if (wave < b.fromWave) continue;
+            out = Object.assign({}, r, b);
+            // "scaleGrowth": the boss grows at every boss wave after its first one (up to "maxScale").
+            if (b.scaleGrowth) {
+                const n = Math.max(0, Math.floor((wave - b.fromWave) / (r.every || 10)));
+                out.scale = Math.min(b.maxScale || Infinity, (b.scale || 1) + n * b.scaleGrowth);
+            }
+        }
+        return out;
     }
 
     static build(wave: number): WavePlan {
@@ -160,7 +180,8 @@ export class WaveMgr {
                 }
             }
         } else {
-            const boss = cfg.bossRule && wave % cfg.bossRule.every === 0 ? cfg.bossRule : null;
+            const br = WaveMgr.bossRule(wave);
+            const boss = br && wave % br.every === 0 ? br : null;
             const interval = Math.max(cfg.minSpawnInterval, cfg.spawnInterval - (cfg.spawnIntervalDecayPerWave || 0) * (wave - 1));
             let normalCount = 0;
             if (ms && ms.name) name = `Wave ${wave} - ${ms.name}`;
