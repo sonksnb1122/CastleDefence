@@ -121,9 +121,9 @@ export class TowerUnit {
         if (this.rangeNode.active) this.showRange(true);
     }
 
-    /** Damage of the tower level plus the flat research bonus (before the % buffs). */
+    /** Base damage: tower level + flat research / hero bonus, times the Halo Spire buff (before the % buffs). */
     baseDamage(): number {
-        return this.lv.damage * (1 + this.halo.damagePct / 100) + (this.demo ? 0 : ResourceMgr.inst.buff('damageFlat', this.save.id));
+        return (this.lv.damage + (this.demo ? 0 : ResourceMgr.inst.buff('damageFlat', this.save.id))) * (1 + this.halo.damagePct / 100);
     }
 
     /** An effect works only once its "Unlock" technology is researched. */
@@ -135,7 +135,7 @@ export class TowerUnit {
         const rm = { buff: (k: string, t?: string) => (this.demo ? 0 : ResourceMgr.inst.buff(k, t)) };
         const sk = this.demo ? { damage: 1, attackSpeed: 1 } : TowerUnit.skillMul;
         // Flat research bonuses (tier 1) are added to the level values, then the % buffs apply.
-        const attackSpeed = (this.lv.attackSpeed * (1 + this.halo.attackSpeedPct / 100) + rm.buff('attackSpeedFlat', id)) * (1 + rm.buff('attackSpeed', id) / 100) * sk.attackSpeed;
+        const attackSpeed = (this.lv.attackSpeed + rm.buff('attackSpeedFlat', id)) * (1 + this.halo.attackSpeedPct / 100) * (1 + rm.buff('attackSpeed', id) / 100) * sk.attackSpeed;
         const explosionBuff = this.def.explosionBuffable ? rm.buff('explosionRange', id) : 0;
         return {
             damage: this.baseDamage() * (1 + rm.buff('damage', id) / 100) * sk.damage,
@@ -223,7 +223,8 @@ export class TowerUnit {
         }
         return {
             towerUid: this.save.uid, towerId: this.save.id, level: this.save.level,
-            damage: this.baseDamage(), damageTypes: this.def.damageTypes,
+            // Active skill buffs (Angel Feather x2) multiply the damage of the shots fired while they last.
+            damage: this.baseDamage() * (this.demo ? 1 : TowerUnit.skillMul.damage), damageTypes: this.def.damageTypes,
             explosionRange: s.explosion, critRate: this.lv.critRate, critDamage: this.lv.critDamage,
             effects, isAoe: !!this.def.explosionBuffable,
         } as ShotInfo;

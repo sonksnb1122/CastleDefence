@@ -764,11 +764,14 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         return { amount: Math.max(1, Math.floor(amount * m)), crit: false, dodged: false };
     }
 
-    /** Heavy Impact bonus: flat, or a share of the max HP (Mastery) when bigger; Crusher / Giant Slayer passives. */
+    /** Heavy Impact bonus: flat (after defense), or a share of the max HP (Mastery) when bigger; Crusher / Giant Slayer passives. */
     private heavyBonus(ef: any, shot: ShotInfo, e: Enemy): number {
         let pct = 0;
         if (ef.value > 0) pct = Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100 * this.percentHpMul(e));
-        let b = Math.max(ef.flat || 0, pct);
+        // The flat bonus goes through defense (best of the shot's damage types) like the other flat effect damage;
+        // the share of the max HP (Mastery) does not.
+        const flat = ef.flat > 0 ? this.flatHit(e, ef.flat, shot.damageTypes).amount : 0;
+        let b = Math.max(flat, pct);
         if ((e.armorBroken || e.stunned) && this.hasPassive('p_crusher')) b *= passiveParams('p_crusher').mul || 1.667;
         if (e.boss && this.hasPassive('p_giant_slayer')) b *= passiveParams('p_giant_slayer').bossMul || 1.5;
         return b;

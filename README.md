@@ -114,8 +114,8 @@ just outside the tower to the halo radius and fades out:
 - **Warding Halo** (research under *Halo Spire*, 2 levels): x2 then x3 projectiles blocked per halo. *Empowering
   Halo* and *Mending Halo* are under it.
 - **Empowering Halo** (research under *Warding Halo*, 5 levels): the closest other towers (not Halo Spires) get
-  +6% of their level's base damage and +4% of their base attack speed per level, added to the base before the %
-  buffs. A tower near several spires keeps the strongest buff (no stacking). Their Info window shows it.
+  +6% base damage and +4% base attack speed per level. The base is the tower level value plus the flat research
+  and hero bonuses; the % buffs come after. A tower near several spires keeps the strongest buff (no stacking). Their Info window shows it.
   Four Lv 3 spires are enough for a full field: each sits in the middle of 8 towers (4 + 4 × 8 = 36).
 - **Mending Halo** (research under *Warding Halo*): every N activations the spire restores a share of the missing
   wall HP. Several spires mend one after the other (each one from what the previous one left), so it does not
@@ -253,33 +253,102 @@ files of its own, it uses the Firebug death sound and the Catapult shot sound (e
 
 ## Combat rules
 
-All tower damage goes through one pipeline:
+### Tower stats
 
-1. **Base damage** = tower damage × (1 + damage buffs).
-2. **Effective defense** = enemy defense × 2 − defense reduction (research, heroes, Armor Break).
-   It can go below 0, which makes the enemy take extra damage.
-3. **Normal damage** = base damage × (1 − effective defense / 100).
-   The Catapult computes this for both damage types and keeps the higher one.
-4. **Critical hit:** roll the crit rate; a crit multiplies the damage by the crit damage.
-5. Round down, minimum 1. Apply the damage, then pay the gold reward once on death.
+Flat bonuses are added to the value of the tower level first, then the % bonuses multiply the result
+(`TowerUnit.stats`). Research and hero buffs of the same kind are added together before they are used.
 
-**Explosions:** projectiles hit the target and every enemy inside the explosion radius.
+| Stat | Formula |
+|---|---|
+| Damage | (level damage + flat damage) × (1 + Halo %) × (1 + damage %) × active skill (Angel Feather ×2) |
+| Attack speed | (level speed + flat speed) × (1 + Halo %) × (1 + attack speed %) × active skill (Buff Arrow ×2) |
+| Attack range | (level range + flat range) × (1 + range %); the Halo Spire radius is fixed |
+| Explosion radius | level radius × (1 + explosion %) (the Crossbow radius is fixed) |
+| Crit rate / crit damage | level value + research + heroes (crit rate 100% at most) |
 
-**Status effects:**
-- slow
-- stun
-- bleed
-- burn
-- armour break
-- marks
+- Flat damage: *Hardened Tips* (+20 per level, +200 at max), *Masterwork Ammunition* (+5 per level, endless) and
+  hero flat damage. Damage %: *Sharpened Ammunition* and hero buffs.
+- Halo %: *Empowering Halo*, on the whole base (level value + flat bonuses).
+- The Halo Spire itself uses the attack speed formula for its activations (flat and % attack speed research apply).
+- Example: a Lv 3 Catapult (330) with +200 flat and +78% damage hits for (330 + 200) × 1.78 ≈ 943 before defense.
 
-Each effect has a duration and a stacking rule (replace if stronger, refresh, or stack), and
-some enemies resist some effects.
+### Damage of a hit
 
-**The wall:**
-- **HP:** starts with 1000 HP and has its own physical and magic defense (max 70).
-- **Damage:** enemies that reach it hit it until they die or the wall falls.
-- **Repair:** costs gold and material per missing HP. The price goes up with the Base level.
+Every tower hit goes through one pipeline (`CombatManager.computeDamage`):
+
+1. **Dodge:** enemies with the dodge ability may avoid the hit ("MISS").
+2. **Base damage** = tower damage (above) × the hit share (100% for a normal hit; less for a chain jump).
+3. **Effective defense** = enemy defense × 2 − reductions (*Armor / Spell Piercing*, Armor Break, heroes).
+   It can go below 0: the enemy then takes more damage. Multiplier = 1 − effective defense / 100.
+4. **Damage types:** a tower with two types (Catapult) computes both and keeps the higher one.
+5. **Marks:** Hunter's Mark (Crossbow) and Arcane Vulnerability (magic) add their % per stack.
+6. **Enemy abilities:** physical damage reduction, area damage reduction (area shots only).
+7. **Passives:** Bitter Cold (Crystal vs slowed enemies), Aftershock (after a Shockwave stun).
+8. **Effect bonus** is added: Heavy Impact (its flat bonus after defense, or its share of the max HP), Hunter's
+   Mark x5 (share of the current HP).
+9. **Critical hit:** a roll on the crit rate; a crit multiplies everything by the crit damage
+   (Exposed passive: +25% crit damage on enemies with Armor Break).
+10. Round down, at least 1. A spell shield (Lich) absorbs the damage first.
+
+**Other damage:**
+- **Effect damage** (Chain Lightning, Shockwave and other flat effect damage): goes through defense (best of the
+  tower's damage types), never crits. The flat Heavy Impact bonus also goes through defense, then it is added to the
+  hit (so it can crit with it). Flat effect damage is ×1.5 on Lv 2 towers and ×2 on Lv 3 towers.
+- **Damage over time** (Bleed, Burn): goes through defense, never crits.
+- **Damage based on HP** (Heavy Impact Mastery, Bleed burst, Hunter's Mark x5, stun-immune hit, Arcane Rupture):
+  bosses take 1/3 of it (`effects.json` "bossPercentHpMul"), and it is never more than 4× the damage of the hit
+  that caused it (10× for the Crossbow; "percentHpCapHitMul" / "percentHpCapByTower"). That hit damage is the
+  full tower damage before defense: base (level + flat research, Masterwork included) × Halo × damage %.
+  Heavy Impact Mastery is limited by its own "capHitMul" × the base damage (level + flat research, × Halo).
+- **Hero skills:** true damage, a share of the max HP (bosses take half), +*Arcane Amplifier* %; no defense,
+  no crit.
+
+**Explosions:** a shot hits its target and every enemy whose center is inside the explosion radius; damage and
+crits are rolled for each enemy. The Crossbow radius is fixed (explosion research does not apply).
+
+### Special effect chance
+
+The chance of an effect on each hit = its two chance technologies (+5% per level, 50% at most) + *Arcane Mastery*
+(all towers, +25% at max) + the tower's *Attunement* (+25% at max) + hero effect-chance buffs, **100% at most**.
+The tower Info window shows where the chance comes from. Some effects have a cooldown per tower.
+
+**Status effects** (slow, stun, bleed, burn, armor break, marks) have a duration and a stacking rule (replace if
+stronger, refresh, or stack). Enemies may resist them:
+- some enemies resist some effects (`enemy.json` "statusEffectResistance");
+- from wave 50 every enemy gets +1.6% resistance per wave to stun, slow, bleed, marks and armor break (70% at
+  most, bosses +20% more, 95% at most in total; `waves.json` "statusResistance");
+- Bleed: only the first stack can be resisted. Stun: a short immunity follows every stun.
+- *Lingering Frost* / *Concussion* make slows / stuns last longer.
+
+### Enemy defense
+
+Enemy defense grows by +5 every 6 waves from wave 10 (70 at most, bosses +10 and 90 at most;
+`waves.json` "defenseGrowth"). The panel at the top left of the battlefield shows the defense of the wave.
+
+### Gold, cores and the end of a wave
+
+- **Gold per kill** = (enemy gold + flat kill gold) × (1 + kill gold %); bosses give ×8.
+- **Energy Cores:** each boss killed drops `2 + floor(wave / 50)`; the Base makes 1 after every wave. A boss that
+  reaches the wall dies **without** dropping cores.
+- A wave ends when every enemy is dead or has reached the wall. After it: building production, wall regen
+  (*Self-Mending Stone*), then the "Wave cleared" window.
+
+### The wall
+
+- **HP:** 1000, + *Stone Blocks* (+100 per level), then × (1 + wall HP %) (*Reinforced Wall*, *Living Stone*,
+  heroes). Raising the max HP also gives the new HP.
+- **Defense:** physical and magic, from *Wall Plating* and heroes, 70 at most (Bulwark passive: ×3, 90 at most).
+- **Damage taken** = enemy damage × (1 − wall defense / 100), rounded down.
+  - An enemy that touches the wall hits it once (its damage, + abilities like more damage at low HP or vs walls)
+    and dies.
+  - Ranged enemies (Flying Demon, Lich) shoot projectiles at it from afar; a Halo Spire can stop them (not the
+    boss ones). Barrier Block stops whole hits.
+  - Last Stand passive: the wall stays at 1 HP for a while instead of falling.
+- **Repair** (preparation only): missing HP × (0.5 gold + 0.5 material) × 1 / 3 / 8 (Base Lv 1 / 2 / 3)
+  × (1 − *Masonry Guild* discount).
+- **Mending:** *Self-Mending Stone* gives back 2% of the max HP per level after each wave; *Mending Halo*
+  heals during the wave.
+- The game is over when the wall reaches 0 HP.
 
 ---
 
@@ -358,8 +427,8 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 | Heroes | - | Hero Scholarship (heroes can learn skills) | Ascension (hero promotion), Battle Tactics, Twin Cast, Arcane Amplifier |
 | Curses | - | Weakening Hex, Withering Curse, Slow / Stun duration (half levels) | (full levels) |
 
-**Endless row** (Research Lab Lv 3, at the bottom of the tree): *Masterwork Ammunition* (+5% damage per level, under
-the Damage % node) and *Living Stone* (+5% wall HP per level, under the Wall HP % node) have no max level.
+**Endless row** (Research Lab Lv 3, at the bottom of the tree): *Masterwork Ammunition* (+5 base damage per level,
+added before the % bonuses, under the Damage % node) and *Living Stone* (+5% wall HP per level, under the Wall HP % node) have no max level.
 
 **Tower Awakening** (Tower Effects, tier 3, 1 level, `"requiresAll"`): the last step of the tree, below a line of
 its own at the end of tier 3. It needs every technology above that line at max level (endless ones aside): the
@@ -538,9 +607,11 @@ Creator and are not in the repository; the editor recreates them the first time 
 
 ### Test saves
 
-For testing, **Load Game** also lists six read-only saves under *Test saves (bot)*: the game as a bot
-played it up to wave 30, 50, 70, 90, 100 and 110. The bot builds and upgrades everything, recruits heroes,
-researches every technology (Smart targeting on all towers from about wave 95) and uses the Market.
+For testing, **Load Game** also lists nine read-only saves under *Test saves (bot)*: the game as a bot
+played it up to wave 30, 50, 70, 90, 100 and 110, then every 20 waves (130, 150, 170). The bot builds and
+upgrades everything (4 Halo Spires next to the wall from wave 72), recruits heroes, researches every
+technology (Tower Awakening at wave 79, every finite technology by wave 93, then the endless ones) and uses the
+Market. It loses at wave 180.
 - They are the files `assets/resources/presets/wave_<n>.json` and cannot be deleted in the game.
 - Loading one starts a normal game from that point; the file itself is never changed.
 - To hide them, set `TEST_SAVES = []` in `Main.ts`.

@@ -97,11 +97,11 @@
       "id": "r_damage_inf",
       "name": "Masterwork Ammunition",
       "label": "DMG\u221e",
-      "description": "+5% tower damage per level. Endless.",
+      "description": "+5 tower base damage per level (added before the % bonuses). Endless.",
       "branch": "offense",
       "tier": 4,
       "parent": "r_damage",
-      "buffKey": "damage",
+      "buffKey": "damageFlat",
       "valuePerLevel": 5,
       "maxLevel": 0,
       "baseCost": {
