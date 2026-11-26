@@ -87,7 +87,10 @@ export class ConfigMgr {
         const out: string[] = [];
         for (const t of ConfigMgr.tower.towers) {
             out.push(t.base.path);
-            for (const lv of t.levels) out.push(lv.sprite.weapon.path, lv.sprite.projectile.path, lv.sprite.impact.path);
+            for (const lv of t.levels) {
+                const sp = lv.sprite;
+                for (const k of ['weapon', 'projectile', 'impact', 'halo']) if (sp[k] && sp[k].path) out.push(sp[k].path);
+            }
         }
         for (const e of ConfigMgr.enemy.enemies) {
             // Every animation (move, dead, attack, boss spells...), projectiles, spell effects and shields.
@@ -248,7 +251,8 @@ export class ConfigMgr {
             for (const t of tw.towers) {
                 str('tower.json', t, 'name', t.id);
                 cost('tower.json', t.buildCost, t.id);
-                if (!Array.isArray(t.damageTypes) || t.damageTypes.length === 0) E.push(`tower.json: "${t.id}" needs "damageTypes"`);
+                const halo = t.kind === 'halo';
+                if (!Array.isArray(t.damageTypes) || (t.damageTypes.length === 0 && !halo)) E.push(`tower.json: "${t.id}" needs "damageTypes"`);
                 else for (const d of t.damageTypes) if (d !== 'physic' && d !== 'magic') E.push(`tower.json: "${t.id}" has invalid damage type "${d}"`);
                 if (!levels('tower.json', t.levels, t.id)) continue;
                 for (const lv of t.levels) {
@@ -257,7 +261,8 @@ export class ConfigMgr {
                     num('tower.json', lv, 'attackRange', where); num('tower.json', lv, 'explosionRange', where);
                     num('tower.json', lv, 'critRate', where); num('tower.json', lv, 'critDamage', where);
                     cost('tower.json', lv.upgradeCost, where);
-                    if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.projectile || !lv.sprite.impact) E.push(`tower.json: ${where} needs "sprite" with weapon/projectile/impact`);
+                    if (halo) { if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.halo) E.push(`tower.json: ${where} needs "sprite" with weapon/halo`); }
+                    else if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.projectile || !lv.sprite.impact) E.push(`tower.json: ${where} needs "sprite" with weapon/projectile/impact`);
                     for (const ef of (lv.effects || [])) if (!ConfigMgr.towerEffectDef(ef.id)) E.push(`tower.json: ${where} references unknown effect "${ef.id}"`);
                 }
             }
@@ -345,6 +350,7 @@ export class ConfigMgr {
                 const branches: any[] = ConfigMgr.research.branches || [];
                 if (!branches.some(b => b.id === t.branch)) E.push(`research.json: tech "${t.id}" has unknown branch "${t.branch}"`);
                 if (!(t.tier >= 1 && t.tier <= 4)) E.push(`research.json: tech "${t.id}" needs "tier" 1 to 4`);
+                for (const r of (t.requires || [])) if (!ConfigMgr.techDef(r)) E.push(`research.json: tech "${t.id}" requires unknown tech "${r}"`);
                 if (t.parent) {
                     const p = ConfigMgr.techDef(t.parent);
                     if (!p || !p.maxLevel) E.push(`research.json: tech "${t.id}" has an unknown or endless parent "${t.parent}"`);

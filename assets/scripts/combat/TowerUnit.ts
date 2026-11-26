@@ -22,6 +22,10 @@ export interface ITowerHost {
     spawnProjectile(tower: TowerUnit, shot: ShotInfo, target: Enemy, fromX: number, fromY: number, angleDeg: number): void;
     /** Smart targeting: true when a clearly better target than the current one exists. */
     shouldRetarget(tower: TowerUnit): boolean;
+    /** Halo Spire: true while it should activate (enemies on the field). */
+    haloActive(): boolean;
+    /** Halo Spire: an activation sends out its halo (blocks enemy projectiles, counts for the wall mending). */
+    emitHalo(tower: TowerUnit): void;
 }
 
 /** Effective (buffed) stats of a tower. */
@@ -43,6 +47,13 @@ export class TowerUnit {
     effectCooldowns: { [id: string]: number } = {};
     /** Frames until Smart targeting looks for a better target again. */
     retargetTimer = 0;
+    /**
+     * Buff of a Halo Spire on this tower (CombatManager.assignHalos): % of the level's base damage / attack speed
+     * added to the base, before the % buffs. `from`: uid of the Halo Spire.
+     */
+    halo = { damagePct: 0, attackSpeedPct: 0, from: 0 };
+    /** Halo Spire: activations so far (wall mending every "mendEvery"). */
+    haloCount = 0;
 
     private baseSprite: Sprite;
     private weaponNode: Node;
@@ -78,6 +89,8 @@ export class TowerUnit {
     }
 
     get uid(): number { return this.save.uid; }
+    /** Halo Spire (tower.json "kind": "halo"): a support tower without target or damage. */
+    get isHalo(): boolean { return this.def.kind === 'halo'; }
     /** Center of the weapon in world coordinates (origin of range and shots). */
     get cx(): number { return this.save.x; }
     get cy(): number { return this.save.y + this.lv.sprite.weaponY * this.scale; }
@@ -109,7 +122,9 @@ export class TowerUnit {
     }
 
     /** Damage of the tower level plus the flat research bonus (before the % buffs). */
-    baseDamage(): number { return this.lv.damage + (this.demo ? 0 : ResourceMgr.inst.buff('damageFlat', this.save.id)); }
+    baseDamage(): number {
+        return this.lv.damage * (1 + this.halo.damagePct / 100) + (this.demo ? 0 : ResourceMgr.inst.buff('damageFlat', this.save.id));
+    }
 
     /** An effect works only once its "Unlock" technology is researched. */
     effectUnlocked(id: string): boolean { return !this.demo && ResourceMgr.inst.buff('effectUnlock:' + id) > 0; }
@@ -120,13 +135,14 @@ export class TowerUnit {
         const rm = { buff: (k: string, t?: string) => (this.demo ? 0 : ResourceMgr.inst.buff(k, t)) };
         const sk = this.demo ? { damage: 1, attackSpeed: 1 } : TowerUnit.skillMul;
         // Flat research bonuses (tier 1) are added to the level values, then the % buffs apply.
-        const attackSpeed = (this.lv.attackSpeed + rm.buff('attackSpeedFlat', id)) * (1 + rm.buff('attackSpeed', id) / 100) * sk.attackSpeed;
+        const attackSpeed = (this.lv.attackSpeed * (1 + this.halo.attackSpeedPct / 100) + rm.buff('attackSpeedFlat', id)) * (1 + rm.buff('attackSpeed', id) / 100) * sk.attackSpeed;
         const explosionBuff = this.def.explosionBuffable ? rm.buff('explosionRange', id) : 0;
         return {
             damage: this.baseDamage() * (1 + rm.buff('damage', id) / 100) * sk.damage,
             attackSpeed,
             interval: 1 / attackSpeed,
-            range: (this.lv.attackRange + rm.buff('attackRangeFlat', id)) * (1 + rm.buff('attackRange', id) / 100),
+            // The halo radius of a Halo Spire is its level's range (range research is for the weapons).
+            range: this.isHalo ? this.lv.attackRange : (this.lv.attackRange + rm.buff('attackRangeFlat', id)) * (1 + rm.buff('attackRange', id) / 100),
             explosion: this.lv.explosionRange * (1 + explosionBuff / 100),
             critRate: Math.max(0, Math.min(100, this.lv.critRate + rm.buff('critRate', id))),
             critDamage: this.lv.critDamage + rm.buff('critDamage', id),
@@ -217,6 +233,7 @@ export class TowerUnit {
     update(dt: number, host: ITowerHost | null) {
         const w = this.lv.sprite.weapon;
         this.cooldown -= dt;
+        if (this.isHalo) { this.updateHalo(dt, host); return; }
         for (const id in this.effectCooldowns) if (this.effectCooldowns[id] > 0) this.effectCooldowns[id] -= dt;
 
         let aligned = false;
@@ -258,6 +275,33 @@ export class TowerUnit {
                 this.firing = false;
                 this.anim.play(this.idleFrames, w.idleFrameTime, true);
             }
+        }
+    }
+
+    /**
+     * Halo Spire: no target and no turning. While enemies are on the field it activates every attack interval:
+     * the crystal flashes and the halo leaves at the weapon's "fireFrame".
+     */
+    private updateHalo(dt: number, host: ITowerHost | null) {
+        const w = this.lv.sprite.weapon;
+        if (!this.firing) {
+            this.anim.update(dt);
+            if (host && this.cooldown <= 0 && host.haloActive()) {
+                const interval = this.stats().interval;
+                this.firing = true;
+                this.spawned = false;
+                this.cooldown = interval + Math.max(this.cooldown, -dt);
+                const count = Math.max(1, this.attackFrames.length);
+                this.anim.play(this.attackFrames, Math.min(w.attackFrameTime, (interval * 0.9) / count), false);
+                if (this.attackFrames.length === 0) { this.spawned = true; host.emitHalo(this); }
+            }
+            return;
+        }
+        const finished = this.anim.update(dt);
+        if (!this.spawned && (this.anim.index >= w.fireFrame || finished || this.anim.finished)) { this.spawned = true; if (host) host.emitHalo(this); }
+        if (finished || this.anim.finished) {
+            this.firing = false;
+            this.anim.play(this.idleFrames, w.idleFrameTime, true);
         }
     }
 

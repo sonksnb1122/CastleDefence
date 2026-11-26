@@ -685,6 +685,81 @@
       "icon": "sprites/research/wall_repair"
     },
     {
+      "id": "r_halo",
+      "name": "Halo Spire",
+      "label": "HALO",
+      "description": "Unlocks the Halo Spire, a support tower whose halo destroys enemy projectiles (not the boss ones). Also needs Masonry Guild at max level.",
+      "branch": "wall",
+      "tier": 3,
+      "parent": "r_wallregen",
+      "requires": [
+        "r_repaircost"
+      ],
+      "buffKey": "towerUnlock:halo",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 6000,
+        "material": 9000,
+        "food": 7000
+      },
+      "costGrowth": 1
+    },
+    {
+      "id": "r_halo_block",
+      "name": "Warding Halo",
+      "label": "WARD",
+      "description": "Each halo of a Halo Spire blocks more enemy projectiles: 1 / 2 / 3 (Halo Spire level 1 / 2 / 3) become 2 / 4 / 6 at level 1 and 3 / 6 / 9 at level 2. Boss projectiles are never blocked.",
+      "branch": "wall",
+      "tier": 3,
+      "parent": "r_halo",
+      "buffKey": "haloBlock",
+      "valuePerLevel": 1,
+      "maxLevel": 2,
+      "baseCost": {
+        "gold": 4000,
+        "material": 6000,
+        "food": 5000
+      },
+      "costGrowth": 1.6
+    },
+    {
+      "id": "r_halo_aura",
+      "name": "Empowering Halo",
+      "label": "AURA",
+      "description": "Halo Spires add +6% of the base damage and +4% of the base attack speed per level to the closest towers (2 / 4 / 8 by Halo Spire level), before the % buffs. No stacking between halos.",
+      "branch": "wall",
+      "tier": 3,
+      "parent": "r_halo_block",
+      "buffKey": "haloAura",
+      "valuePerLevel": 1,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 3000,
+        "material": 4500,
+        "food": 3500
+      },
+      "costGrowth": 1.45
+    },
+    {
+      "id": "r_halo_mend",
+      "name": "Mending Halo",
+      "label": "MEND",
+      "description": "Every 30 / 20 / 10 activations (Halo Spire level 1 / 2 / 3) a Halo Spire restores 0.5% / 1% / 2% of the missing wall HP. Several Halo Spires mend one after the other.",
+      "branch": "wall",
+      "tier": 3,
+      "parent": "r_halo_block",
+      "buffKey": "haloMend",
+      "valuePerLevel": 1,
+      "maxLevel": 1,
+      "baseCost": {
+        "gold": 5000,
+        "material": 7000,
+        "food": 6000
+      },
+      "costGrowth": 1
+    },
+    {
       "id": "r_fxu_piercing_bolt",
       "name": "Piercing Bolt: Unlock",
       "label": "PIERCE",

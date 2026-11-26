@@ -63,7 +63,7 @@ Destroying a building refunds 50% of its build cost.
 
 | Building | Produces after each wave (Lv 1 / 2 / 3) | Limit | Notes |
 |---|---|---|---|
-| **Base** | 120 / 250 / 900 gold | 1 (fixed in the centre) | Raises the tower limit (10 / 20 / 30), the hero limit (3 / 7 / 12), the number of other buildings and the max tower level. Upgrade: 900 gold + 500 material + 400 food, then 4000 gold + 6000 material + 6000 food. |
+| **Base** | 120 / 250 / 900 gold | 1 (fixed in the centre) | Raises the tower limit (10 / 20 / 36), the hero limit (3 / 7 / 12), the number of other buildings and the max tower level. Upgrade: 900 gold + 500 material + 400 food, then 4000 gold + 6000 material + 6000 food. |
 | **Farm** | 95 / 150 / 495 food | 5 per Base level | Build: 60 gold + 100 material |
 | **Lumber & Quarry** | 115 / 180 / 480 material | 5 per Base level | Build: 80 gold + 80 food |
 | **Research Lab** | nothing | 1 | Opens the research tree. Lab Lv 1 / 2 / 3 opens tier 1 / 2 / 3 of the tree (see [Research](#research)). |
@@ -72,7 +72,9 @@ Destroying a building refunds 50% of its build cost.
 
 ## Defense towers
 
-There are three towers, and each has 3 levels.
+There are four towers, and each has 3 levels: three attack towers and the Halo Spire, a support tower.
+- **Building:** outside, the *Build Tower* button (it also shows towers built / tower limit) opens the list of
+  towers with their cost, like the Build button inside the castle; pick one, then tap a free spot.
 - **Placement:** towers stand in the defense area and keep a minimum distance from each other.
 - **Aiming:** each tower has a rotating weapon that turns to face its target before it fires.
 - **Level cap:** a tower can never have a higher level than the Base.
@@ -90,6 +92,36 @@ There are three towers, and each has 3 levels.
 
 From Lv 2 the Catapult throws its 2 loaded stones together: they fly side by side and land as one hit (same damage).
 The Crossbow is strong early on. The Catapult starts weak but becomes the main damage dealer late in the game.
+
+**Halo Spire** (support, tower.json `"halo"`, kind `"halo"`): it has no target and deals no damage. It must be
+unlocked first (research *Halo Spire*, Fortification tier 3, needs Self-Mending Stone and Masonry Guild at max
+level). While enemies are on the field it activates regularly and sends out one thin white ring that grows slowly from
+just outside the tower to the halo radius and fades out:
+
+| | Lv 1 | Lv 2 | Lv 3 |
+|---|---|---|---|
+| Build / upgrade cost | 300 gold, 200 material, 100 food | 420 gold, 500 material, 320 food | 2600 gold, 2900 material, 2200 food |
+| Activations per second | 0.8 | 1.0 | 1.25 |
+| Halo radius (px, fixed: range research and buffs never change it) | 200 | 200 | 200 |
+| Projectiles blocked per halo (*Warding Halo* Lv 0 / 1 / 2) | 1 / 2 / 3 | 2 / 4 / 6 | 3 / 6 / 9 |
+| Towers buffed (*Empowering Halo*) | 2 | 4 | 8 |
+| Wall mending (*Mending Halo*) | every 30 activations, 0.5% of the missing HP | every 20, 1% | every 10, 2% |
+
+- **Block** (always): an enemy projectile (Flying Demon fireball) touched by the growing ring
+  vanishes at once, up to the halo's block count (table; a spent halo goes on dimmed). Projectiles already inside
+  the ring, or arriving after it passed, keep flying, and boss projectiles (the Lich's Soul Bolt, a boss Flying
+  Demon) are never blocked.
+- **Warding Halo** (research under *Halo Spire*, 2 levels): x2 then x3 projectiles blocked per halo. *Empowering
+  Halo* and *Mending Halo* are under it.
+- **Empowering Halo** (research under *Warding Halo*, 5 levels): the closest other towers (not Halo Spires) get
+  +6% of their level's base damage and +4% of their base attack speed per level, added to the base before the %
+  buffs. A tower near several spires keeps the strongest buff (no stacking). Their Info window shows it.
+- **Mending Halo** (research under *Warding Halo*): every N activations the spire restores a share of the missing
+  wall HP. Several spires mend one after the other (each one from what the previous one left), so it does not
+  add up to more than the missing HP.
+- The halo is one ring picture (`art/halo/halo_ring.png`, own atlas `sprites/atlas/halo`) scaled by the game:
+  tower.json `"halo"` gives its `startRadius`, `growTime` and `opacity`. The radius stays small on purpose: a
+  bigger halo would block every projectile.
 
 **Target modes** (switch with the *Target* button of a selected tower):
 - **First:** the enemy closest to the wall.
@@ -320,7 +352,7 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 |---|---|---|---|
 | Offense | Flat bonuses: +2 damage, +0.01 attacks/s, +4 px range (10 levels each); Armor / Spell Piercing | Damage %, Attack speed %, Range %, Crit rate, Explosion radius | Aerodynamics, Smart Targeting, Crit damage |
 | Economy | +5 food / material / gold per building per wave, +1 gold per kill (4 levels each) | Food / material / gold production %, gold from kills % | One more % node for each, Scholarship (-4% research cost per level) |
-| Fortification | +100 wall HP per level (5 levels) | Wall HP %, Wall defense (half levels) | Self-Mending Stone (+2% max HP back after each wave), Masonry Guild (-8% repair cost) |
+| Fortification | +100 wall HP per level (5 levels) | Wall HP %, Wall defense (half levels) | Self-Mending Stone (+2% max HP back after each wave), Masonry Guild (-8% repair cost); Halo Spire (unlocks the tower, needs both at max), then Warding Halo (2 levels), then Empowering Halo (5 levels) and Mending Halo |
 | Tower Effects | - | Unlock each of the 9 effects, then its first 5 rate levels | 5 more rate levels per effect, then its Mastery (3 levels); Arcane Mastery |
 | Heroes | - | Hero Scholarship (heroes can learn skills) | Ascension (hero promotion), Battle Tactics, Twin Cast, Arcane Amplifier |
 | Curses | - | Weakening Hex, Withering Curse, Slow / Stun duration, Bleed / Burn damage (half levels) | (full levels) |
@@ -394,7 +426,7 @@ a popup listing the books the hero can learn; learning costs **1 Energy Core** a
 uses up the book. 5-star heroes learn 1 active + 1 passive skill, the other heroes 1 skill (active or
 passive). Learned skills are listed on the hero card.
 
-**In battle:** when a wave starts, the tower build buttons are replaced by small cards of the heroes that
+**In battle:** when a wave starts, the Build Tower button is replaced by small cards of the heroes that
 learned an active skill. Tap a card to highlight it and read its skill on the right side of the screen;
 drag it up out of the card bar to cast the skill. For an area skill the card goes back to its place and the
 player taps the enemy path to choose where it lands (tap the card again to cancel).
@@ -539,6 +571,7 @@ assets/
 art/                          picture sources that are not shipped as they are (packed into the atlases)
   combat/                     enemies/, towers/, status/: sources of sprites/atlas/combat
   boss/                       one folder per boss (lich/): sources of sprites/atlas/boss
+  halo/                       Halo Spire ring: source of sprites/atlas/halo
   research/                   research icons (96 x 96 PNG): sources of sprites/atlas/research
 ```
 
@@ -584,11 +617,15 @@ art/                          picture sources that are not shipped as they are (
 
 The `tools/` folder is outside the game assets.
 - `tools/atlas/pack_atlas.py`: packs the enemy, tower and status sheets of `art/combat/` into
-  `sprites/atlas/combat`, the boss sheets of `art/boss/` into `sprites/atlas/boss` (full color), and the research icons of `art/research/` into `sprites/atlas/research` (2048 x 512,
+  `sprites/atlas/combat`, the Halo Spire ring of `art/halo/` into `sprites/atlas/halo`, the boss sheets of `art/boss/`
+  into `sprites/atlas/boss` (full color), and the research icons of `art/research/` into `sprites/atlas/research` (2048 x 512,
   256 colors, about 250 KB instead of 1.4 MB in 70 files). The configs keep the old paths
   (`sprites/towers/base_t1`, `sprites/research/off_damage`), which are looked up in the atlas manifests.
   Run it again after changing a sheet or an icon: `python tools/atlas/pack_atlas.py assets/resources
-  [combat|boss|research|all]`. Needs Python + Pillow.
+  [combat|halo|boss|research|all]`. Needs Python + Pillow.
+- `tools/towers/prepare_halo.py`: copies the Halo Spire base and crystals of "Spire - Tower Pack 3" into
+  `art/combat/towers` and draws the thin halo ring `art/halo/halo_ring.png` (`--ring <art/halo>` draws only the
+  ring). Needs Python + Pillow + NumPy.
 - `tools/boss/prepare_lich.py`: makes `art/boss/lich/` from the "AW - Lich King" pack and the two shield sheets:
   mirrors every frame (the pack faces right), crops each animation to what its frames use and prints the
   `"anchor"` of each animation for enemy.json (the ground pivot stays at the same place in every animation; the
@@ -614,7 +651,7 @@ Thanks to the artists whose free assets are used in this game. All packs were do
 
 | Asset | Author | Used for | License |
 |---|---|---|---|
-| [Spire Tower Pack 1](https://foozlecc.itch.io/spire-tower-pack-1) and [Spire Tower Pack 2](https://foozlecc.itch.io/spire-tower-pack-2) | Baldur / [Foozle](https://foozlecc.itch.io) | Defense tower sprites | CC0 |
+| [Spire Tower Pack 1](https://foozlecc.itch.io/spire-tower-pack-1), [Spire Tower Pack 2](https://foozlecc.itch.io/spire-tower-pack-2) and Spire Tower Pack 3 | Baldur / [Foozle](https://foozlecc.itch.io) | Defense tower sprites (pack 3: Halo Spire base and crystal) | CC0 |
 | Monster sprites | Baldur / [Foozle](https://foozlecc.itch.io) (same source as the towers) | Monsters | CC0 |
 | Flying Demon | [luizmelo](https://luizmelo.itch.io) | Flying Demon (fly, attack, fall + death) | CC0 |
 | AW - Lich King 1.0 | [artistworld](https://artistworld.itch.io) | Lich King boss (Frost palette): body animations, Soul Bolt, impact, summoning circle | artistworld license (games and edits allowed, credit appreciated; no resale or redistribution as assets) |

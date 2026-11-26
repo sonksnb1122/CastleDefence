@@ -102,7 +102,7 @@
           "production": {
             "gold": 900
           },
-          "towerLimit": 30,
+          "towerLimit": 36,
           "sprite": {
             "path": "sprites/buildings/castle_l3_anim",
             "cellW": 128,

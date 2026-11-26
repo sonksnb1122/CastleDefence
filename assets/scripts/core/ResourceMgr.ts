@@ -186,6 +186,7 @@ export class ResourceMgr {
     towerUpgradeCost(t: TowerSave) { return this.towers.upgradeCost(t); }
     towerUpgradeBlock(t: TowerSave) { return this.towers.upgradeBlock(t); }
     buildTower(id: string, x: number, y: number) { return this.towers.build(id, x, y); }
+    towerBuildLock(id: string) { return this.towers.buildLock(id); }
     upgradeTower(uid: number) { return this.towers.upgrade(uid); }
     moveTower(uid: number, x: number, y: number) { return this.towers.move(uid, x, y); }
     destroyTower(uid: number) { return this.towers.destroy(uid); }

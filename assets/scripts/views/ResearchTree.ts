@@ -342,6 +342,11 @@ export class ResearchOverlay implements IOverlay {
             const p = ConfigMgr.techDef(t.parent);
             if (p) lines.push(`Requires: "${p.name}" at max level - ${rm.techLevel(p.id) >= p.maxLevel ? 'done' : 'not yet (' + rm.techLevel(p.id) + '/' + p.maxLevel + ')'}.`);
         }
+        // "requires": other technologies at max level (not drawn as links in the tree).
+        for (const rid of (t.requires || [])) {
+            const q = ConfigMgr.techDef(rid);
+            if (q) lines.push(`Requires: "${q.name}" at max level - ${rm.techLevel(q.id) >= q.maxLevel ? 'done' : 'not yet (' + rm.techLevel(q.id) + '/' + q.maxLevel + ')'}.`);
+        }
         for (const l of techEffectLines(t)) lines.push(l);
         const block = rm.techBlock(id);
         lines.push('');

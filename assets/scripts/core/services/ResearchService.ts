@@ -57,6 +57,12 @@ export class ResearchService {
             const p = ConfigMgr.techDef(t.parent);
             return `Needs ${p ? p.name : t.parent} at max level`;
         }
+        // "requires": other technologies that must be at max level too (not drawn in the tree).
+        for (const r of (t.requires || [])) {
+            if (this.isMaxed(r)) continue;
+            const q = ConfigMgr.techDef(r);
+            return `Needs ${q ? q.name : r} at max level`;
+        }
         return null;
     }
 

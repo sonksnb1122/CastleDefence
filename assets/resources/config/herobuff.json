@@ -374,6 +374,26 @@
       "key": "effectMastery:armor_break",
       "name": "Armor Break mastery",
       "unit": ""
+    },
+    {
+      "key": "towerUnlock:halo",
+      "name": "Halo Spire unlocked",
+      "unit": ""
+    },
+    {
+      "key": "haloAura",
+      "name": "Empowering Halo level",
+      "unit": ""
+    },
+    {
+      "key": "haloMend",
+      "name": "Mending Halo",
+      "unit": ""
+    },
+    {
+      "key": "haloBlock",
+      "name": "Warding Halo level",
+      "unit": ""
     }
   ]
 }

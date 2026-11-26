@@ -18,6 +18,9 @@ import { InfoLine, confirm, infoWindow, message, toast } from './common/Popups';
 import { FillBar, PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, costRow, hex, mk, text, toLocal } from './common/UIKit';
 import { BattlefieldGround } from './BattlefieldGround';
+import { BuildView } from './popups/BuildView';
+import { BuildRowView } from './items/BuildRowView';
+import { Assets } from '../core/Assets';
 
 
 
@@ -62,7 +65,9 @@ export class OutCastleScreen implements CombatEvents {
     private cancelBtn: PrefabButton;
     private repairBtn: PrefabButton;
     private buildBar: Node;
-    private buildBtns: Array<{ id: string; btn: PrefabButton }> = [];
+    private buildBtn: PrefabButton | null = null;
+    /** Under the Build button: towers built / tower limit. */
+    private buildCount: Node | null = null;
     private wallBar: FillBar;
     private defTab: DefTab;
     private wallLabel: Label;
@@ -132,18 +137,14 @@ export class OutCastleScreen implements CombatEvents {
             this.stopAiming();
         });
 
-        // Tower build buttons (prefabs/items/TowerButton, one per tower of tower.json).
+        // One "Build" button (prefabs/items/TowerButton) opens the tower list (prefabs/popups/Build), like the
+        // Build button inside the castle.
         this.buildBar = v.buildBar!;
-        const towers: any[] = ConfigMgr.tower.towers;
-        towers.forEach((t, i) => {
-            const node = PrefabUi.create('items/TowerButton', this.buildBar);
-            node.setPosition((i - (towers.length - 1) / 2) * 172, 0, 0);
-            const btn = new PrefabButton(node, () => this.startPlacing(t.id, 0));
-            // Tower name on top, build cost with resource icons below.
-            btn.setText(t.name);
-            costRow(node.getChildByName('Cost'), t.buildCost, 0, 0, { align: 'center', size: 16, fontSize: 12, bold: true });
-            this.buildBtns.push({ id: t.id, btn });
-        });
+        const node = PrefabUi.create('items/TowerButton', this.buildBar);
+        node.setPosition(0, 0, 0);
+        this.buildBtn = new PrefabButton(node, () => this.openTowerBuildMenu());
+        this.buildBtn.setText('Build Tower');
+        this.buildCount = node.getChildByName('Cost');
 
         // A touch anywhere but on a hero card hides the skill description (capture phase: buttons stop the event).
         this.root.on(Node.EventType.TOUCH_START, (e: EventTouch) => this.touchOutsideCards(e), this, true);
@@ -183,7 +184,7 @@ export class OutCastleScreen implements CombatEvents {
             { label: 'Target', icon: 'target', color: COLORS.button, onClick: () => { const m = this.rm.cycleTargetMode(uid); toast(this.root, 'Target mode: ' + m, true); unit.target = null; } },
             { label: 'Info', icon: 'info', onClick: () => this.towerInfoWindow(unit) },
             { label: 'Destroy', icon: 'destroy', color: COLORS.buttonDanger, onClick: () => this.destroyTower(uid), enabled: prep },
-        ];
+        ].filter(it => !(unit.isHalo && it.label === 'Target'));   // the Halo Spire has no target
         // No level label: the tower art already shows its level.
         const below = unit.save.y > 170;
         arcMenu(this.menuLayer, unit.save.x, below ? unit.save.y + 6 : unit.cy + 30, items, below, TOWER_MENU_RADIUS);
@@ -197,7 +198,9 @@ export class OutCastleScreen implements CombatEvents {
         if (block) { toast(this.root, block === 'Upgrade the Base first' ? `Tower level is limited by the Base level (${this.rm.baseLevel})` : block); return; }
         const cost = this.rm.towerUpgradeCost(t)!;
         const next = ConfigMgr.towerLevel(t.id, t.level + 1);
-        const body = `Upgrade to level ${t.level + 1}?\nDamage ${next.damage}, ${next.attackSpeed}/s, range ${next.attackRange}`;
+        const body = def.kind === 'halo'
+            ? `Upgrade to level ${t.level + 1}?\n${next.attackSpeed} halos/s, blocks ${next.blockCount * (1 + this.rm.buff('haloBlock'))} per halo, buffs ${next.buffTargets} towers, mends every ${next.mendEvery}`
+            : `Upgrade to level ${t.level + 1}?\nDamage ${next.damage}, ${next.attackSpeed}/s, range ${next.attackRange}`;
         confirm(this.root, `Upgrade ${def.name}`, body, () => {
             const err = this.rm.upgradeTower(uid);
             toast(this.root, err || `${def.name} upgraded`, !err);
@@ -217,6 +220,7 @@ export class OutCastleScreen implements CombatEvents {
     }
 
     private towerInfoWindow(unit: TowerUnit) {
+        if (unit.isHalo) { this.haloInfoWindow(unit); return; }
         const s = unit.stats();
         const def = unit.def;
         const r1 = (v: number) => Math.round(v * 100) / 100;
@@ -231,6 +235,7 @@ export class OutCastleScreen implements CombatEvents {
             `Crit: ${r1(s.critRate)}%  x${r1(s.critDamage)}%`,
             `Target mode: ${unit.save.targetMode}`,
         ];
+        if (unit.halo.from) lines.push(`Halo Spire buff: +${r1(unit.halo.damagePct)}% base damage, +${r1(unit.halo.attackSpeedPct)}% base attack speed (included above)`);
         // Special effects: unlocked and powered by the Tower Effects branch of the research tree.
         const fx = towerEffectLines(unit.save.id, unit.save.level, id => unit.effectUnlocked(id));
         if (fx.length) {
@@ -242,11 +247,73 @@ export class OutCastleScreen implements CombatEvents {
         infoWindow(this.root, def.name, lines);
     }
 
+    /** Info window of a Halo Spire: what its halo does now and what the research adds. */
+    private haloInfoWindow(unit: TowerUnit) {
+        this.combat.assignHalos();
+        const rm = this.rm, lv = unit.lv, s = unit.stats();
+        const r1 = (v: number) => Math.round(v * 100) / 100;
+        const aura = rm.buff('haloAura'), a = unit.def.aura || {};
+        const buffed = this.combat.towers.filter(t => t.halo.from === unit.uid).length;
+        const lines: InfoLine[] = [
+            unit.def.description, '',
+            `Level: ${unit.save.level} / ${unit.def.levels.length}`,
+            `Activations: ${r1(s.attackSpeed)} / s (only while enemies are on the field)`,
+            `Halo radius: ${Math.round(s.range)} px (fixed)`,
+            '', 'HALO',
+            `Block: up to ${this.combat.haloBlocks(unit)} enemy projectiles touched by each halo vanish at once (not the boss ones).`
+                + (rm.buff('haloBlock') > 0 ? ` Warding Halo Lv ${rm.buff('haloBlock')}.` : ` Warding Halo (research) raises it to ${lv.blockCount * 2} / ${lv.blockCount * 3}.`),
+            aura > 0
+                ? `Empowering Halo Lv ${aura}: the ${lv.buffTargets} closest towers get +${r1((a.damagePctPerLevel || 0) * aura)}% base damage and +${r1((a.attackSpeedPctPerLevel || 0) * aura)}% base attack speed (before the % buffs; the strongest halo counts). Buffing ${buffed} tower${buffed === 1 ? '' : 's'} now.`
+                : `Empowering Halo (research, Fortification): would buff the ${lv.buffTargets} closest towers.`,
+            rm.buff('haloMend') > 0
+                ? `Mending Halo: every ${lv.mendEvery} activations, +${lv.mendPct}% of the missing wall HP (${unit.haloCount % lv.mendEvery}/${lv.mendEvery}).`
+                : `Mending Halo (research, Fortification): every ${lv.mendEvery} activations, +${lv.mendPct}% of the missing wall HP.`,
+        ];
+        const cost = rm.towerUpgradeCost(unit.save);
+        if (cost) {
+            const n = ConfigMgr.towerLevel(unit.save.id, unit.save.level + 1);
+            lines.push('', `Next level: ${n.attackSpeed}/s, blocks ${n.blockCount * (1 + rm.buff('haloBlock'))} per halo, buffs ${n.buffTargets} towers, mends every ${n.mendEvery} (+${n.mendPct}%)`);
+        }
+        lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');
+        infoWindow(this.root, unit.def.name, lines);
+    }
+
+    /** Build popup (prefabs/popups/Build): one row (prefabs/items/BuildRow) per tower of tower.json. */
+    private openTowerBuildMenu() {
+        const rm = this.rm;
+        const defs: any[] = ConfigMgr.tower.towers;
+        const h = 150 + defs.length * 70;
+        const v = PrefabUi.view('popups/Build', this.root, BuildView);
+        v.resize(PrefabUi.size(v.box!).width, h);
+        v.setTitle(`Build Tower  (${rm.data.towers.length}/${rm.towerLimit})`);
+        const top = h / 2 - 62;
+        const full = rm.data.towers.length >= rm.towerLimit;
+        defs.forEach((def, i) => {
+            const r = PrefabUi.view('items/BuildRow', v.rows!, BuildRowView);
+            r.node.setPosition(0, top - 30 - i * 70, 0);
+            // Icon: the level 1 base of the tower (64 x 128), kept in proportion.
+            const frames = Assets.frames(def.base.path, def.base.cellW, def.base.cellH);
+            if (frames.length > 0) {
+                r.icon!.spriteFrame = frames[0];
+                r.icon!.node.getComponent(UITransform)!.setContentSize(28, 56);
+            }
+            const lock = rm.towerBuildLock(def.id);
+            r.title!.string = lock ? `${def.name}  -  ${lock}` : def.name;
+            costRow(r.cost, def.buildCost, 0, 0, { size: 18, fontSize: 13 });
+            const btn = new PrefabButton(r.buildButton, () => { v.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); });
+            if (lock) btn.setText('Locked');
+            btn.setEnabled(!lock && !full && rm.canAfford(def.buildCost));
+        });
+        new PrefabButton(v.closeButton, () => v.close());
+    }
+
     // ------------------------------------------------------------------ placement
     private startPlacing(id: string, uid: number) {
         if (!this.rm.isPreparation) return;
         if (!uid) {
             if (this.rm.data.towers.length >= this.rm.towerLimit) { toast(this.root, `Tower limit reached (${this.rm.towerLimit}). Upgrade the Base`); return; }
+            const lock = this.rm.towerBuildLock(id);
+            if (lock) { toast(this.root, lock); return; }
             if (!this.rm.canAfford(ConfigMgr.towerDef(id).buildCost)) { toast(this.root, 'Not enough resources'); return; }
         }
         this.placing = { id, uid };
@@ -342,7 +409,11 @@ export class OutCastleScreen implements CombatEvents {
         this.startBtn.setText('Start Wave ' + rm.data.currentWave);
         const showBuild = prep && !this.placing;
         this.buildBar.active = showBuild;
-        for (const b of this.buildBtns) b.btn.setEnabled(rm.canAfford(ConfigMgr.towerDef(b.id).buildCost) && rm.data.towers.length < rm.towerLimit);
+        if (this.buildBtn) this.buildBtn.setEnabled(rm.data.towers.length < rm.towerLimit);
+        if (this.buildCount) {
+            this.buildCount.destroyAllChildren();
+            text(this.buildCount, `${rm.data.towers.length} / ${rm.towerLimit} towers`, 12, 0, 0, { bold: true });
+        }
         this.topBar.refresh();
         if (prep) this.waveInfo.string = 'Next: ' + WaveMgr.summary(rm.data.currentWave);
     }

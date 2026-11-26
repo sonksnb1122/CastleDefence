@@ -1,0 +1,11 @@
+{
+ "image": "sprites/atlas/halo",
+ "regions": {
+  "sprites/towers/halo_ring": [
+   0,
+   0,
+   256,
+   256
+  ]
+ }
+}

@@ -3,6 +3,8 @@ Pack sprite sheets into atlas textures so they load as one file and draw in a fe
 
   combat:   the combat sheets (enemies, towers, projectiles, impacts, status icons). Sources live in
             art/combat/<enemies|towers|status> at the project root and keep the key "sprites/<folder>/<name>".
+  halo:     the Halo Spire rings (art/halo, big mostly empty cells): their own atlas keeps the combat atlas
+            at 4096 x 1024. Keys "sprites/towers/<name>".
   boss:     the boss sheets (body animations, spell effects, shield). Sources live in art/boss/<boss>/
             at the project root and keep the key "sprites/bosses/<name>". Full color (the shield has soft alpha).
   research: the research tree icons. Their sources live OUTSIDE assets/resources (art/research at the
@@ -10,7 +12,7 @@ Pack sprite sheets into atlas textures so they load as one file and draw in a fe
             is reduced to 256 colors and drawn with smooth filtering.
 
 Usage (from the project root):
-    python tools/atlas/pack_atlas.py assets/resources [combat|boss|research|all]   (default: all)
+    python tools/atlas/pack_atlas.py assets/resources [combat|halo|boss|research|all]   (default: all)
 
 Writes assets/resources/sprites/atlas/<name>.png and <name>.json:
     { "image": "sprites/atlas/<name>", "regions": { "sprites/enemies/x_move": [x, y, w, h], ... } }
@@ -34,6 +36,12 @@ def combat(res):
                 items.append(('sprites/' + folder + '/' + f[:-4], Image.open(os.path.join(d, f)).convert('RGBA')))
     items.append(('white', Image.new('RGBA', (WHITE, WHITE), (255, 255, 255, 255))))
     pack(res, 'combat', items)
+
+def halo(res):
+    d = os.path.join(res, '..', '..', 'art', 'halo')
+    items = [('sprites/towers/' + f[:-4], Image.open(os.path.join(d, f)).convert('RGBA'))
+             for f in sorted(os.listdir(d)) if f.endswith('.png')]
+    pack(res, 'halo', items)
 
 def boss(res):
     # Sources: <project>/art/boss/<boss>/*.png, served under the path "sprites/bosses/<name>".
@@ -92,5 +100,6 @@ if __name__ == '__main__':
     res = sys.argv[1] if len(sys.argv) > 1 else 'assets/resources'
     which = sys.argv[2] if len(sys.argv) > 2 else 'all'
     if which in ('combat', 'all'): combat(res)
+    if which in ('halo', 'all'): halo(res)
     if which in ('boss', 'all'): boss(res)
     if which in ('research', 'all'): research(res)

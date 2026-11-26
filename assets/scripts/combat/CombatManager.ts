@@ -1,4 +1,4 @@
-import { Node, Graphics, UIOpacity, UITransform, isValid, Color } from 'cc';
+import { Node, Graphics, UIOpacity, UITransform, isValid, Color, Sprite } from 'cc';
 import { Assets } from '../core/Assets';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { Display } from '../core/Display';
@@ -26,6 +26,8 @@ export interface CombatEvents {
 }
 
 const MAX_FLOAT_TEXTS = 70;
+/** Halo Spire: half width of the band in which the ring touches a projectile (line + projectile size). */
+const HALO_EDGE = 10;
 /** Damage texts on one enemy are stacked in rows above its head (newest at the bottom). */
 const TEXT_ROWS = 3;
 const TEXT_ROW_H = 19;
@@ -84,7 +86,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     private groundFxLayer: Node;
     private textPool: CombatText[] = [];
     /** Projectiles of ranged enemies flying to the wall (their nodes come from the impact fx pool). */
-    private enemyShots: Array<{ f: Fx; x: number; y: number; tx: number; tipX: number; speed: number; damage: number; type: string; impact: any }> = [];
+    private enemyShots: Array<{ f: Fx; x: number; y: number; tx: number; tipX: number; speed: number; damage: number; type: string; impact: any; boss: boolean }> = [];
     private sortTimer = 0;
     private gameOver = false;
     private rm = ResourceMgr.inst;
@@ -176,7 +178,9 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         }
 
         const host = this.active ? this : null;
+        this.assignHalos();
         for (const t of this.towers) t.update(dt, host);
+        this.updateHalos(dt);
 
         if (this.active) {
             if (this.lastStandTime > 0) this.lastStandTime -= dt;
@@ -233,6 +237,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ground, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
         for (const sh of this.enemyShots) all.push(sh.f.node);
         this.enemyShots.length = 0;
+        for (const h of this.halos) all.push(h.f.node);
+        this.halos.length = 0;
         this.summons.length = 0;
         for (const t of this.floats.concat(this.textPool)) all.push(t.node);
         for (const n of all) if (isValid(n)) n.destroy();
@@ -1077,8 +1083,130 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         const x = e.x + (pc.offsetX || 0) * e.scale, y = e.y + (pc.offsetY || 0) * e.scale;
         f.node.setPosition(x, y, 0);
         f.anim!.play(Assets.frames(pc.path, pc.cellW, pc.cellH).slice(0, pc.frames || 99), pc.frameTime || 0.06, true);
-        this.enemyShots.push({ f, x, y, tx: this.wallRightX + 6, tipX: pc.tipX || 0, speed: pc.speed || 300, damage: e.wallDamage(), type: e.def.damageType, impact: rg.impact });
+        this.enemyShots.push({ f, x, y, tx: this.wallRightX + 6, tipX: pc.tipX || 0, speed: pc.speed || 300, damage: e.wallDamage(), type: e.def.damageType, impact: rg.impact, boss: e.boss });
         if (!this.demo) G.main.playSfx('shoot_' + e.def.id, e.def.sfx && e.def.sfx.shoot);
+    }
+
+    // ------------------------------------------------------------------ Halo Spire
+    /** Halos in flight: ring sprite, centre, radius from r0 to r1 over `dur` s, ring radius now / last frame. */
+    private halos: Array<{ f: Fx; x: number; y: number; t: number; dur: number; r0: number; r1: number; k: number; alpha: number; r: number; prev: number; left: number }> = [];
+
+    haloActive(): boolean { return this.active && this.enemies.some(e => e.alive); }
+
+    /**
+     * A Halo Spire activates: one thin ring grows from just outside the tower ("startRadius") to the halo
+     * radius (the level's fixed "attackRange") in "growTime" s and fades out. Every activation counts for the
+     * wall mending (research "Mending Halo"): every "mendEvery" activations it restores "mendPct" % of the
+     * missing wall HP. Several spires mend one after the other (each one from the wall HP left by the previous one).
+     */
+    emitHalo(t: TowerUnit) {
+        const h = t.lv.sprite.halo;
+        if (h) {
+            const size = h.size || 256;
+            const frames = Assets.frames(h.path, size, size).slice(0, 1);
+            const f = this.takeFx('impact');
+            f.node.getComponent(UITransform)!.setAnchorPoint(0.5, 0.5);
+            f.node.setPosition(t.cx, t.cy, 0);
+            f.node.active = frames.length > 0 && Display.effects;
+            f.anim!.play(frames, 999, false);
+            const r1 = t.stats().range;
+            this.halos.push({
+                f, x: t.cx, y: t.cy, t: 0, dur: Math.max(0.05, h.growTime || 0.9),
+                r0: Math.min(r1, h.startRadius || 0), r1, k: size / 2 / (h.ringRadius || size / 2),
+                alpha: h.opacity === undefined ? 255 : h.opacity, r: 0, prev: 0, left: this.haloBlocks(t),
+            });
+            const nh = this.halos[this.halos.length - 1];
+            this.placeHalo(nh);
+            nh.prev = nh.r;
+        }
+        if (this.demo) return;
+        t.haloCount++;
+        const every = t.lv.mendEvery || 0;
+        if (every > 0 && this.buff('haloMend') > 0 && t.haloCount % every === 0) {
+            const max = this.rm.wallMaxHp();
+            const lost = max - this.rm.data.wallHp;
+            const heal = lost * (t.lv.mendPct || 0) / 100;
+            if (heal > 0) {
+                this.rm.data.wallHp = Math.min(max, this.rm.data.wallHp + heal);
+                this.rm.notify();
+                this.float('+' + Math.max(1, Math.round(heal)), this.wallRightX + 6, t.cy, '#6ad66a', 16, true);
+            }
+        }
+    }
+
+    /** Ring size and fade for its time: grows fast then slower (ease out), fades in quickly and out at the end. */
+    private placeHalo(h: { f: Fx; t: number; dur: number; r0: number; r1: number; k: number; alpha: number; r: number; prev: number; left: number }) {
+        const p = Math.min(1, h.t / h.dur);
+        const r = h.r0 + (h.r1 - h.r0) * (1 - (1 - p) * (1 - p));
+        h.r = r;
+        const d = 2 * r * h.k;
+        h.f.node.getComponent(UITransform)!.setContentSize(d, d);
+        const fade = Math.min(1, p / 0.12, (1 - p) / 0.35);
+        const sp = h.f.node.getComponent(Sprite);
+        // A halo that has blocked all it can goes on, dimmed.
+        if (sp) sp.color = new Color(255, 255, 255, Math.round(h.alpha * Math.max(0, fade) * (h.left > 0 ? 1 : 0.35)));
+    }
+
+    /** Projectiles one halo can block: "blockCount" of the level x (1 + Warding Halo level). */
+    haloBlocks(t: TowerUnit): number {
+        return (t.lv.blockCount || 1) * (1 + (this.demo ? 0 : this.buff('haloBlock')));
+    }
+
+    /**
+     * Halo rings: an enemy projectile the ring touches vanishes, i.e. one in the band the ring crossed this frame
+     * (from its last radius to the new one, plus HALO_EDGE px on each side for the line and the projectile).
+     * Projectiles inside the ring, or arriving after it passed, keep flying. Each halo blocks at most
+     * haloBlocks() projectiles; boss projectiles are never blocked.
+     */
+    private updateHalos(dt: number) {
+        for (let i = this.halos.length - 1; i >= 0; i--) {
+            const h = this.halos[i];
+            h.t += dt;
+            h.prev = h.r;
+            this.placeHalo(h);
+            const lo = Math.max(0, h.prev - HALO_EDGE), hi = h.r + HALO_EDGE;
+            for (let j = this.enemyShots.length - 1; j >= 0 && h.left > 0; j--) {
+                const s = this.enemyShots[j];
+                if (s.boss) continue;
+                const tipX = s.x + s.tipX;
+                const d2 = (tipX - h.x) * (tipX - h.x) + (s.y - h.y) * (s.y - h.y);
+                if (d2 < lo * lo || d2 > hi * hi) continue;
+                this.enemyShots.splice(j, 1);
+                h.left--;
+                s.f.node.active = false;
+                this.fxPool.impact.push(s.f);
+                if (!this.demo) this.stats.trigger('halo_block', 'Halo: enemy projectiles blocked', 'halo');
+            }
+            if (h.t < h.dur) continue;
+            this.halos.splice(i, 1);
+            h.f.node.active = false;
+            const sp = h.f.node.getComponent(Sprite);
+            if (sp) sp.color = Color.WHITE;
+            this.fxPool.impact.push(h.f);
+        }
+    }
+
+    /**
+     * Halo Spire buffs (research "Empowering Halo", "haloAura" levels): each spire buffs its "buffTargets"
+     * closest other towers (not spires) with "aura" % of their base damage / attack speed per level.
+     * A tower buffed by several spires keeps the strongest.
+     */
+    assignHalos() {
+        for (const t of this.towers) { t.halo.damagePct = 0; t.halo.attackSpeedPct = 0; t.halo.from = 0; }
+        const level = this.buff('haloAura');
+        if (level <= 0) return;
+        const others = this.towers.filter(t => !t.isHalo);
+        for (const h of this.towers) {
+            if (!h.isHalo) continue;
+            const a = h.def.aura || {};
+            const dmg = (a.damagePctPerLevel || 0) * level, spd = (a.attackSpeedPctPerLevel || 0) * level;
+            const near = others.slice().sort((p, q) =>
+                ((p.save.x - h.save.x) ** 2 + (p.save.y - h.save.y) ** 2) - ((q.save.x - h.save.x) ** 2 + (q.save.y - h.save.y) ** 2));
+            for (const t of near.slice(0, h.lv.buffTargets || 0)) {
+                if (dmg + spd <= t.halo.damagePct + t.halo.attackSpeedPct) continue;
+                t.halo.damagePct = dmg; t.halo.attackSpeedPct = spd; t.halo.from = h.uid;
+            }
+        }
     }
 
     // ------------------------------------------------------------------ boss spells

@@ -33,11 +33,21 @@ export class TowerService {
         return null;
     }
 
+    /** A tower that needs research first (tower.json "unlockKey" / "unlockTech"): why it cannot be built yet. */
+    buildLock(id: string): string | null {
+        const def = ConfigMgr.towerDef(id);
+        if (!def || !def.unlockKey || this.rm.buff(def.unlockKey) > 0) return null;
+        const t = def.unlockTech ? ConfigMgr.techDef(def.unlockTech) : null;
+        return `Research "${t ? t.name : def.name}" first`;
+    }
+
     build(id: string, x: number, y: number): string | null {
         const rm = this.rm;
         const def = ConfigMgr.towerDef(id);
         if (!rm.isPreparation) return 'Cannot build during combat';
         if (!def) return 'Unknown tower';
+        const lock = this.buildLock(id);
+        if (lock) return lock;
         if (this.list.length >= this.limit) return `Tower limit reached (${this.limit}). Upgrade the Base`;
         if (!this.canPlace(x, y)) return 'Invalid position';
         if (!rm.canAfford(def.buildCost)) return 'Not enough resources';
