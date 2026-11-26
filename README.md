@@ -116,20 +116,28 @@ Every tower has three special effects. An effect does nothing until its **Unlock
 researched Crystal reaches 100%.
 *Arcane Mastery* (and hero effect-chance buffs) add their points on top of every unlocked effect, above the 50%
 limit: with +25% every researched effect reaches 75% (100% at most).
-The tower's *Info* window lists its three effects with their current chance and what they do
-(the texts are the `"description"` fields of `effects.json`).
 
-| Tower | Effect | What it does |
-|---|---|---|
-| Crossbow | Piercing Bolt | The bolt goes on to hit 2 more enemies nearby. |
-| Crossbow | Bleeding Bolt | Bleed: 20% of the hit as physical damage every second for 4 s (stacks 3 times). |
-| Crossbow | Hunter's Mark | The target takes +50% damage from Crossbows for 5 s. |
-| Crystal | Frost Explosion | Every enemy in the explosion is slowed by 35% for 2.5 s. |
-| Crystal | Chain Lightning | Lightning jumps to 3 more enemies for 80% damage. |
-| Crystal | Arcane Vulnerability | Enemies hit take +20% magic damage for 4 s. |
-| Catapult | Shockwave | Enemies hit are stunned for 0.3 s. |
-| Catapult | Heavy Impact | Bonus damage equal to 6% of the target's max HP. |
-| Catapult | Armor Break | Enemies hit lose 20 defense for 4 s. |
+**Effect level and Mastery.** The levels of the two rate technologies are also the effect's **level (1-10)**:
+every level adds flat damage or makes the debuff stronger. The damage parts based on HP (max HP, current HP),
+longer debuffs and more stacks come from the **Mastery** technology (tier 3, 3 levels, under the second rate
+node); Mastery 3 gives the full effect. Flat damage is multiplied by the tower level (x1 / x1.5 / x2), goes
+through defense and never crits; the effect-chance and Bleed damage research apply, the tower damage % does not.
+Numbers: `effects.json` "effectScaling" and the `"scaling"` of each effect.
+The tower's *Info* window lists its three effects with their current chance and what they do at their level.
+
+| Tower | Effect | Level 1 to 10 | Mastery 1 / 2 / 3 |
+|---|---|---|---|
+| Crossbow | Piercing Bolt | 2 more enemies, 20 to 200 damage | 3 enemies, 50% of the hit / 4 enemies, 75% / 100% |
+| Crossbow | Bleeding Bolt | 8 to 80 damage per second per stack, 3 stacks, 3 s | 5 stacks, 4 s / +20% of the hit / bursts at 5 stacks (4% max HP) |
+| Crossbow | Hunter's Mark | +3% to +30% Crossbow damage per stack, 3 stacks, 3 s | 5 stacks, 5 s / +50% per stack / at 5 stacks +1% current HP per hit |
+| Crystal | Frost Explosion | Slow 10% to 25%, 1.5 s | 2 s / 2.5 s / slow 35% |
+| Crystal | Chain Lightning | 2 jumps, 15 to 150 damage | 3 jumps, 40% of the hit / 4 jumps, 60% / 5 jumps, 80% |
+| Crystal | Arcane Vulnerability | +1.5% to +15% magic damage per stack, 3 stacks, 3 s | 4 stacks, 4 s / 5 stacks / +30% per stack |
+| Catapult | Shockwave | 15 to 150 damage, 0.1 s stun | 0.3 s stun / 2% max HP when immune to stun / 4% |
+| Catapult | Heavy Impact | +30 to +300 damage | 2% / 4% / 6% max HP (when bigger than the flat damage) |
+| Catapult | Armor Break | -2 to -12 defense, 2 s | 3 s / 4 s / -20 defense |
+
+Where a Mastery level gives a share of the hit, the effect uses that share or the flat damage, whichever is bigger.
 
 ---
 
@@ -284,7 +292,7 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 | Offense | Flat bonuses: +2 damage, +0.01 attacks/s, +4 px range (10 levels each); Armor / Spell Piercing | Damage %, Attack speed %, Range %, Crit rate, Explosion radius | Aerodynamics, Smart Targeting, Crit damage |
 | Economy | +5 food / material / gold per building per wave, +1 gold per kill (4 levels each) | Food / material / gold production %, gold from kills % | One more % node for each, Scholarship (-4% research cost per level) |
 | Fortification | +100 wall HP per level (5 levels) | Wall HP %, Wall defense (half levels) | Self-Mending Stone (+2% max HP back after each wave), Masonry Guild (-8% repair cost) |
-| Tower Effects | - | Unlock each of the 9 effects, then its first 5 rate levels | 5 more rate levels per effect, Arcane Mastery |
+| Tower Effects | - | Unlock each of the 9 effects, then its first 5 rate levels | 5 more rate levels per effect, then its Mastery (3 levels); Arcane Mastery |
 | Heroes | - | Hero Scholarship (heroes can learn skills) | Ascension (hero promotion), Battle Tactics, Twin Cast, Arcane Amplifier |
 | Curses | - | Weakening Hex, Withering Curse, Slow / Stun duration, Bleed / Burn damage (half levels) | (full levels) |
 
@@ -295,7 +303,8 @@ Flat bonuses are added to the base value before the % bonuses.
 
 **Old saves** (before the tree) keep their technology levels: every node with a level gets its parents at max
 level for free, effect research is split into the Unlock node + the two rate nodes, and *Hero Scholarship* is
-given when the Research Lab is Lv 2 or more.
+given when the Research Lab is Lv 2 or more. Saves made before the Mastery technologies get Mastery 3 for every
+effect whose two rate technologies are at max level, so those effects keep their full strength.
 
 ---
 
@@ -360,8 +369,40 @@ passive). Learned skills are listed on the hero card.
 learned an active skill. Tap a card to highlight it and read its skill on the right side of the screen;
 drag it up out of the card bar to cast the skill. For an area skill the card goes back to its place and the
 player taps the enemy path to choose where it lands (tap the card again to cancel).
-An active hero skill can be used **once every 5 waves**. Passive skills (`skills.json` "passives") give
-their buffs permanently, like hero buffs (the passive list is a placeholder for now).
+An active hero skill can be used **once every 5 waves**.
+
+**Passive skills** (`skills.json` "passives", 24) work while a hero has learned them. Each skill can only be bought
+once per game, so each passive is owned by one hero at most. The books of the effect passives are only sold once
+that effect is unlocked. Numbers are in each passive's `"params"`.
+
+| Effect | Passive | What it does |
+|---|---|---|
+| Piercing Bolt | Skewer | Pierced enemies can also get the Crossbow's Bleed and Hunter's Mark. |
+| Piercing Bolt | Long Shot | 2 more enemies, jump range 140 to 200. |
+| Bleeding Bolt | Hemorrhage | At full Bleed stacks, enemies nearby (140) get 2 stacks. With Mastery 3 Bleed also deals 0.1% current HP per second per stack (before: +50% Bleed damage). |
+| Bleeding Bolt | Deep Cuts | With Mastery 3 the burst comes 1 stack earlier and deals 6% max HP (before: +50% Bleed damage). |
+| Hunter's Mark | Prey | When an enemy with full mark stacks dies, 3 stacks move to the closest enemy (200). |
+| Hunter's Mark | Open Season | The mark also counts for every other tower, at 1/3 of its value. |
+| Frost Explosion | Deep Freeze | A slowed enemy hit by Frost 2 more times is frozen (stunned) for 1 s. |
+| Frost Explosion | Bitter Cold | Slow +15%, slowed enemies take +15% damage from Crystals. |
+| Chain Lightning | Conductor | Jumps to slowed enemies first and stuns them for 0.3 s. |
+| Chain Lightning | Overload | Every jump deals 10% more than the one before. |
+| Arcane Vulnerability | Arcane Rupture | At full stacks the enemy explodes (radius 100): 4% max HP with Mastery 3, flat damage before; the stacks are removed. |
+| Arcane Vulnerability | Spell Weave | Arcane stacks raise hero skill damage by half of their value. |
+| Shockwave | Aftershock | A stunned enemy takes +30% damage until 1 s after the stun. |
+| Shockwave | Tremor | Stun +0.2 s, stun-immune hit 4% to 6% max HP (before Mastery 2: +50% Shockwave damage). |
+| Heavy Impact | Crusher | x10/6 damage on enemies with Armor Break or stunned. |
+| Heavy Impact | Giant Slayer | +50% on bosses. |
+| Armor Break | Sunder | Stacks up to 3 times. |
+| Armor Break | Exposed | Enemies with Armor Break take +25% critical damage. |
+| - | Last Stand | The wall stays at 1 HP for 20 s instead of falling. Recharges in 15 waves. |
+| - | Bulwark | Below 50% HP the wall defense is tripled (max 90) for 30 s. Recharges in 10 waves. |
+| - | Spoils of War | After a boss is defeated, the next building production is x10. |
+| - | Time Warp | After every wave, a random recharging hero skill needs 1 wave less. |
+| - | Treasure Hunter | +1 gold per normal kill; +1 Energy Core and +8888 gold per boss. |
+| - | Hawk's Gaze | +35% critical chance for every tower. |
+
+The skill card of a passive that recharges shows how many waves are left.
 
 **Special research** (Research Lab Lv 3, paid with Energy Cores as well):
 

@@ -96,7 +96,7 @@
     {
       "id": "r_damage_inf",
       "name": "Masterwork Ammunition",
-      "label": "DMG∞",
+      "label": "DMG\u221e",
       "description": "+5% tower damage per level. Endless.",
       "branch": "offense",
       "tier": 4,
@@ -610,7 +610,7 @@
     {
       "id": "r_wallhp_inf",
       "name": "Living Stone",
-      "label": "HP∞",
+      "label": "HP\u221e",
       "description": "+5% wall HP per level. Endless.",
       "branch": "wall",
       "tier": 4,
@@ -706,7 +706,7 @@
       "id": "r_fx_piercing_bolt",
       "name": "Piercing Bolt",
       "label": "PIERCE%",
-      "description": "Crossbow: +5% chance, bolt pierces up to 4 more enemies (max 25% here)",
+      "description": "Crossbow: +5% Piercing Bolt chance and +20 pierce damage per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_piercing_bolt",
@@ -725,7 +725,7 @@
       "id": "r_fx_piercing_bolt_2",
       "name": "Piercing Bolt II",
       "label": "PIERCE2",
-      "description": "Crossbow: +5% Piercing Bolt chance per level (max 50% in total)",
+      "description": "Crossbow: +5% Piercing Bolt chance and +20 pierce damage per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_piercing_bolt",
@@ -739,6 +739,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_piercing_bolt_3"
+    },
+    {
+      "id": "r_fxm_piercing_bolt",
+      "name": "Piercing Bolt Mastery",
+      "label": "PIERCE M",
+      "description": "Crossbow: Piercing Bolt gets stronger. Lv 1: 3 enemies, 50% of the hit. Lv 2: 4 enemies, 75%. Lv 3: 100% of the hit.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_piercing_bolt_2",
+      "buffKey": "effectMastery:piercing_bolt",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 3897,
+        "material": 1992,
+        "food": 1992
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_bleeding_bolt",
@@ -762,7 +780,7 @@
       "id": "r_fx_bleeding_bolt",
       "name": "Bleeding Bolt",
       "label": "BLEED%",
-      "description": "Crossbow: +5% chance to bleed the target (x5 stacks bursts for 4% max HP) (max 25% here)",
+      "description": "Crossbow: +5% Bleeding Bolt chance and +8 bleed damage per second per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_bleeding_bolt",
@@ -781,7 +799,7 @@
       "id": "r_fx_bleeding_bolt_2",
       "name": "Bleeding Bolt II",
       "label": "BLEED2",
-      "description": "Crossbow: +5% Bleeding Bolt chance per level (max 50% in total)",
+      "description": "Crossbow: +5% Bleeding Bolt chance and +8 bleed damage per second per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_bleeding_bolt",
@@ -795,6 +813,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_bleeding_bolt_3"
+    },
+    {
+      "id": "r_fxm_bleeding_bolt",
+      "name": "Bleeding Bolt Mastery",
+      "label": "BLEED M",
+      "description": "Crossbow: Bleeding Bolt gets stronger. Lv 1: 5 stacks, 4 s. Lv 2: +20% of the hit per second. Lv 3: bursts at 5 stacks for 4% max HP.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_bleeding_bolt_2",
+      "buffKey": "effectMastery:bleeding_bolt",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 3897,
+        "material": 1992,
+        "food": 1992
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_hunters_mark",
@@ -818,7 +854,7 @@
       "id": "r_fx_hunters_mark",
       "name": "Hunter's Mark",
       "label": "MARK%",
-      "description": "Crossbow: +5% chance, +50% Crossbow dmg per stack (x5, then +1% current HP per hit) (max 25% here)",
+      "description": "Crossbow: +5% Hunter's Mark chance and +3% Crossbow damage per mark per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_hunters_mark",
@@ -837,7 +873,7 @@
       "id": "r_fx_hunters_mark_2",
       "name": "Hunter's Mark II",
       "label": "MARK2",
-      "description": "Crossbow: +5% Hunter's Mark chance per level (max 50% in total)",
+      "description": "Crossbow: +5% Hunter's Mark chance and +3% Crossbow damage per mark per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_hunters_mark",
@@ -851,6 +887,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_hunters_mark_3"
+    },
+    {
+      "id": "r_fxm_hunters_mark",
+      "name": "Hunter's Mark Mastery",
+      "label": "MARK M",
+      "description": "Crossbow: Hunter's Mark gets stronger. Lv 1: 5 stacks, 5 s. Lv 2: +50% per stack. Lv 3: at 5 stacks every Crossbow hit also deals 1% current HP.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_hunters_mark_2",
+      "buffKey": "effectMastery:hunters_mark",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 3897,
+        "material": 1992,
+        "food": 1992
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_frost_explosion",
@@ -874,7 +928,7 @@
       "id": "r_fx_frost_explosion",
       "name": "Frost Explosion",
       "label": "FROST%",
-      "description": "Crystal: +5% chance to slow enemies hit (max 25% here)",
+      "description": "Crystal: +5% Frost Explosion chance and stronger slow (10% to 25%) per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_frost_explosion",
@@ -893,7 +947,7 @@
       "id": "r_fx_frost_explosion_2",
       "name": "Frost Explosion II",
       "label": "FROST2",
-      "description": "Crystal: +5% Frost Explosion chance per level (max 50% in total)",
+      "description": "Crystal: +5% Frost Explosion chance and stronger slow (10% to 25%) per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_frost_explosion",
@@ -907,6 +961,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_frost_explosion_3"
+    },
+    {
+      "id": "r_fxm_frost_explosion",
+      "name": "Frost Explosion Mastery",
+      "label": "FROST M",
+      "description": "Crystal: Frost Explosion gets stronger. Lv 1: slow lasts 2 s. Lv 2: 2.5 s. Lv 3: slow 35%.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_frost_explosion_2",
+      "buffKey": "effectMastery:frost_explosion",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 17322,
+        "material": 8661,
+        "food": 8661
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_chain_lightning",
@@ -930,7 +1002,7 @@
       "id": "r_fx_chain_lightning",
       "name": "Chain Lightning",
       "label": "CHAIN%",
-      "description": "Crystal: +5% chance, lightning jumps to up to 5 enemies (max 25% here)",
+      "description": "Crystal: +5% Chain Lightning chance and +15 lightning damage per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_chain_lightning",
@@ -949,7 +1021,7 @@
       "id": "r_fx_chain_lightning_2",
       "name": "Chain Lightning II",
       "label": "CHAIN2",
-      "description": "Crystal: +5% Chain Lightning chance per level (max 50% in total)",
+      "description": "Crystal: +5% Chain Lightning chance and +15 lightning damage per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_chain_lightning",
@@ -963,6 +1035,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_chain_lightning_3"
+    },
+    {
+      "id": "r_fxm_chain_lightning",
+      "name": "Chain Lightning Mastery",
+      "label": "CHAIN M",
+      "description": "Crystal: Chain Lightning gets stronger. Lv 1: 3 jumps, 40% of the hit. Lv 2: 4 jumps, 60%. Lv 3: 5 jumps, 80%.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_chain_lightning_2",
+      "buffKey": "effectMastery:chain_lightning",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 9699,
+        "material": 4851,
+        "food": 4851
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_arcane_vulnerability",
@@ -986,7 +1076,7 @@
       "id": "r_fx_arcane_vulnerability",
       "name": "Arcane Vulnerability",
       "label": "ARCANE%",
-      "description": "Crystal: +5% chance, enemies take +30% magic dmg per stack, x5 (max 25% here)",
+      "description": "Crystal: +5% Arcane Vulnerability chance and +1.5% magic damage per stack per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_arcane_vulnerability",
@@ -1005,7 +1095,7 @@
       "id": "r_fx_arcane_vulnerability_2",
       "name": "Arcane Vulnerability II",
       "label": "ARCANE2",
-      "description": "Crystal: +5% Arcane Vulnerability chance per level (max 50% in total)",
+      "description": "Crystal: +5% Arcane Vulnerability chance and +1.5% magic damage per stack per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_arcane_vulnerability",
@@ -1019,6 +1109,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_arcane_vulnerability_3"
+    },
+    {
+      "id": "r_fxm_arcane_vulnerability",
+      "name": "Arcane Vulnerability Mastery",
+      "label": "ARCANE M",
+      "description": "Crystal: Arcane Vulnerability gets stronger. Lv 1: 4 stacks, 4 s. Lv 2: 5 stacks. Lv 3: +30% per stack.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_arcane_vulnerability_2",
+      "buffKey": "effectMastery:arcane_vulnerability",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 9699,
+        "material": 4851,
+        "food": 4851
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_shockwave",
@@ -1042,7 +1150,7 @@
       "id": "r_fx_shockwave",
       "name": "Shockwave",
       "label": "SHOCK%",
-      "description": "Catapult: +5% chance stun; immune: 4% max HP (max 25% here)",
+      "description": "Catapult: +5% Shockwave chance and +15 shockwave damage per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_shockwave",
@@ -1061,7 +1169,7 @@
       "id": "r_fx_shockwave_2",
       "name": "Shockwave II",
       "label": "SHOCK2",
-      "description": "Catapult: +5% Shockwave chance per level (max 50% in total)",
+      "description": "Catapult: +5% Shockwave chance and +15 shockwave damage per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_shockwave",
@@ -1075,6 +1183,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_shockwave_3"
+    },
+    {
+      "id": "r_fxm_shockwave",
+      "name": "Shockwave Mastery",
+      "label": "SHOCK M",
+      "description": "Catapult: Shockwave gets stronger. Lv 1: stun 0.3 s. Lv 2: an enemy immune to stun loses 2% max HP. Lv 3: 4% max HP.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_shockwave_2",
+      "buffKey": "effectMastery:shockwave",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 25116,
+        "material": 11691,
+        "food": 11691
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_heavy_impact",
@@ -1098,7 +1224,7 @@
       "id": "r_fx_heavy_impact",
       "name": "Heavy Impact",
       "label": "HEAVY%",
-      "description": "Catapult: +5% chance, +6% max HP bonus damage (max 25% here)",
+      "description": "Catapult: +5% Heavy Impact chance and +30 bonus damage per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_heavy_impact",
@@ -1117,7 +1243,7 @@
       "id": "r_fx_heavy_impact_2",
       "name": "Heavy Impact II",
       "label": "HEAVY2",
-      "description": "Catapult: +5% Heavy Impact chance per level (max 50% in total)",
+      "description": "Catapult: +5% Heavy Impact chance and +30 bonus damage per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_heavy_impact",
@@ -1131,6 +1257,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_heavy_impact_3"
+    },
+    {
+      "id": "r_fxm_heavy_impact",
+      "name": "Heavy Impact Mastery",
+      "label": "HEAVY M",
+      "description": "Catapult: Heavy Impact gets stronger. Lv 1: 2% max HP. Lv 2: 4%. Lv 3: 6% (when it beats the flat damage).",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_heavy_impact_2",
+      "buffKey": "effectMastery:heavy_impact",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 9699,
+        "material": 4851,
+        "food": 4851
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_fxu_armor_break",
@@ -1154,7 +1298,7 @@
       "id": "r_fx_armor_break",
       "name": "Armor Break",
       "label": "BREAK%",
-      "description": "Catapult: +5% chance, enemies lose 20 defense (max 25% here)",
+      "description": "Catapult: +5% Armor Break chance and more defense removed (2 to 12) per level (max 25% here)",
       "branch": "effects",
       "tier": 2,
       "parent": "r_fxu_armor_break",
@@ -1173,7 +1317,7 @@
       "id": "r_fx_armor_break_2",
       "name": "Armor Break II",
       "label": "BREAK2",
-      "description": "Catapult: +5% Armor Break chance per level (max 50% in total)",
+      "description": "Catapult: +5% Armor Break chance and more defense removed (2 to 12) per level (max 50% in total)",
       "branch": "effects",
       "tier": 3,
       "parent": "r_fx_armor_break",
@@ -1187,6 +1331,24 @@
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_armor_break_3"
+    },
+    {
+      "id": "r_fxm_armor_break",
+      "name": "Armor Break Mastery",
+      "label": "BREAK M",
+      "description": "Catapult: Armor Break gets stronger. Lv 1: lasts 3 s. Lv 2: 4 s. Lv 3: -20 defense.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fx_armor_break_2",
+      "buffKey": "effectMastery:armor_break",
+      "valuePerLevel": 1,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 17322,
+        "material": 8661,
+        "food": 8661
+      },
+      "costGrowth": 2
     },
     {
       "id": "r_effect",

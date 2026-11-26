@@ -31,9 +31,16 @@ export class BuffService {
         const d = this.rm.data;
         for (const t of ConfigMgr.research.techs) {
             const lv = d.research[t.id] || 0;
-            if (lv > 0) add({ key: t.buffKey, value: t.valuePerLevel * lv, towerId: t.towerId });
+            if (lv <= 0) continue;
+            add({ key: t.buffKey, value: t.valuePerLevel * lv, towerId: t.towerId });
+            // "lvl:effect:<id>": levels of the chance technologies = the effect's level (EffectScaling).
+            if (typeof t.buffKey === 'string' && t.buffKey.indexOf('effect:') === 0) out['lvl:' + t.buffKey] = (out['lvl:' + t.buffKey] || 0) + lv;
         }
-        for (const id of d.heroes) for (const e of this.heroBuffs(id)) add(e);
+        for (const id of d.heroes) {
+            for (const e of this.heroBuffs(id)) add(e);
+            // "passive:<id>" = 1 for every passive skill a hero learned (rules in CombatManager / EffectScaling).
+            for (const sid of this.rm.skills.learned(id)) if (ConfigMgr.passiveDef(sid)) out['passive:' + sid] = 1;
+        }
         return out;
     }
 

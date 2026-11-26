@@ -8,7 +8,7 @@ export const RESOURCE_KEYS = ['food', 'material', 'gold', 'core'];
 /** Resources that the Market trades (Energy Core is not traded). */
 export const TRADE_KEYS = ['food', 'material', 'gold'];
 /** 5: research tree (old saves get their technologies moved into the tree, see SaveCodec). */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export interface BuffEntry { key: string; value: number; towerId?: string; }
 
@@ -50,6 +50,10 @@ export interface SaveData {
     boughtBooks?: { [skillId: string]: number };
     /** Stars added to each hero by promotions (research "Ascension"). */
     heroStars?: { [heroId: string]: number };
+    /** Passives that recharge (Last Stand, Bulwark): wave from which each one works again. */
+    passiveReady?: { [passiveId: string]: number };
+    /** Spoils of War: a boss was defeated, the next building production is multiplied. */
+    spoilsPending?: boolean;
 }
 
 /** Result of one damage calculation (see CombatManager). */

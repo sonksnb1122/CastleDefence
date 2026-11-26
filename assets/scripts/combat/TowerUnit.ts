@@ -1,5 +1,6 @@
 import { Node, Sprite, SpriteFrame, UITransform, Graphics } from 'cc';
 import { Assets } from '../core/Assets';
+import { EffectScaling } from './EffectScaling';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { ShotInfo, TowerSave } from '../core/GameTypes';
 import { ResourceMgr } from '../core/ResourceMgr';
@@ -153,9 +154,23 @@ export class TowerUnit {
         return Math.abs(x - this.save.x) <= 32 * this.scale && y >= this.save.y - 6 && y <= this.save.y + top;
     }
 
+    /** The effect with its numbers for this tower (level, mastery, tower level, passives), see EffectScaling. */
+    resolvedEffect(id: string): any {
+        const def = ConfigMgr.towerEffectDef(id);
+        if (!def) return null;
+        const rm = ResourceMgr.inst;
+        const b = (k: string) => (this.demo ? 0 : rm.buff(k));
+        return EffectScaling.resolve(def, {
+            level: Math.min(EffectScaling.maxLevel, b('lvl:effect:' + id)),
+            mastery: b('effectMastery:' + id),
+            towerLevel: this.save.level,
+            has: (p: string) => b('passive:' + p) > 0,
+        });
+    }
+
     /**
      * The tower's special effects for the info window: chance in % (-1 = not unlocked yet),
-     * with the research bonus and the effect-chance buff, as in combat.
+     * with the research bonus and the effect-chance buff, as in combat, and what it does at its level.
      */
     effectInfo(): Array<{ name: string; description: string; chance: number }> {
         const rm = ResourceMgr.inst;
@@ -169,7 +184,8 @@ export class TowerUnit {
             const base = researched * mul, max = (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul;
             // Same rule as CombatManager.explode: the effect-chance buff adds points above the cap.
             const chance = Math.min(100, Math.min(max, base) + rm.buff('effectChance', this.save.id));
-            out.push({ name: def.name, description: def.description || '', chance: Math.min(100, Math.round(chance)) });
+            const r = this.resolvedEffect(e.id);
+            out.push({ name: def.name, description: r && r.level > 0 ? EffectScaling.describe(r, true) : (def.description || ''), chance: Math.min(100, Math.round(chance)) });
         }
         return out;
     }
@@ -179,15 +195,15 @@ export class TowerUnit {
         const s = this.stats();
         const effects: any[] = [];
         for (const e of (this.lv.effects || [])) {
-            const def = ConfigMgr.towerEffectDef(e.id);
-            if (!def) continue;
             // The "Unlock" technology turns an effect on; its chance comes from the rate technologies
-            // (+5% per level, max 50%) and the effect-chance buff.
+            // (+5% per level, max 50%) and the effect-chance buff; its numbers from EffectScaling.
             if (!this.effectUnlocked(e.id)) continue;
+            const r = this.resolvedEffect(e.id);
+            if (!r) continue;
             const researched = ResourceMgr.inst.buff('effect:' + e.id);
             // effectChanceMul (per tower level, e.g. Crystal Lv 3 x2) multiplies the chance and its cap.
             const mul = this.lv.effectChanceMul || 1;
-            effects.push(Object.assign({}, def, { unlocked: true, chance: researched * mul, maxChance: (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul }));
+            effects.push(Object.assign({}, r, { unlocked: true, chance: researched * mul, maxChance: (ConfigMgr.tower.defaults.maxEffectChance || 50) * mul }));
         }
         return {
             towerUid: this.save.uid, towerId: this.save.id, level: this.save.level,

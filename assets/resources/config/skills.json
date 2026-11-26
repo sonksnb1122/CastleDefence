@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_doc": "Active skills. The skill circle has the diameter of the enemy lane (tower.json battlefield.enemyLaneY); \"areaScale\" is the zone diameter as a share of it. Damage is a share of the max HP of each enemy, \"bossDamageMul\" on bosses. vfx: sheet of cellW x cellH frames (8 per row), \"hitFrame\" = frame when the effect lands; placement: wall | path | area | towers | towerFront | contact; anchorX / anchorY: point of the sheet placed on the target (default 0.5); size: px width of one sprite (area: share of the zone diameter); extra: more sprites at [dx, dy] x zone diameter from the center. Passives (\"passives\"): skills that only give buffs ({key, value} like hero buffs) while the hero has learned them.",
+  "_doc": "Active skills. The skill circle has the diameter of the enemy lane (tower.json battlefield.enemyLaneY); \"areaScale\" is the zone diameter as a share of it. Damage is a share of the max HP of each enemy, \"bossDamageMul\" on bosses. vfx: sheet of cellW x cellH frames (8 per row), \"hitFrame\" = frame when the effect lands; placement: wall | path | area | towers | towerFront | contact; anchorX / anchorY: point of the sheet placed on the target (default 0.5); size: px width of one sprite (area: share of the zone diameter); extra: more sprites at [dx, dy] x zone diameter from the center. Passives (\"passives\"): work while a hero has learned them. \"buffs\": {key, value} like hero buffs; \"params\": numbers of the passive's own rule (see CombatManager / PassiveRules); \"requiresEffect\": the book is only sold once that tower effect is unlocked; \"cooldownWaves\": a passive that triggers, then recharges for that many waves.",
   "bossDamageMul": 0.5,
   "skills": [
     {
@@ -629,35 +629,253 @@
   },
   "passives": [
     {
-      "id": "p_eagle_eye",
-      "name": "Eagle Eye",
-      "description": "Passive: towers get +10% critical chance.",
+      "id": "p_skewer",
+      "name": "Skewer",
+      "description": "Passive: enemies hit by Piercing Bolt can also get the Crossbow's Bleed and Hunter's Mark, like the first target.",
+      "requiresEffect": "piercing_bolt",
+      "buffs": []
+    },
+    {
+      "id": "p_long_shot",
+      "name": "Long Shot",
+      "description": "Passive: Piercing Bolt hits 2 more enemies and jumps farther (200 instead of 140).",
+      "requiresEffect": "piercing_bolt",
+      "buffs": [],
+      "params": {
+        "extraTargets": 2,
+        "range": 200
+      }
+    },
+    {
+      "id": "p_hemorrhage",
+      "name": "Hemorrhage",
+      "description": "Passive: when Bleed reaches its full stacks, enemies nearby get 2 Bleed stacks. With Bleeding Bolt Mastery 3, Bleed also deals 0.1% of the current HP per second per stack (before that: +50% Bleed damage).",
+      "requiresEffect": "bleeding_bolt",
+      "buffs": [],
+      "params": {
+        "spreadStacks": 2,
+        "spreadRange": 140,
+        "currentHpPctPerSec": 0.1,
+        "flatMul": 1.5
+      }
+    },
+    {
+      "id": "p_deep_cuts",
+      "name": "Deep Cuts",
+      "description": "Passive: with Bleeding Bolt Mastery 3, Bleed bursts 1 stack earlier and the burst deals 6% max HP (before that: +50% Bleed damage).",
+      "requiresEffect": "bleeding_bolt",
+      "buffs": [],
+      "params": {
+        "burstMaxHpPct": 6,
+        "flatMul": 1.5
+      }
+    },
+    {
+      "id": "p_prey",
+      "name": "Prey",
+      "description": "Passive: when an enemy with full Hunter's Mark stacks dies, 3 stacks move to the closest enemy.",
+      "requiresEffect": "hunters_mark",
+      "buffs": [],
+      "params": {
+        "stacks": 3,
+        "range": 200
+      }
+    },
+    {
+      "id": "p_open_season",
+      "name": "Open Season",
+      "description": "Passive: Hunter's Mark also makes the enemy take more damage from every other tower, at 1/3 of its value.",
+      "requiresEffect": "hunters_mark",
+      "buffs": [],
+      "params": {
+        "share": 0.333
+      }
+    },
+    {
+      "id": "p_deep_freeze",
+      "name": "Deep Freeze",
+      "description": "Passive: a slowed enemy hit by Frost Explosion 2 more times is frozen (stunned) for 1 s.",
+      "requiresEffect": "frost_explosion",
+      "buffs": [],
+      "params": {
+        "hits": 2,
+        "stun": 1
+      }
+    },
+    {
+      "id": "p_bitter_cold",
+      "name": "Bitter Cold",
+      "description": "Passive: Frost Explosion slows 15% more, and slowed enemies take +15% damage from Crystal towers.",
+      "requiresEffect": "frost_explosion",
+      "buffs": [],
+      "params": {
+        "slow": 15,
+        "crystalDamage": 15
+      }
+    },
+    {
+      "id": "p_conductor",
+      "name": "Conductor",
+      "description": "Passive: Chain Lightning jumps to slowed enemies first and stuns them for 0.3 s.",
+      "requiresEffect": "chain_lightning",
+      "buffs": [],
+      "params": {
+        "stun": 0.3
+      }
+    },
+    {
+      "id": "p_overload",
+      "name": "Overload",
+      "description": "Passive: every Chain Lightning jump deals +10% more than the one before.",
+      "requiresEffect": "chain_lightning",
+      "buffs": [],
+      "params": {
+        "perJump": 10
+      }
+    },
+    {
+      "id": "p_arcane_rupture",
+      "name": "Arcane Rupture",
+      "description": "Passive: at full Arcane Vulnerability stacks the enemy explodes: the stacks are removed and it and the enemies nearby take magic damage (4% max HP with Arcane Vulnerability Mastery 3, flat damage before).",
+      "requiresEffect": "arcane_vulnerability",
+      "buffs": [],
+      "params": {
+        "maxHpPct": 4,
+        "range": 100
+      }
+    },
+    {
+      "id": "p_spell_weave",
+      "name": "Spell Weave",
+      "description": "Passive: Arcane Vulnerability stacks also raise the damage of hero skills by half of their value.",
+      "requiresEffect": "arcane_vulnerability",
+      "buffs": [],
+      "params": {
+        "share": 0.5
+      }
+    },
+    {
+      "id": "p_aftershock",
+      "name": "Aftershock",
+      "description": "Passive: an enemy stunned by Shockwave takes +30% damage until 1 s after the stun.",
+      "requiresEffect": "shockwave",
+      "buffs": [],
+      "params": {
+        "damage": 30,
+        "time": 1
+      }
+    },
+    {
+      "id": "p_tremor",
+      "name": "Tremor",
+      "description": "Passive: Shockwave stuns 0.2 s longer and its stun-immune hit deals 6% max HP instead of 4% (before Mastery 2: +50% Shockwave damage).",
+      "requiresEffect": "shockwave",
+      "buffs": [],
+      "params": {
+        "stun": 0.2,
+        "immuneMul": 1.5,
+        "flatMul": 1.5
+      }
+    },
+    {
+      "id": "p_crusher",
+      "name": "Crusher",
+      "description": "Passive: Heavy Impact deals 10/6 as much to enemies with Armor Break or stunned (6% max HP becomes 10%).",
+      "requiresEffect": "heavy_impact",
+      "buffs": [],
+      "params": {
+        "mul": 1.667
+      }
+    },
+    {
+      "id": "p_giant_slayer",
+      "name": "Giant Slayer",
+      "description": "Passive: Heavy Impact deals +50% to bosses (1/2 of the normal share instead of 1/3).",
+      "requiresEffect": "heavy_impact",
+      "buffs": [],
+      "params": {
+        "bossMul": 1.5
+      }
+    },
+    {
+      "id": "p_sunder",
+      "name": "Sunder",
+      "description": "Passive: Armor Break stacks up to 3 times instead of only refreshing.",
+      "requiresEffect": "armor_break",
+      "buffs": [],
+      "params": {
+        "maxStacks": 3
+      }
+    },
+    {
+      "id": "p_exposed",
+      "name": "Exposed",
+      "description": "Passive: enemies with Armor Break take +25% critical damage.",
+      "requiresEffect": "armor_break",
+      "buffs": [],
+      "params": {
+        "critDamage": 25
+      }
+    },
+    {
+      "id": "p_last_stand",
+      "name": "Last Stand",
+      "description": "Passive: when the wall would fall below 1 HP, it stays at 1 HP for 20 s. Recharges in 15 waves.",
+      "cooldownWaves": 15,
+      "buffs": [],
+      "params": {
+        "time": 20
+      }
+    },
+    {
+      "id": "p_bulwark",
+      "name": "Bulwark",
+      "description": "Passive: when the wall falls below 50% HP, its defense is tripled for 30 s. Recharges in 10 waves.",
+      "cooldownWaves": 10,
+      "buffs": [],
+      "params": {
+        "hpPct": 50,
+        "mul": 3,
+        "time": 30
+      }
+    },
+    {
+      "id": "p_spoils_of_war",
+      "name": "Spoils of War",
+      "description": "Passive: after a boss is defeated, the next building production is 10 times bigger.",
+      "buffs": [],
+      "params": {
+        "mul": 10
+      }
+    },
+    {
+      "id": "p_time_warp",
+      "name": "Time Warp",
+      "description": "Passive: after every wave, a random hero skill that is recharging needs 1 wave less.",
+      "buffs": [],
+      "params": {
+        "waves": 1
+      }
+    },
+    {
+      "id": "p_treasure_hunter",
+      "name": "Treasure Hunter",
+      "description": "Passive: +1 gold for every normal enemy killed; +1 Energy Core and +8888 gold for every boss.",
+      "buffs": [],
+      "params": {
+        "gold": 1,
+        "bossGold": 8888,
+        "bossCore": 1
+      }
+    },
+    {
+      "id": "p_hawks_gaze",
+      "name": "Hawk's Gaze",
+      "description": "Passive: every tower gets +35% critical chance.",
       "buffs": [
         {
           "key": "critRate",
-          "value": 10
-        }
-      ]
-    },
-    {
-      "id": "p_war_chest",
-      "name": "War Chest",
-      "description": "Passive: +30% gold from killed enemies.",
-      "buffs": [
-        {
-          "key": "killGold",
-          "value": 30
-        }
-      ]
-    },
-    {
-      "id": "p_master_gunner",
-      "name": "Master Gunner",
-      "description": "Passive: towers deal +20% damage.",
-      "buffs": [
-        {
-          "key": "damage",
-          "value": 20
+          "value": 35
         }
       ]
     }

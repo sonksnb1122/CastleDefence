@@ -14,6 +14,7 @@ import { ITowerHost, TowerUnit } from './TowerUnit';
 import { SpawnEntry, WaveMgr, WavePlan } from './WaveMgr';
 import { WaveStats } from './WaveStats';
 import { ISkillHost, SkillManager } from './SkillManager';
+import { passiveParams } from './EffectScaling';
 
 /** A short visual effect. `kind` says which pool it goes back to. */
 interface Fx { kind: 'impact' | 'ground' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; }
@@ -57,6 +58,9 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     skills: SkillManager;
     /** Hits on the wall still blocked by Barrier Block (this wave only). */
     barrierCharges = 0;
+    /** Seconds left of the passives Last Stand (wall kept at 1 HP) and Bulwark (wall defense multiplied). */
+    lastStandTime = 0;
+    bulwarkTime = 0;
 
     // Who is dealing the damage that applyDamage is about to apply (wave statistics).
     private ctxTower = '';
@@ -90,6 +94,11 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
 
     /** Research + hero buff; always 0 in demo mode so the menu never reads player data. */
     private buff(key: string, towerId?: string): number { return this.demo ? 0 : this.rm.buff(key, towerId); }
+    /** A hero owns this passive skill (never in demo mode). */
+    private hasPassive(id: string): boolean { return this.buff('passive:' + id) > 0; }
+    /** Owned and not recharging (passives with "cooldownWaves"). */
+    private passiveReady(id: string): boolean { return this.hasPassive(id) && this.rm.skills.passiveReady(id); }
+    private startPassiveCooldown(id: string) { this.rm.skills.startPassiveCooldown(id); }
 
     constructor(private enemyLayer: Node, private fxLayer: Node, private textLayer: Node, private events: CombatEvents) {
         const wall = ConfigMgr.tower.battlefield.wall;
@@ -114,6 +123,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         this.gameOver = false;
         this.active = true;
         this.barrierCharges = 0;
+        this.lastStandTime = 0;
+        this.bulwarkTime = 0;
         this.stats.reset(wave, this.towers.map(t => ({ id: t.save.id, name: (t.def && t.def.name) || t.save.id })));
     }
 
@@ -166,6 +177,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         for (const t of this.towers) t.update(dt, host);
 
         if (this.active) {
+            if (this.lastStandTime > 0) this.lastStandTime -= dt;
+            if (this.bulwarkTime > 0) this.bulwarkTime -= dt;
             this.elapsed += dt;
             this.stats.time += dt;
             while (this.queue.length > 0 && this.queue[0].time <= this.elapsed) this.spawn(this.queue.shift()!);
@@ -442,21 +455,28 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         if (Math.random() * 100 < e.abilityValue('dodge')) return { amount: 0, crit: false, dodged: true };
         const base = shot.damage * baseMul * (1 + this.buff('damage', shot.towerId) / 100);
         let normal = -Infinity, amp = 0, ampType: DamageType = 'physic';
+        const open = this.hasPassive('p_open_season') ? (passiveParams('p_open_season').share || 0.333) : 0;
         for (const type of shot.damageTypes) {
             let d = base * this.defenseMultiplier(e, type);
-            const mark = e.markBonus(shot.towerId, type) / 100;
+            const mark = e.markBonus(shot.towerId, type, open) / 100;
             d *= 1 + mark;
             if (type === 'physic') d *= 1 - e.abilityValue('physicDamageReduction') / 100;
             if (d > normal) { normal = d; amp = mark > 0 ? d - d / (1 + mark) : 0; ampType = type; }
         }
         if (shot.isAoe) { const k = 1 - e.abilityValue('aoeReduction') / 100; normal *= k; amp *= k; }
+        // Passives: Bitter Cold (Crystal vs slowed enemies), Aftershock (after a Shockwave stun).
+        let more = 1;
+        if (shot.towerId === 'crystal' && e.slowed && this.hasPassive('p_bitter_cold')) more += (passiveParams('p_bitter_cold').crystalDamage || 15) / 100;
+        if (e.aftershock > 0 && this.hasPassive('p_aftershock')) more += (passiveParams('p_aftershock').damage || 30) / 100;
+        normal *= more; amp *= more;
         normal += flatBonus;
         const critRate = Math.max(0, Math.min(100, shot.critRate + this.buff('critRate', shot.towerId)));
-        const critDamage = shot.critDamage + this.buff('critDamage', shot.towerId);
+        let critDamage = shot.critDamage + this.buff('critDamage', shot.towerId);
+        if (e.armorBroken && this.hasPassive('p_exposed')) critDamage += passiveParams('p_exposed').critDamage || 25;
         const crit = Math.random() * 100 < critRate;
         const mul = crit ? critDamage / 100 : 1;
         const final = normal * mul;
-        return { amount: Math.max(1, Math.floor(final)), crit, dodged: false, flat: Math.max(0, flatBonus * mul), amp: Math.max(0, amp * mul), ampType };
+        return { amount: Math.max(1, Math.floor(final + 1e-6)), crit, dodged: false, flat: Math.max(0, flatBonus * mul), amp: Math.max(0, amp * mul), ampType };
     }
 
     /** 1 - EffectiveDefense / 100, where EffectiveDefense = def * 2 - reductions (not clamped). */
@@ -482,6 +502,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     // ------------------------------------------------------------------ skills (ISkillHost)
     /** Skill damage: true damage (no defense, no crit), counted under "Skills" in the wave statistics. */
     skillHit(e: Enemy, amount: number, skill: any) {
+        // Spell Weave: Arcane Vulnerability stacks raise skill damage by a share of their value.
+        if (this.hasPassive('p_spell_weave')) amount = Math.floor(amount * (1 + e.markBonus('', 'magic') * (passiveParams('p_spell_weave').share || 0.5) / 100));
         const prevTower = this.ctxTower, prevEffect = this.ctxEffect;
         this.ctxTower = 'skill';
         this.ctxEffect = { key: 'skill_' + skill.id, name: skill.name };
@@ -532,7 +554,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         if (e.rewarded) return;
         e.rewarded = true;
         if (!this.demo) this.stats.kills++;
-        const gold = this.demo ? e.goldReward : this.rm.killGold(e.goldReward);
+        if (!this.demo) this.onKillPassives(e);
+        const gold = this.demo ? e.goldReward : this.rm.killGold(e.goldReward) + (!e.boss && this.hasPassive('p_treasure_hunter') ? (passiveParams('p_treasure_hunter').gold || 1) : 0);
         this.float('+' + gold, e.x + 8, e.y - 6, '#f2c14e', 15, true, 'gold');
         if (this.demo) return;
         this.goldFromKills += gold;
@@ -552,11 +575,43 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         G.main.playSfx('coin');
     }
 
+    /** Passives that act when an enemy dies: Prey (marks move on), Treasure Hunter and Spoils of War (bosses). */
+    private onKillPassives(e: Enemy) {
+        if (this.hasPassive('p_prey')) {
+            const m = e.deathStatuses.find(x => x.def.id === 'hunter_mark');
+            if (m && m.stacks >= Math.max(1, m.def.maxStacks || 1)) {
+                const p = passiveParams('p_prey');
+                let best = (p.range || 200) * (p.range || 200), next: Enemy | null = null;
+                for (const o of this.enemies) {
+                    if (o === e || !o.alive) continue;
+                    const d = (o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y);
+                    if (d <= best) { best = d; next = o; }
+                }
+                if (next) {
+                    for (let i = 0; i < Math.min(p.stacks || 3, m.def.maxStacks || 1); i++) next.applyStatus(m.def, m.sourceUid);
+                    this.lineFx(e.x, e.y, next.x, next.y, '#ffffff');
+                }
+            }
+        }
+        if (!e.boss) return;
+        if (this.hasPassive('p_treasure_hunter')) {
+            const p = passiveParams('p_treasure_hunter');
+            const gold = p.bossGold || 8888, core = p.bossCore || 1;
+            this.rm.add({ gold, core });
+            this.goldFromKills += gold;
+            this.coresFromKills += core;
+            this.float('+' + gold, e.x + 8, e.y + 40, '#f2c14e', 18, true, 'gold');
+        }
+        if (this.hasPassive('p_spoils_of_war')) this.rm.data.spoilsPending = true;
+    }
+
     /** Damage over time from Bleed / Burn. Goes through defense but never crits. */
-    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid = 0, statusId = '') {
+    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid = 0, statusId = '', currentHpPct = 0) {
         if (!e.alive) return;
         const buff = this.buff(statusType === 'bleed' ? 'bleedDamage' : 'burnDamage');
-        const amount = Math.max(1, Math.floor(rawDamage * (1 + buff / 100) * this.defenseMultiplier(e, type)));
+        // Hemorrhage (Bleeding Bolt Mastery 3): + a share of the current HP per tick, not reduced by defense.
+        const extra = currentHpPct > 0 ? e.hp * currentHpPct / 100 * this.percentHpMul(e) : 0;
+        const amount = Math.max(1, Math.floor(rawDamage * (1 + buff / 100) * this.defenseMultiplier(e, type) + extra));
         if (!this.demo) {
             const src = this.towerByUid(sourceUid);
             const tower = src ? src.save.id : 'other';
@@ -595,14 +650,15 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         const ready = (ef: any) => !tower || !(tower.effectCooldowns[ef.id] > 0);
         const used = (ef: any) => { if (tower && ef.cooldown > 0) tower.effectCooldowns[ef.id] = ef.cooldown; };
         const statusCount: { [id: string]: number } = {};
+        const hitDamage = shot.damage * (1 + this.buff('damage', shot.towerId) / 100);
 
         for (const e of hit) {
-            // Pre-damage effects (extra damage based on max HP).
+            // Pre-damage effects (Heavy Impact: flat bonus, or a share of the max HP with Mastery).
             let bonus = 0;
             this.ctxFlat.length = 0;
             for (const ef of shot.effects) {
                 if (ef.kind === 'bonusMaxHp' && ready(ef) && Math.random() * 100 < chance(ef)) {
-                    const b = Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100 * this.percentHpMul(e));
+                    const b = this.heavyBonus(ef, shot, e);
                     bonus += b;
                     if (st) { st.trigger(ef.id, ef.name, shot.towerId, true); this.ctxFlat.push({ key: ef.id, name: ef.name, amount: b }); }
                 }
@@ -616,15 +672,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             this.ctxFlat.length = 0;
             if (!e.alive) continue;
             // Post-damage effects: status effects on the enemies that were hit.
-            for (const ef of shot.effects) {
-                if (ef.kind !== 'status' || !ready(ef)) continue;
-                if ((statusCount[ef.id] || 0) >= (ef.maxTargets || 1)) continue;
-                if (Math.random() * 100 >= chance(ef)) continue;
-                const landed = this.applyStatusFromTower(e, ef.statusId, shot.towerUid, shot.damage * (1 + this.buff('damage', shot.towerId) / 100));
-                if (st) { if (landed === 'landed') st.trigger(ef.id, ef.name, shot.towerId); else if (landed === 'resisted') st.resist(ef.id, ef.name, shot.towerId); }
-                if (!statusCount[ef.id] && !this.demo) this.effectSfx(ef.statusId);
-                statusCount[ef.id] = (statusCount[ef.id] || 0) + 1;
-            }
+            this.rollStatuses(shot, e, statusCount, chance, ready, hitDamage);
         }
         for (const ef of shot.effects) if (ef.kind === 'status' && statusCount[ef.id]) used(ef);
 
@@ -636,24 +684,32 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             used(ef);
             if (!this.demo) G.main.playSfx(shot.damageTypes[0] === 'magic' ? 'fx_lightning' : 'hit_' + shot.towerId);
             let jumped = false;
-            this.ctxEffect = { key: ef.id, name: ef.name };
+            const lightning = ef.id === 'chain_lightning';
+            const conductor = lightning && this.hasPassive('p_conductor');
+            const overload = lightning && this.hasPassive('p_overload') ? (passiveParams('p_overload').perJump || 10) : 0;
+            const skewer = ef.id === 'piercing_bolt' && this.hasPassive('p_skewer');
             let fromX = x, fromY = y;
             for (let n = 0; n < (ef.maxTargets || 1); n++) {
-                let next: Enemy | null = null;
-                let best = ef.range * ef.range;
-                for (const e of this.enemies) {
-                    if (!e.alive || hit.indexOf(e) >= 0) continue;
-                    const d = (e.x - fromX) * (e.x - fromX) + (e.y - fromY) * (e.y - fromY);
-                    if (d <= best) { best = d; next = e; }
-                }
+                const next = this.nextJump(hit, fromX, fromY, ef.range, conductor);
                 if (!next) break;
                 hit.push(next);
                 this.lineFx(fromX, fromY, next.x, next.y, shot.damageTypes[0] === 'magic' ? '#9fe8ff' : '#ffffff');
                 fromX = next.x; fromY = next.y;
                 jumped = true;
-                this.applyDamage(next, this.computeDamage(shot, next, ef.value / 100, this.markHpBonus(shot, next)));
+                // Flat damage (through defense, no crit), or a share of the hit with Mastery, whichever is bigger.
+                // Overload: every jump deals perJump % more (of the hit: + perJump points).
+                const k = 1 + overload * n / 100;
+                const flat = this.flatHit(next, ef.flat * k, shot.damageTypes);
+                const share = ef.hitPct > 0 ? this.computeDamage(shot, next, (ef.hitPct + overload * n) / 100, this.markHpBonus(shot, next)) : null;
+                this.ctxEffect = { key: ef.id, name: ef.name };
+                this.applyDamage(next, share && share.amount > flat.amount ? share : flat);
+                this.ctxEffect = null;
+                if (!next.alive) continue;
+                if (conductor && next.slowed) this.stunFor(next, passiveParams('p_conductor').stun || 0.3, shot.towerUid);
+                // Skewer: the pierced enemies can get the Crossbow's status effects too.
+                // (their own count: the shot's status limits are for the explosion targets).
+                if (skewer) this.rollStatuses(shot, next, {}, chance, ready, hitDamage);
             }
-            this.ctxEffect = null;
             if (st && jumped) st.trigger(ef.id, ef.name, shot.towerId, true);
         }
         this.ctxTower = '';
@@ -662,6 +718,107 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             if (shot.towerId === 'catapult') G.main.playSfx('explode');
             else G.main.playSfx('hit_' + shot.towerId, shot.isAoe ? 'explode' : 'hit');
         }
+    }
+
+    /** Next enemy of a chain: the closest one not hit yet; with Conductor a slowed one first. */
+    private nextJump(hit: Enemy[], fromX: number, fromY: number, range: number, preferSlowed: boolean): Enemy | null {
+        let next: Enemy | null = null, slowed: Enemy | null = null;
+        let best = range * range, bestSlow = range * range;
+        for (const e of this.enemies) {
+            if (!e.alive || hit.indexOf(e) >= 0) continue;
+            const d = (e.x - fromX) * (e.x - fromX) + (e.y - fromY) * (e.y - fromY);
+            if (d <= best) { best = d; next = e; }
+            if (preferSlowed && d <= bestSlow && e.slowed) { bestSlow = d; slowed = e; }
+        }
+        return slowed || next;
+    }
+
+    /** Flat effect damage: through defense (the best of the shot's damage types), never a crit. */
+    private flatHit(e: Enemy, amount: number, types: DamageType[]): DamageResult {
+        let m = 0;
+        for (const t of types) m = Math.max(m, this.defenseMultiplier(e, t));
+        return { amount: Math.max(1, Math.floor(amount * m)), crit: false, dodged: false };
+    }
+
+    /** Heavy Impact bonus: flat, or a share of the max HP (Mastery) when bigger; Crusher / Giant Slayer passives. */
+    private heavyBonus(ef: any, shot: ShotInfo, e: Enemy): number {
+        let pct = 0;
+        if (ef.value > 0) pct = Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100 * this.percentHpMul(e));
+        let b = Math.max(ef.flat || 0, pct);
+        if ((e.armorBroken || e.stunned) && this.hasPassive('p_crusher')) b *= passiveParams('p_crusher').mul || 1.667;
+        if (e.boss && this.hasPassive('p_giant_slayer')) b *= passiveParams('p_giant_slayer').bossMul || 1.5;
+        return b;
+    }
+
+    /** Rolls the status effects of a shot on one enemy (explosion targets, and pierced enemies with Skewer). */
+    private rollStatuses(shot: ShotInfo, e: Enemy, statusCount: { [id: string]: number }, chance: (ef: any) => number, ready: (ef: any) => boolean, hitDamage: number) {
+        const st = this.demo ? null : this.stats;
+        for (const ef of shot.effects) {
+            if (ef.kind !== 'status' || !ready(ef) || !e.alive) continue;
+            if ((statusCount[ef.id] || 0) >= (ef.maxTargets || 1)) continue;
+            if (Math.random() * 100 >= chance(ef)) continue;
+            const def = ef.status || ConfigMgr.statusDef(ef.statusId);
+            const wasSlowed = e.slowed;
+            // Bleed: flat damage per second per stack (+ a share of the hit with Mastery).
+            const value = def.type === 'bleed' ? (ef.flat || 0) + hitDamage * (ef.hitPct || 0) / 100 : undefined;
+            const landed = this.applyStatusFromTower(e, def, shot.towerUid, hitDamage, value);
+            if (st) { if (landed === 'landed') st.trigger(ef.id, ef.name, shot.towerId); else if (landed === 'resisted') st.resist(ef.id, ef.name, shot.towerId); }
+            if (!statusCount[ef.id] && !this.demo) this.effectSfx(def.id);
+            statusCount[ef.id] = (statusCount[ef.id] || 0) + 1;
+            if (landed === 'resisted') continue;
+            if (def.type === 'stun') {
+                // Shockwave: flat damage on every enemy it reaches (stunned or immune).
+                if (ef.flat > 0 && e.alive) this.hitAsEffect(e, this.flatHit(e, ef.flat, shot.damageTypes).amount, ef.id + '_flat', ef.name + ' (damage)', shot.towerId, false);
+                if (landed === 'landed' && this.hasPassive('p_aftershock')) e.aftershock = def.duration + (passiveParams('p_aftershock').time || 1);
+            }
+            if (landed !== 'landed' || !e.alive) continue;
+            if (def.id === 'slow' && this.hasPassive('p_deep_freeze')) {
+                // Deep Freeze: a slowed enemy hit by Frost again `hits` times is frozen.
+                const p = passiveParams('p_deep_freeze');
+                if (!wasSlowed) e.frostHits = 0;
+                else if (++e.frostHits >= (p.hits || 2)) { e.frostHits = 0; this.stunFor(e, p.stun || 1, shot.towerUid, 'FROZEN'); }
+            }
+            if (def.type === 'bleed' && ef.spread) this.spreadBleed(e, def, shot.towerUid, value || 0, ef.spread);
+            if (def.id === 'arcane_mark' && this.hasPassive('p_arcane_rupture') && e.stacksOf(def.id) >= Math.max(1, def.maxStacks || 1)) this.arcaneRupture(e, ef, shot, hitDamage);
+        }
+    }
+
+    /** Hemorrhage: an enemy whose Bleed just reached its full stacks spreads stacks to the enemies nearby. */
+    private spreading = false;
+    private spreadBleed(e: Enemy, def: any, sourceUid: number, value: number, spread: { stacks: number; range: number }) {
+        if (this.spreading || e.stacksOf(def.id) < Math.max(1, def.maxStacks || 1)) return;
+        this.spreading = true;
+        const r2 = spread.range * spread.range;
+        for (const o of this.enemies) {
+            if (o === e || !o.alive) continue;
+            if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) > r2) continue;
+            for (let i = 0; i < spread.stacks && o.alive; i++) this.applyStatusFromTower(o, def, sourceUid, 0, value);
+        }
+        this.spreading = false;
+    }
+
+    /** Arcane Rupture: full Arcane Vulnerability stacks explode (max HP share with Mastery 3, flat before). */
+    private arcaneRupture(e: Enemy, ef: any, shot: ShotInfo, hitDamage: number) {
+        const p = passiveParams('p_arcane_rupture');
+        const full = ef.mastery >= 3;
+        e.clearStatus('arcane_mark');
+        const r2 = (p.range || 100) * (p.range || 100);
+        this.ringFxAt(e.x, e.y, p.range || 100, '#b48cff');
+        for (const o of this.enemies.slice()) {
+            if (!o.alive || (o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) > r2) continue;
+            const amount = full
+                ? Math.max(1, Math.floor(this.capPercentHp(o.maxHp * (p.maxHpPct || 4) / 100 * this.percentHpMul(o), hitDamage, shot.towerId)))
+                : this.flatHit(o, ef.flat || 0, ['magic']).amount;
+            this.hitAsEffect(o, amount, 'arcane_rupture', 'Arcane Rupture', shot.towerId);
+        }
+    }
+
+    /** Stun of a passive (Deep Freeze, Conductor): the Stun status for `seconds`, stun immunity still applies. */
+    private stunFor(e: Enemy, seconds: number, sourceUid: number, text = '') {
+        const base = ConfigMgr.statusDef('stun');
+        if (!base || e.isImmune('stun') || !e.alive) return;
+        const def = Object.assign({}, base, { duration: seconds, immuneHit: null });
+        if (e.applyStatus(def, sourceUid) && text) this.enemyFloat(e, text, '#9fe8ff', 13);
     }
 
     /** Sound of a status effect landing (Frost slow, Bleed, Shockwave stun). */
@@ -673,10 +830,13 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         else if (def.type === 'stun') G.main.playSfx('wall_hit');
     }
 
-    /** `hitDamage`: damage of the shot before defense; statuses with "percentOfHit" scale their value with it. */
-    /** 'landed', 'resisted', or 'immune' (blocked by the immunity; may have dealt the stun-immune hit instead). */
-    private applyStatusFromTower(e: Enemy, statusId: string, sourceUid: number, hitDamage = 0): 'landed' | 'resisted' | 'immune' {
-        const def = ConfigMgr.statusDef(statusId);
+    /**
+     * `def`: the status (the resolved copy of the tower effect, see EffectScaling). `hitDamage`: damage of the
+     * shot before defense (statuses with "percentOfHit", caps of the max HP shares). `value`: the status value
+     * when the effect gives it (Bleed). Returns 'landed', 'resisted', or 'immune' (blocked by the immunity; may
+     * have dealt the stun-immune hit instead).
+     */
+    private applyStatusFromTower(e: Enemy, def: any, sourceUid: number, hitDamage = 0, value?: number): 'landed' | 'resisted' | 'immune' {
         if (!def) return 'resisted';
         const src = this.towerByUid(sourceUid);
         const srcId = src ? src.save.id : '';
@@ -689,7 +849,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             return 'immune';
         }
         let durationMul = 1, valueMul = 1;
-        if (def.percentOfHit) valueMul = Math.max(0.01, hitDamage / 100);
+        if (value !== undefined) valueMul = Math.max(0.01, value) / Math.max(0.0001, def.value || 1);
+        else if (def.percentOfHit) valueMul = Math.max(0.01, hitDamage / 100);
         if (def.type === 'slow') { durationMul += this.buff('slowDuration') / 100; valueMul += this.buff('slowEffect') / 100; }
         if (def.type === 'stun') durationMul += this.buff('stunDuration') / 100;
         if (!e.applyStatus(def, sourceUid, durationMul, valueMul)) {
@@ -697,23 +858,23 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             if (def.type !== 'mark' && def.type !== 'bleed') this.enemyFloat(e, 'RESIST', '#aaaaaa', 12);
             return 'resisted';
         }
-        // Burst at full stacks (Bleed x5): the stacks are removed and the enemy loses a share of its max HP.
+        // Burst at full stacks (Bleed x5, Deep Cuts: one stack earlier): the stacks are removed and the enemy loses a share of its max HP.
         const burst = def.burstAtMaxStacks;
-        if (burst && e.stacksOf(def.id) >= Math.max(1, def.maxStacks || 1)) {
+        if (burst && e.stacksOf(def.id) >= Math.max(1, burst.stacks || def.maxStacks || 1)) {
             e.clearStatus(def.id);
             const amount = Math.max(1, Math.floor(this.capPercentHp(e.maxHp * (burst.maxHpPct || 0) / 100 * this.percentHpMul(e), hitDamage, srcId)));
-            this.hitAsEffect(e, amount, 'burst_' + def.id, def.name + ' burst (x' + (def.maxStacks || 1) + ')', srcId);
+            this.hitAsEffect(e, amount, 'burst_' + def.id, def.name + ' burst (x' + (burst.stacks || def.maxStacks || 1) + ')', srcId);
         }
         return 'landed';
     }
 
     /** Damage dealt by an effect on its own (Bleed burst, stun-immune hit): shown as a red number, counted for that effect. */
-    private hitAsEffect(e: Enemy, amount: number, key: string, name: string, towerId: string) {
+    private hitAsEffect(e: Enemy, amount: number, key: string, name: string, towerId: string, big = true) {
         const prevTower = this.ctxTower, prevEffect = this.ctxEffect;
         this.ctxTower = towerId || prevTower;
         this.ctxEffect = { key, name };
         if (!this.demo && this.ctxTower) this.stats.trigger(key, name, this.ctxTower, true);
-        this.applyDamage(e, { amount, crit: true, dodged: false });
+        this.applyDamage(e, { amount, crit: big, dodged: false });
         this.ctxTower = prevTower;
         this.ctxEffect = prevEffect;
     }
@@ -762,8 +923,24 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             return;
         }
         const type: DamageType = e.def.damageType === 'magic' ? 'magic' : 'physic';
-        const amount = Math.max(0, Math.floor(e.wallDamage() * (1 - this.rm.wallDef(type) / 100)));
-        const destroyed = this.rm.damageWall(amount);
+        // Bulwark: the wall defense is multiplied while it lasts (at most 90).
+        const def = this.bulwarkTime > 0 ? Math.min(90, this.rm.wallDef(type) * (passiveParams('p_bulwark').mul || 3)) : this.rm.wallDef(type);
+        const amount = Math.max(0, Math.floor(e.wallDamage() * (1 - def / 100)));
+        // Last Stand: the wall stays at 1 HP for a while instead of falling.
+        if (this.rm.data.wallHp - amount < 1 && this.lastStandTime <= 0 && this.passiveReady('p_last_stand')) {
+            this.lastStandTime = passiveParams('p_last_stand').time || 20;
+            this.startPassiveCooldown('p_last_stand');
+            this.float('LAST STAND', this.wallRightX + 10, 360, '#ffe08a', 22, true);
+        }
+        const destroyed = this.lastStandTime > 0
+            ? (this.rm.data.wallHp = Math.max(1, this.rm.data.wallHp - amount), false)
+            : this.rm.damageWall(amount);
+        const bw = passiveParams('p_bulwark');
+        if (!destroyed && this.bulwarkTime <= 0 && this.rm.data.wallHp < this.rm.wallMaxHp() * (bw.hpPct || 50) / 100 && this.passiveReady('p_bulwark')) {
+            this.bulwarkTime = bw.time || 30;
+            this.startPassiveCooldown('p_bulwark');
+            this.float('BULWARK', this.wallRightX + 10, 330, '#9fe8ff', 22, true);
+        }
         this.float('-' + amount, this.wallRightX - 20, e.y + 20, '#ff6b6b', 18, true);
         G.main.playSfx('wall_hit', 'hit');
         this.events.onWallChanged();
@@ -859,6 +1036,25 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             f.op!.opacity = 255;
             this.fx.push(f);
         }
+    }
+
+    /** A fading circle (Arcane Rupture). */
+    private ringFxAt(x: number, y: number, r: number, color: string) {
+        if (!Display.effects) return;
+        const f = this.takeFx('ring');
+        const g = f.g!;
+        g.clear();
+        g.fillColor = hex(color, 40);
+        g.circle(0, 0, r);
+        g.fill();
+        g.lineWidth = 2;
+        g.strokeColor = hex(color, 230);
+        g.circle(0, 0, r);
+        g.stroke();
+        f.node.setPosition(x, y, 0);
+        f.life = f.total = 0.35;
+        f.op!.opacity = 255;
+        this.fx.push(f);
     }
 
     private lineFx(x1: number, y1: number, x2: number, y2: number, color: string) {

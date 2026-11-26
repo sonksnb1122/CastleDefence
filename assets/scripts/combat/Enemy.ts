@@ -24,7 +24,7 @@ export interface StatusInstance {
 export interface IEnemyHost {
     wallRightX: number;
     onEnemyReachedWall(e: Enemy): void;
-    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid?: number, statusId?: string): void;
+    applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid?: number, statusId?: string, currentHpPct?: number): void;
 }
 
 export interface EnemyStats { hp: number; damage: number; moveSpeed: number; goldReward: number; scale: number; boss: boolean; physicDef: number; magicDef: number;
@@ -64,6 +64,12 @@ export class Enemy {
     private immune: { [type: string]: number } = {};
     /** Wave boss (bigger, tougher). */
     boss = false;
+    /** Statuses the enemy had when it died (passive "Prey" moves its marks on). */
+    deathStatuses: StatusInstance[] = [];
+    /** Passive "Deep Freeze": Frost hits taken while already slowed. */
+    frostHits = 0;
+    /** Passive "Aftershock": seconds left of the extra damage taken after a Shockwave stun. */
+    aftershock = 0;
     /** Number given at each spawn: tells a pooled enemy apart from its previous life. */
     serial = 0;
 
@@ -109,6 +115,7 @@ export class Enemy {
         this.waveResist = stats.statusResist || { types: [], value: 0 };
         this.immune = {};
         this.flash = 0; this.sprintTimer = 0; this.sprintLeft = 0;
+        this.frostHits = 0; this.aftershock = 0; this.deathStatuses = [];
         const scale = (def.scale || 1) * stats.scale;
         this.radius = (def.radius || 22) * scale;
         this.abilities = (def.specialAbilities || []).filter((a: any) => a.enabled);
@@ -240,6 +247,10 @@ export class Enemy {
         return Math.min(100, v);
     }
     get stunned(): boolean { return this.statuses.some(s => s.def.type === 'stun'); }
+    get slowed(): boolean { return this.statuses.some(s => s.def.type === 'slow'); }
+    get armorBroken(): boolean { return this.statuses.some(s => s.def.type === 'armorBreak'); }
+    /** The status instance of an effect id (its def is the resolved copy that was applied), or null. */
+    statusOf(id: string): StatusInstance | null { return this.statuses.find(s => s.def.id === id) || null; }
 
     /** Points removed from effective defense by Armor Break effects. */
     defReduction(type: DamageType): number {
@@ -274,13 +285,15 @@ export class Enemy {
         return n;
     }
 
-    markBonus(towerId: string, type: DamageType): number {
+    /** `otherTowerShare`: passive "Open Season", the share of a tower mark that also works for the other towers. */
+    markBonus(towerId: string, type: DamageType, otherTowerShare = 0): number {
         let v = 0;
         for (const s of this.statuses) {
             if (s.def.type !== 'mark') continue;
             const byTower = s.def.towerIds && s.def.towerIds.indexOf(towerId) >= 0;
             const byType = s.def.damageTypes && s.def.damageTypes.indexOf(type) >= 0;
             if (byTower || byType) v += s.value * s.stacks;
+            else if (otherTowerShare > 0 && s.def.towerIds) v += s.value * s.stacks * otherTowerShare;
         }
         return v;
     }
@@ -406,6 +419,7 @@ export class Enemy {
     kill() {
         if (!this.alive) return;
         this.alive = false;
+        this.deathStatuses = this.statuses.slice();
         this.statuses.length = 0;
         if (this.statusLabel) this.statusLabel.string = '';
         if (this.statusIcons) this.statusIcons.active = false;
@@ -433,6 +447,7 @@ export class Enemy {
 
         // Status effects: damage over time and expiry.
         for (const k in this.immune) if (this.immune[k] > 0) this.immune[k] -= dt;
+        if (this.aftershock > 0) this.aftershock -= dt;
         let changed = false;
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             const s = this.statuses[i];
@@ -440,7 +455,7 @@ export class Enemy {
                 s.tick -= dt;
                 while (s.tick <= 0 && this.alive) {
                     s.tick += s.def.tickInterval;
-                    host.applyDot(this, s.value * s.stacks, s.def.damageType || (s.def.type === 'bleed' ? 'physic' : 'magic'), s.def.type, s.sourceUid, s.def.id);
+                    host.applyDot(this, s.value * s.stacks, s.def.damageType || (s.def.type === 'bleed' ? 'physic' : 'magic'), s.def.type, s.sourceUid, s.def.id, (s.def.currentHpPctPerTick || 0) * s.stacks);
                 }
                 if (!this.alive) return;
             }

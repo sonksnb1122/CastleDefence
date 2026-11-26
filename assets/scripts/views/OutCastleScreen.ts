@@ -1,3 +1,4 @@
+import { towerEffectLines } from './EffectInfo';
 import { waveStatsWindow } from './WaveStatsWindow';
 import { Node, Graphics, EventTouch, EventMouse, Vec3, Label, UITransform } from 'cc';
 import { CombatEvents, CombatManager } from '../combat/CombatManager';
@@ -231,13 +232,10 @@ export class OutCastleScreen implements CombatEvents {
             `Target mode: ${unit.save.targetMode}`,
         ];
         // Special effects: unlocked and powered by the Tower Effects branch of the research tree.
-        const effects = unit.effectInfo();
-        if (effects.length) {
-            lines.push('', 'Special effects:');
-            for (const e of effects) {
-                const state = e.chance >= 0 ? `${e.chance}% chance` : 'locked - unlock it in the research tree (Tower Effects, Lab Lv 2)';
-                lines.push(`- ${e.name} (${state}): ${e.description}`);
-            }
+        const fx = towerEffectLines(unit.save.id, unit.save.level, id => unit.effectUnlocked(id));
+        if (fx.length) {
+            lines.push('', 'SPECIAL EFFECTS');
+            for (const l of fx) lines.push(l);
         }
         const cost = this.rm.towerUpgradeCost(unit.save);
         lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');

@@ -92,6 +92,38 @@ export class HeroSkillService {
         return out;
     }
 
+    // ------------------------------------------------------------------ passives that recharge
+    /** Waves a passive needs to recharge after it triggered (skills.json "cooldownWaves"), 0 = never. */
+    static passiveCooldown(id: string): number { const p = ConfigMgr.passiveDef(id); return (p && p.cooldownWaves) || 0; }
+
+    /** Wave from which a recharging passive works again (0 = ready). */
+    passiveReadyWave(id: string): number { return (this.rm.data.passiveReady && this.rm.data.passiveReady[id]) || 0; }
+
+    passiveReady(id: string): boolean { return this.rm.data.currentWave >= this.passiveReadyWave(id); }
+
+    /** The passive triggered: it works again "cooldownWaves" waves later. */
+    startPassiveCooldown(id: string) {
+        const d = this.rm.data;
+        if (!d.passiveReady) d.passiveReady = {};
+        d.passiveReady[id] = d.currentWave + HeroSkillService.passiveCooldown(id);
+        this.rm.notify();
+    }
+
+    /** Time Warp: a random hero skill that is recharging needs `waves` less (called once per cleared wave). */
+    timeWarp(waves: number) {
+        const d = this.rm.data;
+        const list = this.castable().filter(c => this.readyWave(c.heroId) > d.currentWave);
+        if (list.length === 0) return;
+        const pick = list[Math.floor(Math.random() * list.length)];
+        d.skillReady![pick.heroId] = Math.max(d.currentWave, this.readyWave(pick.heroId) - waves);
+    }
+
+    /** A passive book is only sold once its tower effect is unlocked (skills.json "requiresEffect"). */
+    private sellable(id: string): boolean {
+        const p = ConfigMgr.passiveDef(id);
+        return !p || !p.requiresEffect || this.rm.buff('effectUnlock:' + p.requiresEffect) > 0;
+    }
+
     // ------------------------------------------------------------------ casting (active skills)
     /** Waves an active hero skill needs to recharge (research lowers it, at least 1). */
     get cooldownWaves(): number { return Math.max(1, (this.cfg.cooldownWaves || 5) - this.rm.buff('skillCooldown')); }
@@ -166,7 +198,7 @@ export class HeroSkillService {
     offers(): BookOffer[] {
         const c = this.shopCfg;
         const wave = this.rm.data.currentWave;
-        const pool = HeroSkillService.allIds().filter(id => { const w = this.boughtWave(id); return !w || w >= wave; });
+        const pool = HeroSkillService.allIds().filter(id => { const w = this.boughtWave(id); return (!w || w >= wave) && this.sellable(id); });
         const min = c.offersMin || 4, max = Math.max(min, c.offersMax || 6);
         const count = Math.min(pool.length, min + Math.floor(this.rand(1) * (max - min + 1)));
         const out: BookOffer[] = [];

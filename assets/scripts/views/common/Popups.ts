@@ -54,7 +54,8 @@ export function toast(parent: Node, msg: string, good = false) {
 export type InfoLine = string | { label: string; cost: Cost };
 
 /** Info window listing lines (prefabs/popups/Info). Long lists become scrollable. */
-export function infoWindow(parent: Node, title: string, lines: InfoLine[]) {
+/** `action`: an optional button next to Close (e.g. "Research"); the window closes when it is used. */
+export function infoWindow(parent: Node, title: string, lines: InfoLine[], action?: { text: string; onTap: () => void }) {
     const W = 500, LINE = 22;
     // Estimate wrapped height (about 52 characters fit on one line).
     const rowsOf = (l: InfoLine) => (typeof l === 'string' ? Math.max(1, Math.ceil(l.length / 52)) : 1);
@@ -91,4 +92,13 @@ export function infoWindow(parent: Node, title: string, lines: InfoLine[]) {
     }
     flush();
     new PrefabButton(v.closeButton, () => v.close());
+    if (v.actionButton) {
+        v.actionButton.active = !!action;
+        if (action) {
+            new PrefabButton(v.actionButton, () => { v.close(); action.onTap(); }).setText(action.text);
+            const c = v.closeButton!.position;
+            v.closeButton!.setPosition(95, c.y, 0);
+            v.actionButton.setPosition(-95, c.y, 0);
+        }
+    }
 }

@@ -329,6 +329,51 @@
       "key": "effectUnlock:armor_break",
       "name": "Armor Break unlocked",
       "unit": ""
+    },
+    {
+      "key": "effectMastery:piercing_bolt",
+      "name": "Piercing Bolt mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:bleeding_bolt",
+      "name": "Bleeding Bolt mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:hunters_mark",
+      "name": "Hunter's Mark mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:frost_explosion",
+      "name": "Frost Explosion mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:chain_lightning",
+      "name": "Chain Lightning mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:arcane_vulnerability",
+      "name": "Arcane Vulnerability mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:shockwave",
+      "name": "Shockwave mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:heavy_impact",
+      "name": "Heavy Impact mastery",
+      "unit": ""
+    },
+    {
+      "key": "effectMastery:armor_break",
+      "name": "Armor Break mastery",
+      "unit": ""
     }
   ]
 }

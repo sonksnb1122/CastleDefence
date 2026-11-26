@@ -1,3 +1,4 @@
+import { ConfigMgr } from './ConfigMgr';
 import { BuffEntry, BuildingSave, Cost, DamageType, RESOURCE_KEYS, SaveData, TowerSave } from './GameTypes';
 import { BuffService } from './services/BuffService';
 import { BuildingService } from './services/BuildingService';
@@ -121,17 +122,30 @@ export class ResourceMgr {
      */
     completeWave(wave: number): Cost {
         const gained: Cost = {};
-        if (wave > this.data.lastRewardedWave) {
+        const firstTime = wave > this.data.lastRewardedWave;
+        if (firstTime) {
             this.data.lastRewardedWave = wave;
             for (const b of this.data.buildings) {
                 const p = this.production(b);
                 for (const r in p) gained[r] = (gained[r] || 0) + p[r];
+            }
+            // Spoils of War: the production after a boss kill is multiplied.
+            if (this.data.spoilsPending) {
+                const p = ConfigMgr.passiveDef('p_spoils_of_war');
+                const mul = (p && p.params && p.params.mul) || 10;
+                for (const r in gained) gained[r] = Math.floor(gained[r] * mul);
+                this.data.spoilsPending = false;
             }
             this.wall.regenAfterWave();
         }
         this.data.highestWave = Math.max(this.data.highestWave, wave);
         this.data.currentWave = wave + 1;
         this.data.state = 'Preparation';
+        // Time Warp: a recharging hero skill needs one wave less (once per wave).
+        if (firstTime && this.buff('passive:p_time_warp') > 0) {
+            const p = ConfigMgr.passiveDef('p_time_warp');
+            this.skills.timeWarp((p && p.params && p.params.waves) || 1);
+        }
         this.add(gained);
         return gained;
     }

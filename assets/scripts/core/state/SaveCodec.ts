@@ -80,7 +80,11 @@ export class SaveCodec {
             skillUses: {},
             boughtBooks: {},
             heroStars: {},
+            passiveReady: {},
+            spoilsPending: !!raw.spoilsPending,
         };
+        const pr = raw.passiveReady && typeof raw.passiveReady === 'object' ? raw.passiveReady : {};
+        for (const id in pr) if (ConfigMgr.passiveDef(id)) d.passiveReady![id] = Math.floor(n(pr[id], 0));
         // Skill cooldowns: only skills that still exist in skills.json.
         const ready = raw.skillReady && typeof raw.skillReady === 'object' ? raw.skillReady : {};
         for (const id in ready) if (ConfigMgr.skillDef(id) || ConfigMgr.heroDef(id)) d.skillReady![id] = Math.floor(n(ready[id], 0));
@@ -151,6 +155,7 @@ export class SaveCodec {
         }
         let research = raw.research || {};
         if (raw.saveVersion < 5) research = SaveCodec.migrateResearch(research, d);
+        if (raw.saveVersion < 6) research = SaveCodec.migrateMastery(research);
         for (const t of ConfigMgr.research.techs) {
             const lv = research[t.id];
             if (typeof lv === 'number' && lv > 0) d.research[t.id] = t.maxLevel ? Math.min(t.maxLevel, Math.floor(lv)) : Math.floor(lv);
@@ -165,6 +170,20 @@ export class SaveCodec {
      *  - every node with a level gets its parents at max level (the tree path is opened for free);
      *  - "Hero Scholarship" is given when the Research Lab is Lv 2 or more (skills could be learned before).
      */
+    /**
+     * Saves made before the effect Mastery technologies (version < 6): an effect whose two chance
+     * technologies are at max level gets its Mastery at max level, so it keeps the full strength it had.
+     */
+    static migrateMastery(research: any): { [id: string]: number } {
+        const out: { [id: string]: number } = Object.assign({}, research);
+        for (const t of ConfigMgr.research.techs) {
+            if (typeof t.buffKey !== 'string' || t.buffKey.indexOf('effectMastery:') !== 0 || !t.parent) continue;
+            const p = ConfigMgr.techDef(t.parent);
+            if (p && (out[p.id] || 0) >= p.maxLevel) out[t.id] = t.maxLevel;
+        }
+        return out;
+    }
+
     static migrateResearch(old: any, d: SaveData): { [id: string]: number } {
         const out: { [id: string]: number } = {};
         for (const id in old) if (typeof old[id] === 'number' && old[id] > 0) out[id] = Math.floor(old[id]);

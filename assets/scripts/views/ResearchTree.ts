@@ -5,7 +5,8 @@ import { ResourceMgr } from '../core/ResourceMgr';
 import { ResearchTreeView } from './popups/ResearchTreeView';
 import { IOverlay } from './Overlays';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
-import { confirm, infoWindow, toast } from './common/Popups';
+import { InfoLine, infoWindow, toast } from './common/Popups';
+import { effectOfTech, techEffectLines } from './EffectInfo';
 import { COLORS, drawBox, hex, mk, registerRedraw, sprite, text, toLocal } from './common/UIKit';
 import { Assets } from '../core/Assets';
 
@@ -321,17 +322,36 @@ export class ResearchOverlay implements IOverlay {
         const endless = ResourceMgr.isEndless(t);
         const info = ConfigMgr.buffInfo(t.buffKey);
         const branch = ((ConfigMgr.research.branches || []) as any[]).find(b => b.id === t.branch);
-        const where = `${branch ? branch.name : t.branch}, ${t.tier > 3 ? 'endless' : 'tier ' + t.tier}`;
-        const shown = Math.round(t.valuePerLevel * lv * 100) / 100;
+        const tierDef = ((ConfigMgr.research.tiers || []) as any[]).find(x => x.tier === t.tier);
+        const lab = tierDef ? tierDef.labLevel : Math.min(3, t.tier);
+        const where = `${branch ? branch.name : t.branch} branch, ${t.tier > 3 ? 'endless row' : 'tier ' + t.tier} - needs Research Lab Lv ${lab}`;
         const cap = rm.techCap(id);
-        const capText = !endless && cap < t.maxLevel && cap > 0 ? ` (Lab limit ${cap})` : '';
-        const level = (endless ? `Level ${lv} (endless)` : `Level ${lv}/${t.maxLevel}${capText}`) + (t.maxLevel === 1 || lv === 0 ? '' : `   now +${shown}${info.unit}`);
-        const block = rm.techBlock(id);
-        if (block) {
-            infoWindow(this.root, t.name, [`(${where})`, t.description, '', level, block]);
-            return;
+        const capText = !endless && cap < t.maxLevel && cap > 0 ? ` (your Research Lab allows Lv ${cap} for now)` : '';
+        const maxed = !endless && lv >= t.maxLevel;
+        const lines: InfoLine[] = [where, t.description, ''];
+        lines.push(endless ? `Level ${lv} (no max level)` : `Level ${lv}/${t.maxLevel}${capText}`);
+        // What the technology gives now and after the next level (not for the on / off ones and the effect ones,
+        // whose lines below say it in full).
+        const fx = effectOfTech(t);
+        const r2 = (v: number) => Math.round(v * 100) / 100;
+        if (!fx && t.maxLevel !== 1) {
+            lines.push(`Now: ${lv > 0 ? '+' + r2(t.valuePerLevel * lv) + info.unit + ' ' + info.name : 'nothing yet'}`);
+            if (!maxed) lines.push(`After this level: +${r2(t.valuePerLevel * (lv + 1))}${info.unit} ${info.name} (+${r2(t.valuePerLevel)}${info.unit} per level)`);
+        } else if (!fx) lines.push(lv > 0 ? 'Researched.' : 'Not researched yet.');
+        if (t.parent) {
+            const p = ConfigMgr.techDef(t.parent);
+            if (p) lines.push(`Requires: "${p.name}" at max level - ${rm.techLevel(p.id) >= p.maxLevel ? 'done' : 'not yet (' + rm.techLevel(p.id) + '/' + p.maxLevel + ')'}.`);
         }
-        confirm(this.root, t.name, `${t.description}\n${level}`, () => this.research(id), 'Research', 'Cancel', { label: 'Cost:', cost: rm.techCost(id) });
+        for (const l of techEffectLines(t)) lines.push(l);
+        const block = rm.techBlock(id);
+        lines.push('');
+        if (maxed) lines.push('Max level reached.');
+        else {
+            // (the parent rule is already on the "Requires" line)
+            if (block && !(t.parent && block.indexOf('at max level') >= 0)) lines.push(block);
+            lines.push({ label: block ? 'Next level cost:' : 'Cost:', cost: rm.techCost(id) });
+        }
+        infoWindow(this.root, t.name, lines, block || maxed ? undefined : { text: 'Research', onTap: () => this.research(id) });
     }
 
     private research(id: string) {

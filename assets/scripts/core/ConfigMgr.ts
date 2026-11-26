@@ -225,6 +225,9 @@ export class ConfigMgr {
                 num('effects.json', t, 'chance', t.id);
                 if (['status', 'chain', 'bonusMaxHp'].indexOf(t.kind) < 0) E.push(`effects.json: tower effect "${t.id}" has unknown kind "${t.kind}"`);
                 if (t.kind === 'status' && !ConfigMgr.statusDef(t.statusId)) E.push(`effects.json: tower effect "${t.id}" references unknown status "${t.statusId}"`);
+                const sc = t.scaling;
+                if (sc && sc.mastery && !Array.isArray(sc.mastery)) E.push(`effects.json: tower effect "${t.id}" scaling.mastery must be a list`);
+                for (const k of ['flat', 'value']) if (sc && sc[k] && !(Array.isArray(sc[k]) && sc[k].length === 2)) E.push(`effects.json: tower effect "${t.id}" scaling.${k} must be [level 1, level 10]`);
             }
         }
 
@@ -304,6 +307,10 @@ export class ConfigMgr {
                 if (typeof h.stars !== 'number' || h.stars < 1 || h.stars > ConfigMgr.herobuff.buffs.length) E.push(`heroes.json: hero "${h.id}" has invalid "stars"`);
                 for (const pb of ((h.passive && h.passive.buffs) || [])) if (!buffKeys[pb.key]) E.push(`heroes.json: hero "${h.id}" passive uses unknown buff key "${pb.key}"`);
             }
+        }
+        for (const p of ((ConfigMgr.skills && ConfigMgr.skills.passives) || [])) {
+            if (p.requiresEffect && !ConfigMgr.towerEffectDef(p.requiresEffect)) E.push(`skills.json: passive "${p.id}" requires unknown tower effect "${p.requiresEffect}"`);
+            for (const pb of (p.buffs || [])) if (!buffKeys[pb.key]) E.push(`skills.json: passive "${p.id}" uses unknown buff key "${pb.key}"`);
         }
         if (uniqueIds('research.json', ConfigMgr.research.techs, 'techs')) {
             for (const t of ConfigMgr.research.techs) {

@@ -142,7 +142,7 @@
     {
       "id": "piercing_bolt",
       "name": "Piercing Bolt",
-      "description": "The bolt goes on to hit up to 4 more enemies nearby.",
+      "description": "The bolt goes on to more enemies nearby: flat damage, or a share of the hit with Mastery.",
       "trigger": "onHit",
       "kind": "chain",
       "chance": 25,
@@ -150,48 +150,165 @@
       "range": 140,
       "maxTargets": 4,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "scaling": {
+        "flat": [
+          20,
+          200
+        ],
+        "base": {
+          "maxTargets": 2,
+          "hitPct": 0
+        },
+        "mastery": [
+          {
+            "maxTargets": 3,
+            "hitPct": 50
+          },
+          {
+            "maxTargets": 4,
+            "hitPct": 75
+          },
+          {
+            "hitPct": 100
+          }
+        ]
+      }
     },
     {
       "id": "bleeding_bolt",
       "name": "Bleeding Bolt",
-      "description": "Bleed: 20% of the hit as physical damage every second for 4 s (stacks 5 times). At 5 stacks the bleed bursts for 4% of the max HP (1/3 on bosses, at most 10x the hit).",
+      "description": "Bleed: flat physical damage every second per stack (stacks). Mastery: more stacks, a share of the hit, then a burst at full stacks (4% max HP).",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "bleed",
       "chance": 30,
       "maxTargets": 1,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "scaling": {
+        "flat": [
+          8,
+          80
+        ],
+        "base": {
+          "hitPct": 0,
+          "status": {
+            "maxStacks": 3,
+            "duration": 3,
+            "burstAtMaxStacks": null,
+            "percentOfHit": false
+          }
+        },
+        "mastery": [
+          {
+            "status": {
+              "maxStacks": 5,
+              "duration": 4
+            }
+          },
+          {
+            "hitPct": 20
+          },
+          {
+            "status": {
+              "burstAtMaxStacks": {
+                "maxHpPct": 4
+              }
+            }
+          }
+        ]
+      }
     },
     {
       "id": "hunters_mark",
       "name": "Hunter's Mark",
-      "description": "The target takes +50% Crossbow damage per stack for 5 s (max 5 stacks, shared by all Crossbows). At 5 stacks every Crossbow hit also deals 1% of the current HP (1/3 on bosses, at most 10x the hit).",
+      "description": "The target takes more Crossbow damage per stack (shared by all Crossbows). Mastery: more stacks, +50% per stack, then +1% current HP per hit at full stacks.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "hunter_mark",
       "chance": 20,
       "maxTargets": 1,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "scaling": {
+        "value": [
+          3,
+          30
+        ],
+        "base": {
+          "status": {
+            "maxStacks": 3,
+            "duration": 3,
+            "atMaxStacks": null
+          }
+        },
+        "mastery": [
+          {
+            "status": {
+              "maxStacks": 5,
+              "duration": 5
+            }
+          },
+          {
+            "status": {
+              "value": 50
+            }
+          },
+          {
+            "status": {
+              "atMaxStacks": {
+                "currentHpPct": 1
+              }
+            }
+          }
+        ]
+      }
     },
     {
       "id": "frost_explosion",
       "name": "Frost Explosion",
-      "description": "Every enemy in the explosion is slowed by 35% for 2.5 s.",
+      "description": "Every enemy in the explosion is slowed. Mastery: longer slow, then 35%.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "slow",
       "chance": 40,
       "maxTargets": 99,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "scaling": {
+        "value": [
+          10,
+          25
+        ],
+        "base": {
+          "status": {
+            "duration": 1.5
+          }
+        },
+        "mastery": [
+          {
+            "status": {
+              "duration": 2
+            }
+          },
+          {
+            "status": {
+              "duration": 2.5
+            }
+          },
+          {
+            "status": {
+              "value": 35
+            }
+          }
+        ]
+      }
     },
     {
       "id": "chain_lightning",
       "name": "Chain Lightning",
-      "description": "Lightning jumps to up to 5 more enemies for 80% damage, even when the shot hits no enemy.",
+      "description": "Lightning jumps to more enemies for flat damage, even when the shot hits no enemy. Mastery: more jumps and a share of the hit.",
       "trigger": "onHit",
       "kind": "chain",
       "chance": 25,
@@ -200,36 +317,127 @@
       "maxTargets": 5,
       "cooldown": 0,
       "targetType": "enemy",
-      "fromImpact": true
+      "fromImpact": true,
+      "scaling": {
+        "flat": [
+          15,
+          150
+        ],
+        "base": {
+          "maxTargets": 2,
+          "hitPct": 0
+        },
+        "mastery": [
+          {
+            "maxTargets": 3,
+            "hitPct": 40
+          },
+          {
+            "maxTargets": 4,
+            "hitPct": 60
+          },
+          {
+            "maxTargets": 5,
+            "hitPct": 80
+          }
+        ]
+      }
     },
     {
       "id": "arcane_vulnerability",
       "name": "Arcane Vulnerability",
-      "description": "Enemies hit take +30% magic damage per stack for 4 s (max 5 stacks).",
+      "description": "Enemies hit take more magic damage per stack. Mastery: more stacks, longer, then +30% per stack.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "arcane_mark",
       "chance": 35,
       "maxTargets": 99,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "scaling": {
+        "value": [
+          1.5,
+          15
+        ],
+        "flat": [
+          10,
+          100
+        ],
+        "base": {
+          "status": {
+            "maxStacks": 3,
+            "duration": 3
+          }
+        },
+        "mastery": [
+          {
+            "status": {
+              "maxStacks": 4,
+              "duration": 4
+            }
+          },
+          {
+            "status": {
+              "maxStacks": 5
+            }
+          },
+          {
+            "status": {
+              "value": 30
+            }
+          }
+        ]
+      }
     },
     {
       "id": "shockwave",
       "name": "Shockwave",
-      "description": "Enemies hit are stunned for 0.3 s (then immune to stun for 0.5 s). A stunned or immune enemy takes 4% of its max HP instead (1/3 on bosses, at most 4x the hit).",
+      "description": "Enemies hit take flat damage and are stunned for a moment. Mastery: longer stun, then a share of the max HP when the enemy is immune to stun.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "stun",
       "chance": 20,
       "maxTargets": 99,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "scaling": {
+        "flat": [
+          15,
+          150
+        ],
+        "base": {
+          "status": {
+            "duration": 0.1,
+            "immuneHit": null
+          }
+        },
+        "mastery": [
+          {
+            "status": {
+              "duration": 0.3
+            }
+          },
+          {
+            "status": {
+              "immuneHit": {
+                "maxHpPct": 2
+              }
+            }
+          },
+          {
+            "status": {
+              "immuneHit": {
+                "maxHpPct": 4
+              }
+            }
+          }
+        ]
+      }
     },
     {
       "id": "heavy_impact",
       "name": "Heavy Impact",
-      "description": "Bonus damage equal to 6% of the target's max HP (at most 5 normal hits, 1/3 on bosses).",
+      "description": "Bonus damage on every hit: flat, or a share of the max HP with Mastery (at most 5 normal hits, 1/3 on bosses).",
       "trigger": "onHit",
       "kind": "bonusMaxHp",
       "chance": 100,
@@ -237,19 +445,76 @@
       "maxTargets": 99,
       "cooldown": 0,
       "targetType": "enemy",
-      "capHitMul": 5
+      "capHitMul": 5,
+      "scaling": {
+        "flat": [
+          30,
+          300
+        ],
+        "base": {
+          "value": 0
+        },
+        "mastery": [
+          {
+            "value": 2
+          },
+          {
+            "value": 4
+          },
+          {
+            "value": 6
+          }
+        ]
+      }
     },
     {
       "id": "armor_break",
       "name": "Armor Break",
-      "description": "Enemies hit lose 20 defense for 4 s.",
+      "description": "Enemies hit lose defense for a short time. Mastery: longer, then 20 defense.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "armor_break",
       "chance": 30,
       "maxTargets": 99,
       "cooldown": 0,
-      "targetType": "enemy"
+      "targetType": "enemy",
+      "scaling": {
+        "value": [
+          2,
+          12
+        ],
+        "base": {
+          "status": {
+            "duration": 2
+          }
+        },
+        "mastery": [
+          {
+            "status": {
+              "duration": 3
+            }
+          },
+          {
+            "status": {
+              "duration": 4
+            }
+          },
+          {
+            "status": {
+              "value": 20
+            }
+          }
+        ]
+      }
     }
-  ]
+  ],
+  "effectScaling": {
+    "_doc": "Tower effects grow with their research. Effect level 1-10 = levels of the two chance technologies (Chance I + Chance II); Mastery 0-3 = the Mastery technology. At level L, [a, b] means a at level 1 up to b at level 10 (linear). 'flat' is damage, multiplied by towerLevelMul of the tower level, through defense, never crits. 'base' fields apply from level 1, each 'mastery' entry adds its fields on top (Mastery 3 = the full effect). 'hitPct': share of the hit (with crits) used when it beats the flat damage. 'status': fields of the status effect replaced for this effect (value there wins over the 'value' range).",
+    "levels": 10,
+    "towerLevelMul": [
+      1,
+      1.5,
+      2
+    ]
+  }
 }

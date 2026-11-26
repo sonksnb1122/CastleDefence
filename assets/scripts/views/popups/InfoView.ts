@@ -7,4 +7,6 @@ const { ccclass, property } = _decorator;
 export class InfoView extends PopupView {
     @property(Node) content: Node | null = null;
     @property(Node) closeButton: Node | null = null;
+    /** Optional action next to Close (hidden when the window has none). */
+    @property(Node) actionButton: Node | null = null;
 }

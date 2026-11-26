@@ -50,7 +50,14 @@ export function skillArt(holder: Node, skillId: string, w: number, h: number): N
 
 /** "Active skill - recharges in 5 waves" / "Passive skill". */
 export function skillTypeLine(skillId: string): string {
-    if (HeroSkillService.isPassive(skillId)) return 'Passive skill';
+    if (HeroSkillService.isPassive(skillId)) {
+        // Passives that trigger (Last Stand, Bulwark): recharge time, and the waves left while recharging.
+        const cd = HeroSkillService.passiveCooldown(skillId);
+        if (cd <= 0) return 'Passive skill';
+        const rm = ResourceMgr.inst;
+        const left = rm.skills.passiveReadyWave(skillId) - rm.data.currentWave;
+        return left > 0 ? `Passive skill - recharging: ${left} wave${left > 1 ? 's' : ''} left` : `Passive skill - ready (recharges in ${cd} waves)`;
+    }
     return `Active skill - once every ${ResourceMgr.inst.skills.cooldownWaves} waves`;
 }
 
