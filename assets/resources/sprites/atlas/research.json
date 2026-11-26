@@ -373,6 +373,30 @@
    96,
    96
   ],
+  "sprites/research/tree_dash": [
+   906,
+   294,
+   288,
+   4
+  ],
+  "sprites/research/tree_node_bg": [
+   844,
+   294,
+   52,
+   52
+  ],
+  "sprites/research/tree_node_frame": [
+   784,
+   294,
+   58,
+   58
+  ],
+  "sprites/research/tree_white": [
+   898,
+   294,
+   6,
+   6
+  ],
   "sprites/research/wall_def": [
    196,
    294,

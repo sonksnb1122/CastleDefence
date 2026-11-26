@@ -1,4 +1,4 @@
-import { Node, Label, Graphics, Mask, EventTouch, EventMouse, Vec3, Sprite, Color } from 'cc';
+import { Node, Label, Graphics, Mask, EventTouch, EventMouse, Vec3, Sprite, Color, isValid, UITransform } from 'cc';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
@@ -27,7 +27,7 @@ const HEAD = 34;
 const GUTTER = 56;
 const ZOOM_MAX = 1.6;
 
-interface TreeNode { id: string; t: any; x: number; y: number; g: Graphics; label: Label; level: Label; color: string; icon: Sprite | null; }
+interface TreeNode { id: string; t: any; x: number; y: number; label: Label; level: Label; color: string; icon: Sprite | null; bg: Sprite; frame: Sprite; }
 
 /** "#rrggbb" scaled by k (0 = black, 1 = same color). */
 function shade(c: string, k: number): string {
@@ -54,9 +54,17 @@ export class ResearchOverlay implements IOverlay {
     root: Node;
     private rm = ResourceMgr.inst;
     private nodes: TreeNode[] = [];
+    /** Screen parts under the window (map, HUD buttons): hidden while the tree is open (covered, but still drawn). */
+    private hidden: Node[] = [];
+    private iconLayer: Node;
+    /** Lines (links, tier separators): pooled sprites of the research atlas, placed again on every refresh. */
+    private linkLayer: Node;
+    private linkPool: Sprite[] = [];
+    private linkUsed = 0;
+    private textLayer: Node;
+    private headLayer: Node;
     private byId: { [id: string]: TreeNode } = {};
     private content: Node;
-    private lines: Graphics;
     private tierLabels: Array<{ label: Label; y: number }> = [];
     private viewW: number;
     private viewH: number;
@@ -76,6 +84,14 @@ export class ResearchOverlay implements IOverlay {
         // Almost the whole screen; the top bar (resources) stays visible above it.
         const W = G.main.W - 24, H = G.main.H - 46;
         const v = PrefabUi.view('popups/ResearchTree', parent, ResearchTreeView);
+        // Only the background and the top bar (resources) stay visible around the window.
+        const scr: any = (G.main as any).screen;
+        const sroot: Node | null = scr ? (scr.root || scr.node || null) : null;
+        if (sroot && isValid(sroot)) for (const c of sroot.children) {
+            if (!c.active || c.name === 'Background' || c.name === 'TopBarSlot') continue;
+            c.active = false;
+            this.hidden.push(c);
+        }
         this.root = v.node;
         v.resize(W, H);
         v.node.setPosition(0, -20, 0);
@@ -96,7 +112,14 @@ export class ResearchOverlay implements IOverlay {
         const view = mk('View', area, 0, 0, this.viewW - 6, this.viewH - 6);
         view.addComponent(Mask);
         this.content = mk('Content', view, 0, 0, 0, 0, 0, 1);
-        this.lines = mk('Lines', this.content).addComponent(Graphics);
+        // Draw order (few draw calls and triangles for ~90 nodes): the lines and separators, then the node squares,
+        // frames and icons, all sprites of the research atlas (one batch, 2 triangles each, no Graphics), then all
+        // the node texts (CHAR cache, one batch).
+        this.linkLayer = mk('Links', this.content);
+        registerRedraw(this.linkLayer, () => this.refresh());
+        this.iconLayer = mk('NodeIcons', this.content);
+        this.textLayer = mk('NodeTexts', this.content);
+        this.headLayer = mk('BranchNames', this.content);
         const gutter = mk('Tiers', view, -(this.viewW - 6) / 2, 0, GUTTER, this.viewH - 6, 0, 0.5);
         this.build(gutter);
         this.bindInput(view);
@@ -189,7 +212,9 @@ export class ResearchOverlay implements IOverlay {
             }
             for (const t of own) this.makeNode(t, pos[t.id], rowY(rowOf(t)), b.color);
             const w = NODE + (col - 1) * COL;
-            text(this.content, b.name, 20, left + w / 2, -HEAD / 2 - 2, { bold: true, color: b.color });
+            const head = text(this.headLayer, b.name, 20, left + w / 2, -HEAD / 2 - 2, { color: b.color });
+            head.cacheMode = Label.CacheMode.CHAR;     // one batch for the 6 names; outline instead of bold
+            head.enableOutline = true; head.outlineColor = new Color(10, 8, 16, 255); head.outlineWidth = 1;
             this.branchX[b.id] = left + w / 2;
             x += w + BRANCH_GAP;
             bars.push(x - BRANCH_GAP / 2);
@@ -222,7 +247,7 @@ export class ResearchOverlay implements IOverlay {
             sp.node.angle = 90;
             sp.node.setScale(BAR_SCALE, BAR_SCALE, 1);
             sp.node.name = 'BranchBar';
-            sp.node.setSiblingIndex(1);
+            sp.node.setSiblingIndex(0);   // under the lines (and out of the batch of the tree sprites)
         }
 
         // Tier bands: a dashed line between two tiers, the tier name in the fixed gutter on the left.
@@ -236,7 +261,9 @@ export class ResearchOverlay implements IOverlay {
             const r0 = tierRow[tier], r1 = tier === 3 && bandRow >= 0 ? bandRow + bandMax : tierRow[tier] + maxDepth[tier];
             const y = (rowY(r0) + rowY(r1)) / 2;
             const def = tiers.find(t => t.tier === tier) || { labLevel: Math.min(3, tier) };
-            const l = text(gutter, `${def.short || 'T' + tier}\nLab ${def.labLevel}`, 12, GUTTER / 2, 0, { bold: true, color: COLORS.textDim });
+            const l = text(gutter, `${def.short || 'T' + tier}\nLab ${def.labLevel}`, 12, GUTTER / 2, 0, { color: COLORS.textDim });
+            l.cacheMode = Label.CacheMode.CHAR;     // one batch for the tier names; outline instead of bold
+            l.enableOutline = true; l.outlineColor = new Color(10, 8, 16, 255); l.outlineWidth = 1;
             this.tierLabels.push({ label: l, y });
         }
         const bg = gutter.addComponent(Graphics);
@@ -249,24 +276,31 @@ export class ResearchOverlay implements IOverlay {
     }
 
     private makeNode(t: any, x: number, y: number, color: string) {
-        const n = mk('Tech_' + t.id, this.content, x, y, NODE, NODE);
-        const g = n.addComponent(Graphics);
+        // "Tech_<id>": an empty node at the node position (taps are matched by position; tests find it by name).
+        mk('Tech_' + t.id, this.content, x, y, NODE, NODE);
         // Picture: the node icon (research.json "icon"), or a short text for now ("label").
         const size = ConfigMgr.research.iconSize || 96;
+        const bg = sprite(this.iconLayer, Assets.frames('sprites/research/tree_node_bg', NODE, NODE)[0] || null, NODE, NODE, x, y);
+        const frame = sprite(this.iconLayer, Assets.frames('sprites/research/tree_node_frame', 58, 58)[0] || null, 58, 58, x, y);
         const frames = t.icon ? Assets.frames(t.icon, size, size) : [];
-        const icon = frames.length ? sprite(n, frames[0], NODE - 6, NODE - 6) : null;
-        const label = text(n, t.label || t.name.slice(0, 5), 12, 0, 8, { bold: true });
+        const icon = frames.length ? sprite(this.iconLayer, frames[0], NODE - 6, NODE - 6, x, y) : null;
+        const label = this.nodeText(t.label || t.name.slice(0, 5), 12, x, y + 8);
         label.node.active = !icon;
-        // Level on a dark strip at the bottom of the square.
-        const strip = mk('LevelStrip', n, 0, -NODE / 2 + 8, NODE - 4, 14).addComponent(Graphics);
-        strip.fillColor = hex('#000000', 150);
-        strip.rect(-(NODE - 4) / 2, -7, NODE - 4, 14);
-        strip.fill();
-        const level = text(n, '', 11, 0, -NODE / 2 + 8, { color: COLORS.textDim, bold: true });
-        const node: TreeNode = { id: t.id, t, x, y, g, label, level, color, icon };
-        registerRedraw(n, () => this.drawNode(node));
+        // Level on a dark strip at the bottom of the square (the strip is drawn with the node square).
+        const level = this.nodeText('', 11, x, y - NODE / 2 + 8);
+        const node: TreeNode = { id: t.id, t, x, y, label, level, color, icon, bg, frame };
         this.nodes.push(node);
         this.byId[t.id] = node;
+    }
+
+    /** A node text: CHAR cache so every node text shares one glyph texture (one batch); outline instead of bold. */
+    private nodeText(str: string, size: number, x: number, y: number): Label {
+        const l = text(this.textLayer, str, size, x, y);
+        l.cacheMode = Label.CacheMode.CHAR;
+        l.enableOutline = true;
+        l.outlineColor = new Color(10, 8, 16, 255);
+        l.outlineWidth = 1;
+        return l;
     }
 
     // ------------------------------------------------------------------ drawing
@@ -277,25 +311,19 @@ export class ResearchOverlay implements IOverlay {
         return this.rm.techLock(id) ? 'locked' : 'open';
     }
 
+    /**
+     * Node square: the grayscale band picture (level strip included) tinted with the node color: bands from 22% of
+     * the color at the top to the full color. Finished nodes are brightest, open ones a little darker, locked ones
+     * grey. Frame: the branch color, darker (white and thicker when selected).
+     */
     private drawNode(n: TreeNode) {
         const st = this.state(n.id);
-        const g = n.g;
-        g.clear();
-        // Background: bands from a dark shade at the top to the branch color at the bottom (like the hero
-        // card backgrounds). Finished nodes are brightest, open ones a little darker, locked ones grey.
         const base = st === 'locked' ? '#4a4656' : st === 'open' ? shade(n.color, 0.75) : n.color;
-        const top = shade(base, 0.22);
-        const BANDS = 11, bh = NODE / BANDS;
-        for (let i = 0; i < BANDS; i++) {
-            g.fillColor = hex(mix(top, base, i / (BANDS - 1)));
-            g.rect(-NODE / 2, NODE / 2 - (i + 1) * bh, NODE, bh + 0.5);
-            g.fill();
-        }
-        // Frame: the branch color, darker (white when selected).
-        g.lineWidth = n.id === this.selected ? 4 : 3;
-        g.strokeColor = hex(n.id === this.selected ? '#ffffff' : st === 'locked' ? '#2e2b36' : shade(n.color, 0.5));
-        g.rect(-NODE / 2, -NODE / 2, NODE, NODE);
-        g.stroke();
+        n.bg.color = hex(base);
+        const sel = n.id === this.selected;
+        n.frame.color = hex(sel ? '#ffffff' : st === 'locked' ? '#2e2b36' : shade(n.color, 0.5));
+        const fs = sel ? 60 : 58;
+        n.frame.node.getComponent(UITransform)!.setContentSize(fs, fs);
         if (n.icon) n.icon.color = st === 'locked' ? new Color(110, 110, 120, 255) : Color.WHITE;
         n.label.color = hex(st === 'locked' ? '#8a8598' : '#ffffff');
         const lv = this.rm.techLevel(n.id);
@@ -303,8 +331,31 @@ export class ResearchOverlay implements IOverlay {
         n.level.color = hex(st === 'max' ? '#ffe08a' : st === 'locked' ? '#8a8598' : '#ffffff');
     }
 
+    /** A pooled line sprite: the middle cell of tree_white (no edge blur), or the dashed separator picture. */
+    private linkSprite(dash: boolean): Sprite {
+        const frame = dash ? Assets.frames('sprites/research/tree_dash', 288, 4)[0] : Assets.frames('sprites/research/tree_white', 2, 2)[4];
+        let sp = this.linkPool[this.linkUsed];
+        if (!sp) { sp = sprite(this.linkLayer, frame || null, 1, 1); this.linkPool.push(sp); }
+        this.linkUsed++;
+        sp.spriteFrame = frame || null;
+        sp.node.active = true;
+        return sp;
+    }
+
+    /** Axis-aligned line from (x1, y1) to (x2, y2), `w` px wide (square ends, so corners join). */
+    private seg(x1: number, y1: number, x2: number, y2: number, w: number, color: string, alpha = 255) {
+        const sp = this.linkSprite(false);
+        sp.node.setPosition((x1 + x2) / 2, (y1 + y2) / 2, 0);
+        sp.node.getComponent(UITransform)!.setContentSize(Math.abs(x2 - x1) + w, Math.abs(y2 - y1) + w);
+        sp.color = hex(color, alpha);
+    }
+
+    /** A polyline of axis-aligned segments. */
+    private path(pts: number[], w: number, color: string) {
+        for (let i = 0; i + 3 < pts.length; i += 2) this.seg(pts[i], pts[i + 1], pts[i + 2], pts[i + 3], w, color);
+    }
+
     private drawLines() {
-        const g = this.lines;
         // Every column above the awakening line leads to the "requiresAll" node: down to the dashed line, along
         // it, and down into the node. Lit for a finished node; the last part once all are done.
         const gate = this.nodes.find(n => n.t.requiresAll);
@@ -312,42 +363,26 @@ export class ResearchOverlay implements IOverlay {
             const busY = this.awakenLineY;
             for (const f of this.feeders) {
                 const done = this.rm.techLevel(f.id) >= f.t.maxLevel;
-                g.lineWidth = done ? 3 : 2;
-                g.strokeColor = hex(done ? f.color : '#5a5468');
-                g.moveTo(f.x, f.y - NODE / 2);
-                g.lineTo(f.x, busY);
-                g.stroke();
+                this.seg(f.x, f.y - NODE / 2, f.x, busY, done ? 3 : 2, done ? f.color : '#5a5468');
             }
             const all = this.rm.research.missingForAll(gate.id).length === 0;
             const xs = this.feeders.map(f => f.x).concat(gate.x);
-            g.lineWidth = all ? 3 : 2;
-            g.strokeColor = hex(all ? gate.color : '#5a5468');
-            g.moveTo(Math.min(...xs), busY);
-            g.lineTo(Math.max(...xs), busY);
-            g.moveTo(gate.x, busY);
-            g.lineTo(gate.x, gate.y + NODE / 2);
-            g.stroke();
+            const c = all ? gate.color : '#5a5468', w = all ? 3 : 2;
+            this.seg(Math.min(...xs), busY, Math.max(...xs), busY, w, c);
+            this.seg(gate.x, busY, gate.x, gate.y + NODE / 2, w, c);
         }
-        // Tier separators were drawn once in build(); the connections are drawn on top of them.
         for (const n of this.nodes) {
             if (!n.t.parent) continue;
             const p = this.byId[n.t.parent];
             if (!p) continue;
             const done = this.rm.techLevel(p.id) >= p.t.maxLevel;
-            g.lineWidth = done ? 4 : 2;
-            g.strokeColor = hex(done ? n.color : '#5a5468');
-            g.moveTo(p.x, p.y - NODE / 2);
-            if (p.x === n.x) g.lineTo(n.x, n.y + NODE / 2);
-            else {
-                // Down from the parent, across, then down into the child. The across part follows the tier line
-                // above the child when the child is in a lower tier, else it runs halfway between the two rows.
-                const lineY = n.t.tier !== p.t.tier ? this.tierLineY[n.t.tier] : undefined;
-                const midY = lineY !== undefined ? lineY : (p.y + n.y) / 2;
-                g.lineTo(p.x, midY);
-                g.lineTo(n.x, midY);
-                g.lineTo(n.x, n.y + NODE / 2);
-            }
-            g.stroke();
+            const w = done ? 4 : 2, c = done ? n.color : '#5a5468';
+            if (p.x === n.x) { this.seg(p.x, p.y - NODE / 2, n.x, n.y + NODE / 2, w, c); continue; }
+            // Down from the parent, across, then down into the child. The across part follows the tier line
+            // above the child when the child is in a lower tier, else it runs halfway between the two rows.
+            const lineY = n.t.tier !== p.t.tier ? this.tierLineY[n.t.tier] : undefined;
+            const midY = lineY !== undefined ? lineY : (p.y + n.y) / 2;
+            this.path([p.x, p.y - NODE / 2, p.x, midY, n.x, midY, n.x, n.y + NODE / 2], w, c);
         }
     }
 
@@ -357,9 +392,10 @@ export class ResearchOverlay implements IOverlay {
             ? 'Build a Research Lab to unlock research.'
             : `Research Lab Lv ${lab}: tier${lab > 1 ? 's 1-' + Math.min(3, lab) : ' 1'} open.` + (lab < 3 ? ' Upgrade the Lab for more.' : '');
         // Lines: redraw everything (tier separators included) so lit connections follow the progress.
-        this.lines.clear();
+        this.linkUsed = 0;
         this.redrawSeparators();
         this.drawLines();
+        for (let i = this.linkUsed; i < this.linkPool.length; i++) this.linkPool[i].node.active = false;
         for (const n of this.nodes) this.drawNode(n);
     }
 
@@ -369,12 +405,14 @@ export class ResearchOverlay implements IOverlay {
     private feeders: TreeNode[] = [];
     /** y of the dashed line above each tier (from tier 2). */
     private tierLineY: { [tier: number]: number } = {};
+    /** Dashed tier lines: pieces of the dash picture (288 px = 16 dashes each), white at 1/3. */
     private redrawSeparators() {
-        const g = this.lines;
-        g.lineWidth = 2;
-        g.strokeColor = hex('#ffffff', 85);
-        for (const y of this.separators) for (let sx = GUTTER; sx < this.treeW; sx += 18) { g.moveTo(sx, y); g.lineTo(sx + 11, y); }
-        g.stroke();
+        for (const y of this.separators) for (let sx = GUTTER; sx < this.treeW; sx += 288) {
+            const sp = this.linkSprite(true);
+            sp.node.setPosition(sx + 144, y, 0);
+            sp.node.getComponent(UITransform)!.setContentSize(288, 4);
+            sp.color = hex('#ffffff', 85);
+        }
     }
 
     // ------------------------------------------------------------------ selection
@@ -384,7 +422,7 @@ export class ResearchOverlay implements IOverlay {
      */
     private select(id: string) {
         this.selected = id;
-        for (const n of this.nodes) this.drawNode(n);
+        this.refresh();
         const t = ConfigMgr.techDef(id);
         if (!t) return;
         const rm = this.rm;
@@ -521,5 +559,10 @@ export class ResearchOverlay implements IOverlay {
         this.panTo(n.x * this.zoom - vw / 2, -n.y * this.zoom - vh / 2);
     }
 
-    destroy() { this.unsubscribe(); this.root.destroy(); }
+    destroy() {
+        this.unsubscribe();
+        for (const c of this.hidden) if (isValid(c)) c.active = true;
+        this.hidden.length = 0;
+        this.root.destroy();
+    }
 }

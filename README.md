@@ -695,6 +695,8 @@ The `tools/` folder is outside the game assets.
 - `tools/towers/prepare_halo.py`: copies the Halo Spire base and crystals of "Spire - Tower Pack 3" into
   `art/combat/towers` and draws the thin halo ring `art/halo/halo_ring.png` and the disc `art/halo/fx_disc.png`
   (also used by the explosion rings; `--ring <art/halo>` draws only these two). Needs Python + Pillow + NumPy.
+- `tools/research/make_tree_parts.py`: draws the research tree pictures (`art/research/tree_*.png`: node square,
+  frame, line, dashed line), packed into the research atlas with the icons.
 - `tools/enemies/thin_frames.py`: keeps only some frames of a sheet (`every2`: every 2nd frame + the last one).
   The death animations were thinned with it (Clampbeetle 13 -> 7 frames, Firebug 11 -> 6, Magma Crab 10 -> 6,
   Scorpion 8 -> 5, Lich King 23 -> 12), and the Flying Demon death keeps only its own 4 frames (the fall was cut).
