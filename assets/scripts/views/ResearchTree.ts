@@ -121,34 +121,58 @@ export class ResearchOverlay implements IOverlay {
         const techs: any[] = cfg.techs;
         const childrenOf: { [id: string]: any[] } = {};
         for (const t of techs) if (t.parent) (childrenOf[t.parent] = childrenOf[t.parent] || []).push(t);
-        // Rows: a node one row below its parent when both are in the same tier.
+        // Awakening band (end of tier 3, below a line of its own): the "requiresAll" node (Tower Awakening) on
+        // its first row, then the "afterAwakening" nodes (one row below their parent when it is in the band too).
+        const band = (t: any) => !!(t && (t.afterAwakening || t.requiresAll));
+        // Rows: a node one row below its parent when both are in the same tier (and band).
         const depth: { [id: string]: number } = {};
         const depthOf = (t: any): number => {
             if (depth[t.id] !== undefined) return depth[t.id];
             const p = t.parent ? ConfigMgr.techDef(t.parent) : null;
-            return (depth[t.id] = p && p.tier === t.tier ? depthOf(p) + 1 : 0);
+            if (band(t)) return (depth[t.id] = t.requiresAll ? 0 : p && band(p) ? depthOf(p) + 1 : 1);
+            return (depth[t.id] = p && p.tier === t.tier && !band(p) ? depthOf(p) + 1 : 0);
         };
-        // Tiers 1-3, then tier 4: the endless technologies, in a row of their own at the bottom.
+        // Tiers 1-3 (then the awakening band), then tier 4: the endless technologies, in a row of their own.
         const lastTier = techs.reduce((m, t) => Math.max(m, t.tier), 3);
         const maxDepth: number[] = [], tierRow: number[] = [];
         for (let i = 0; i <= lastTier; i++) { maxDepth.push(0); tierRow.push(0); }
-        for (const t of techs) maxDepth[t.tier] = Math.max(maxDepth[t.tier], depthOf(t));
-        for (let tier = 2; tier <= lastTier; tier++) tierRow[tier] = tierRow[tier - 1] + maxDepth[tier - 1] + 1;
-        const rows = tierRow[lastTier] + maxDepth[lastTier] + 1;
-        const tierOfRow = (r: number) => { let t = 1; for (let i = 1; i <= lastTier; i++) if (r >= tierRow[i]) t = i; return t; };
-        // Rows of a tier are ROW apart; every new tier adds TIER_GAP.
-        const rowY = (r: number) => -(HEAD + NODE / 2 + 10 + r * ROW + (tierOfRow(r) - 1) * TIER_GAP);
+        let bandMax = -1;
+        for (const t of techs) {
+            if (band(t)) bandMax = Math.max(bandMax, depthOf(t));
+            else maxDepth[t.tier] = Math.max(maxDepth[t.tier], depthOf(t));
+        }
+        let bandRow = -1;
+        for (let tier = 2; tier <= lastTier; tier++) {
+            tierRow[tier] = tierRow[tier - 1] + maxDepth[tier - 1] + 1;
+            if (tier === 4 && bandMax >= 0) { bandRow = tierRow[tier]; tierRow[tier] += bandMax + 1; }
+        }
+        if (bandMax >= 0 && bandRow < 0) bandRow = tierRow[lastTier] + maxDepth[lastTier] + 1;
+        const rows = Math.max(tierRow[lastTier] + maxDepth[lastTier] + 1, bandRow + bandMax + 1);
+        const rowOf = (t: any) => band(t) ? bandRow + depthOf(t) : tierRow[t.tier] + depthOf(t);
+        // Rows are ROW apart; every line above a row (new tier, awakening band) adds TIER_GAP.
+        const starts: number[] = [];
+        for (let tier = 2; tier <= lastTier; tier++) starts.push(tierRow[tier]);
+        if (bandRow >= 0) starts.push(bandRow);
+        const linesAbove = (r: number) => starts.filter(v => v <= r).length;
+        const rowY = (r: number) => -(HEAD + NODE / 2 + 10 + r * ROW + linesAbove(r) * TIER_GAP);
 
-        // Columns: depth-first, a parent above its first child, leaves side by side.
+        // Columns: depth-first, a parent above its first child, leaves side by side. A node with "column" takes
+        // the column of that technology; a "requiresAll" node sits in the middle of its children.
         // A frame bar before the first branch and after the last one too, half a branch gap from the nodes.
         let x = GUTTER + BRANCH_GAP;
         const bars: number[] = [GUTTER + BRANCH_GAP / 2];
         const colOf: { [id: string]: number } = {};
+        const pos: { [id: string]: number } = {};
         for (const b of (cfg.branches || [])) {
             let col = 0;
             const place = (t: any): number => {
-                const kids = childrenOf[t.id] || [];
-                if (kids.length === 0) return (colOf[t.id] = col++);
+                const kids = (childrenOf[t.id] || []).filter(k => !k.column);
+                for (const k of (childrenOf[t.id] || [])) if (k.column) place(k);
+                if (t.column) return -1;
+                if (kids.length === 0) {
+                    if (t.requiresAll && (childrenOf[t.id] || []).length) return -1;
+                    return (colOf[t.id] = col++);
+                }
                 const first = place(kids[0]);
                 for (let i = 1; i < kids.length; i++) place(kids[i]);
                 return (colOf[t.id] = first);
@@ -156,12 +180,32 @@ export class ResearchOverlay implements IOverlay {
             const roots = techs.filter(t => t.branch === b.id && !t.parent);
             for (const r of roots) place(r);
             const left = x;
-            for (const t of techs) if (t.branch === b.id) this.makeNode(t, left + NODE / 2 + colOf[t.id] * COL, rowY(depthOf(t) + tierRow[t.tier]), b.color);
+            const own = techs.filter(t => t.branch === b.id);
+            for (const t of own) if (t.column && colOf[t.column] !== undefined) colOf[t.id] = colOf[t.column];
+            for (const t of own) if (colOf[t.id] !== undefined) pos[t.id] = left + NODE / 2 + colOf[t.id] * COL;
+            for (const t of own) if (pos[t.id] === undefined) {
+                const kx = (childrenOf[t.id] || []).map(k => pos[k.id]).filter(v => v !== undefined);
+                pos[t.id] = kx.length ? (Math.min(...kx) + Math.max(...kx)) / 2 : left + NODE / 2;
+            }
+            for (const t of own) this.makeNode(t, pos[t.id], rowY(rowOf(t)), b.color);
             const w = NODE + (col - 1) * COL;
             text(this.content, b.name, 20, left + w / 2, -HEAD / 2 - 2, { bold: true, color: b.color });
             this.branchX[b.id] = left + w / 2;
             x += w + BRANCH_GAP;
             bars.push(x - BRANCH_GAP / 2);
+        }
+        // The awakening line, and the nodes that feed the "requiresAll" node: the lowest node of every column
+        // above the line (endless ones aside).
+        if (bandRow >= 0) {
+            const y = (rowY(bandRow - 1) + rowY(bandRow)) / 2;
+            this.separators.push(y);
+            this.awakenLineY = y;
+            const low: { [x: number]: TreeNode } = {};
+            for (const n of this.nodes) {
+                if (band(n.t) || !n.t.maxLevel) continue;
+                if (!low[n.x] || n.y < low[n.x].y) low[n.x] = n;
+            }
+            this.feeders = Object.keys(low).map(k => low[+k]);
         }
         this.treeW = x;
         this.treeH = -rowY(rows - 1) + NODE / 2 + 24;
@@ -189,7 +233,7 @@ export class ResearchOverlay implements IOverlay {
         }
         const tiers: any[] = cfg.tiers || [];
         for (let tier = 1; tier <= lastTier; tier++) {
-            const r0 = tierRow[tier], r1 = tierRow[tier] + maxDepth[tier];
+            const r0 = tierRow[tier], r1 = tier === 3 && bandRow >= 0 ? bandRow + bandMax : tierRow[tier] + maxDepth[tier];
             const y = (rowY(r0) + rowY(r1)) / 2;
             const def = tiers.find(t => t.tier === tier) || { labLevel: Math.min(3, tier) };
             const l = text(gutter, `${def.short || 'T' + tier}\nLab ${def.labLevel}`, 12, GUTTER / 2, 0, { bold: true, color: COLORS.textDim });
@@ -261,6 +305,29 @@ export class ResearchOverlay implements IOverlay {
 
     private drawLines() {
         const g = this.lines;
+        // Every column above the awakening line leads to the "requiresAll" node: down to the dashed line, along
+        // it, and down into the node. Lit for a finished node; the last part once all are done.
+        const gate = this.nodes.find(n => n.t.requiresAll);
+        if (gate && this.feeders.length) {
+            const busY = this.awakenLineY;
+            for (const f of this.feeders) {
+                const done = this.rm.techLevel(f.id) >= f.t.maxLevel;
+                g.lineWidth = done ? 3 : 2;
+                g.strokeColor = hex(done ? f.color : '#5a5468');
+                g.moveTo(f.x, f.y - NODE / 2);
+                g.lineTo(f.x, busY);
+                g.stroke();
+            }
+            const all = this.rm.research.missingForAll(gate.id).length === 0;
+            const xs = this.feeders.map(f => f.x).concat(gate.x);
+            g.lineWidth = all ? 3 : 2;
+            g.strokeColor = hex(all ? gate.color : '#5a5468');
+            g.moveTo(Math.min(...xs), busY);
+            g.lineTo(Math.max(...xs), busY);
+            g.moveTo(gate.x, busY);
+            g.lineTo(gate.x, gate.y + NODE / 2);
+            g.stroke();
+        }
         // Tier separators were drawn once in build(); the connections are drawn on top of them.
         for (const n of this.nodes) {
             if (!n.t.parent) continue;
@@ -297,6 +364,9 @@ export class ResearchOverlay implements IOverlay {
     }
 
     private separators: number[] = [];
+    /** Awakening band: y of its line, and the lowest node of every column above it (they lead to the "requiresAll" node). */
+    private awakenLineY = 0;
+    private feeders: TreeNode[] = [];
     /** y of the dashed line above each tier (from tier 2). */
     private tierLineY: { [tier: number]: number } = {};
     private redrawSeparators() {
@@ -346,6 +416,12 @@ export class ResearchOverlay implements IOverlay {
         for (const rid of (t.requires || [])) {
             const q = ConfigMgr.techDef(rid);
             if (q) lines.push(`Requires: "${q.name}" at max level - ${rm.techLevel(q.id) >= q.maxLevel ? 'done' : 'not yet (' + rm.techLevel(q.id) + '/' + q.maxLevel + ')'}.`);
+        }
+        if (t.requiresAll) {
+            const left = rm.research.missingForAll(t.id);
+            lines.push(left.length
+                ? `Requires: every technology above the awakening line at max level - ${left.length} left (${left.slice(0, 4).map((q: any) => q.name).join(', ')}${left.length > 4 ? ', ...' : ''}).`
+                : 'Requires: every technology above the awakening line at max level - done.');
         }
         for (const l of techEffectLines(t)) lines.push(l);
         const block = rm.techBlock(id);

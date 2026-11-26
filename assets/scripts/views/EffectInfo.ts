@@ -26,7 +26,7 @@ function resolve(id: string, level: number, mastery: number, towerLevel = 1): an
     return EffectScaling.resolve(ConfigMgr.towerEffectDef(id), { level, mastery, towerLevel, has });
 }
 
-/** Chance of an effect on a tower level: research chance x tower multiplier (cap 50% x multiplier) + effect-chance bonus. */
+/** Chance of an effect on a tower level: chance research (cap 50%) + effect-chance bonuses (Arcane Mastery, Attunement, heroes), 100% at most. */
 export function effectChance(id: string, researchedPct: number, tower: any, towerLevel: number): { total: number; text: string } {
     const lv = tower ? tower.levels[Math.max(0, Math.min(tower.levels.length - 1, towerLevel - 1))] : null;
     const mul = (lv && lv.effectChanceMul) || 1;
@@ -34,9 +34,16 @@ export function effectChance(id: string, researchedPct: number, tower: any, towe
     const bonus = tower ? rm().buff('effectChance', tower.id) : rm().buff('effectChance');
     const base = Math.min(cap, researchedPct * mul);
     const total = Math.min(100, Math.round(base + bonus));
-    const parts = [`research ${Math.round(researchedPct)}%${mul !== 1 ? ' x' + mul + ' (tower Lv ' + towerLevel + ')' : ''}`];
-    if (bonus > 0) parts.push(`+${Math.round(bonus)}% effect chance bonus`);
-    return { total, text: parts.join(', ') + `; max ${cap}% from research` };
+    // Where the chance comes from: the effect's two chance technologies (max 50%), then on top of that
+    // Arcane Mastery (all towers), the tower's Attunement and hero buffs; 100% at most.
+    const techPts = (id: string) => { const t = ConfigMgr.techDef(id); return t ? rm().techLevel(id) * (t.valuePerLevel || 0) : 0; };
+    const arcane = techPts('r_effect'), attune = tower ? techPts('r_chance_' + tower.id) : 0;
+    const heroes = Math.max(0, bonus - arcane - attune);
+    const parts = [`effect research ${Math.round(base)}%${mul !== 1 ? ' (x' + mul + ' at tower Lv ' + towerLevel + ')' : ''} of ${cap}%`];
+    if (arcane > 0) parts.push(`Arcane Mastery +${Math.round(arcane)}%`);
+    if (attune > 0) parts.push(`${tower.name} Attunement +${Math.round(attune)}%`);
+    if (heroes > 0) parts.push(`heroes +${Math.round(heroes)}%`);
+    return { total, text: parts.join(', ') + '; 100% at most' };
 }
 
 /** Owned passives that change this effect. */
@@ -74,7 +81,7 @@ export function techEffectLines(t: any): string[] {
         out.push(unlocked ? 'Unlocked.' : `Unlocking it does not trigger it yet: its chance and effect level come from the next two technologies (+5% chance and +1 effect level per level).`);
         show('At effect level 1', 1, 0, 5);
         show('At effect level 10', EffectScaling.maxLevel, 0, 50);
-        out.push(`Its Mastery technology (under the second chance technology) then adds: ${masterySummary(fx.id)}`);
+        out.push(`Its Mastery technology (under Tower Awakening) then adds: ${masterySummary(fx.id)}`);
     } else if (fx.kind === 'chance') {
         out.push(`Effect level ${level}/${EffectScaling.maxLevel} (levels of both chance technologies), Mastery ${mastery}/3.`);
         show('Now', level, mastery, pct);
@@ -87,7 +94,7 @@ export function techEffectLines(t: any): string[] {
     const ps = passivesOf(fx.id);
     if (ps.length) out.push(`Hero passives on this effect: ${ps.join(', ')} (included above).`);
     out.push(`Numbers for a level 1 ${towerName}. ${FLAT_NOTE}`);
-    out.push('Arcane Mastery and hero effect-chance bonuses add their chance on top, above the 50% research limit.');
+    out.push('Arcane Mastery, the tower Attunement and hero effect-chance buffs add their chance on top of the 50% from these technologies (100% at most).');
     return out;
 }
 

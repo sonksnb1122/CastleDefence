@@ -57,6 +57,16 @@
     },
     {
       "fromWave": 12,
+      "toWave": 49,
+      "weights": {
+        "berserker": 5,
+        "runner": 5,
+        "tank": 3,
+        "juggernaut": 2
+      }
+    },
+    {
+      "fromWave": 50,
       "toWave": 9999,
       "weights": {
         "berserker": 5,

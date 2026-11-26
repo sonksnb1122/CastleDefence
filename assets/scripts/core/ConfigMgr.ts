@@ -351,6 +351,7 @@ export class ConfigMgr {
                 if (!branches.some(b => b.id === t.branch)) E.push(`research.json: tech "${t.id}" has unknown branch "${t.branch}"`);
                 if (!(t.tier >= 1 && t.tier <= 4)) E.push(`research.json: tech "${t.id}" needs "tier" 1 to 4`);
                 for (const r of (t.requires || [])) if (!ConfigMgr.techDef(r)) E.push(`research.json: tech "${t.id}" requires unknown tech "${r}"`);
+                if (t.column && (!ConfigMgr.techDef(t.column) || ConfigMgr.techDef(t.column).branch !== t.branch)) E.push(`research.json: tech "${t.id}" column "${t.column}" must be a tech of the same branch`);
                 if (t.parent) {
                     const p = ConfigMgr.techDef(t.parent);
                     if (!p || !p.maxLevel) E.push(`research.json: tech "${t.id}" has an unknown or endless parent "${t.parent}"`);

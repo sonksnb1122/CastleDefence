@@ -394,6 +394,11 @@
       "key": "haloBlock",
       "name": "Warding Halo level",
       "unit": ""
+    },
+    {
+      "key": "towerAwakening",
+      "name": "Tower Awakening",
+      "unit": ""
     }
   ]
 }

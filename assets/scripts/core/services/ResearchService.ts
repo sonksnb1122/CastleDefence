@@ -63,7 +63,26 @@ export class ResearchService {
             const q = ConfigMgr.techDef(r);
             return `Needs ${q ? q.name : r} at max level`;
         }
+        // "requiresAll" (Tower Awakening): every other finite technology at max level.
+        if (t.requiresAll) {
+            const left = this.missingForAll(id);
+            if (left.length) return `Needs every technology above the awakening line at max level (${left.length} left)`;
+        }
         return null;
+    }
+
+    /**
+     * Technologies a "requiresAll" node still waits for: every finite technology that is not at max level,
+     * except endless ones, the node itself, the nodes below it (its children need it first) and the
+     * "afterAwakening" ones (drawn below it, e.g. Warding / Empowering / Mending Halo).
+     */
+    missingForAll(id: string): any[] {
+        const below = (t: any): boolean => {
+            for (let p = t; p && p.parent; p = ConfigMgr.techDef(p.parent)) if (p.parent === id) return true;
+            return false;
+        };
+        return ConfigMgr.research.techs.filter((t: any) =>
+            t.id !== id && !t.afterAwakening && !ResearchService.isEndless(t) && !below(t) && this.level(t.id) < t.maxLevel);
     }
 
     /**

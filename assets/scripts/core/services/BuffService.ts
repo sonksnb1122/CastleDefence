@@ -65,7 +65,7 @@ export class BuffService {
         if (!fromHeroesOnly) {
             for (const t of ConfigMgr.research.techs) {
                 const lv = d.research[t.id] || 0;
-                if (lv > 0) add({ key: t.buffKey, value: t.valuePerLevel * lv });
+                if (lv > 0) add({ key: t.buffKey, value: t.valuePerLevel * lv, towerId: t.towerId });
             }
         }
         for (const id of d.heroes) for (const e of this.heroBuffs(id)) add(e);

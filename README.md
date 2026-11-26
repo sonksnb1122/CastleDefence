@@ -48,7 +48,7 @@ If the wall's HP reaches 0, the game is over.
 
 **Starting resources:** 600 food, 700 material, 700 gold.
 
-**Energy Core:** a fourth resource, dropped by bosses (see [Hero skills and Energy Cores](#hero-skills-and-energy-cores)). It is shown in the top bar and cannot be traded in the Market.
+**Energy Core:** a fourth resource: the Base makes 1 per wave and bosses drop more (see [Hero skills and Energy Cores](#hero-skills-and-energy-cores)). It is shown in the top bar and cannot be traded in the Market.
 
 **Saving:** one autosave slot (written after every wave and when the app goes to the background)
 and three manual slots. Saving is only possible during preparation.
@@ -116,6 +116,7 @@ just outside the tower to the halo radius and fades out:
 - **Empowering Halo** (research under *Warding Halo*, 5 levels): the closest other towers (not Halo Spires) get
   +6% of their level's base damage and +4% of their base attack speed per level, added to the base before the %
   buffs. A tower near several spires keeps the strongest buff (no stacking). Their Info window shows it.
+  Four Lv 3 spires are enough for a full field: each sits in the middle of 8 towers (4 + 4 × 8 = 36).
 - **Mending Halo** (research under *Warding Halo*): every N activations the spire restores a share of the missing
   wall HP. Several spires mend one after the other (each one from what the previous one left), so it does not
   add up to more than the missing HP.
@@ -144,16 +145,16 @@ just outside the tower to the halo radius and fades out:
 ### Special effects
 Every tower has three special effects. An effect does nothing until its **Unlock** technology is researched
 (Tower Effects branch, Research Lab Lv 2). Its chance then comes from two rate technologies: +5% per level,
-5 levels in tier 2 and 5 more in tier 3, up to 50%. The Crystal gets twice the chance at level 3, so a fully
-researched Crystal reaches 100%.
-*Arcane Mastery* (and hero effect-chance buffs) add their points on top of every unlocked effect, above the 50%
-limit: with +25% every researched effect reaches 75% (100% at most).
+5 levels in tier 2 and 5 more in tier 3, up to 50%.
+*Arcane Mastery*, the three tower *Attunements* (Crossbow / Crystal / Catapult Attunement, tier 3, under Arcane Mastery, 5 levels:
++5% per level for that tower) and hero effect-chance buffs add their points on top of every unlocked effect,
+above the 50% limit (100% at most): 50% + 25% (Arcane Mastery) + 25% (Attunement) = 100%.
 
 **Effect level and Mastery.** The levels of the two rate technologies are also the effect's **level (1-10)**:
 every level adds flat damage or makes the debuff stronger. The damage parts based on HP (max HP, current HP),
-longer debuffs and more stacks come from the **Mastery** technology (tier 3, 3 levels, under the second rate
-node); Mastery 3 gives the full effect. Flat damage is multiplied by the tower level (x1 / x1.5 / x2), goes
-through defense and never crits; the effect-chance and Bleed damage research apply, the tower damage % does not.
+longer debuffs and more stacks come from the **Mastery** technology (tier 3, 3 levels, under *Tower Awakening*);
+Mastery 3 gives the full effect. Flat damage is multiplied by the tower level (x1 / x1.5 / x2), goes
+through defense and never crits; the effect-chance research applies, the tower damage % does not.
 Numbers: `effects.json` "effectScaling" and the `"scaling"` of each effect.
 The tower's *Info* window lists its three effects with their current chance and what they do at their level.
 
@@ -223,7 +224,7 @@ files of its own, it uses the Firebug death sound and the Catapult shot sound (e
   | 1–3 | Scorpions and Firebugs |
   | from 4 | Clampbeetles join |
   | from 7 | Magma Crabs join |
-  | from 12 | Flying Demons join |
+  | from 50 | Flying Demons join (they attack the wall from range) |
 
 - **Wave 5, "Swarm":** a special wave with many weak Firebugs and Scorpions.
 - **Bosses:** every 10th wave adds a giant Magma Crab boss with ×4 HP, ×3 damage and ×8 gold. From wave 70 the
@@ -350,17 +351,24 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 
 | Branch | Tier 1 (Lab Lv 1) | Tier 2 (Lab Lv 2) | Tier 3 (Lab Lv 3) |
 |---|---|---|---|
-| Offense | Flat bonuses: +2 damage, +0.01 attacks/s, +4 px range (10 levels each); Armor / Spell Piercing | Damage %, Attack speed %, Range %, Crit rate, Explosion radius | Aerodynamics, Smart Targeting, Crit damage |
-| Economy | +5 food / material / gold per building per wave, +1 gold per kill (4 levels each) | Food / material / gold production %, gold from kills % | One more % node for each, Scholarship (-4% research cost per level) |
+| Offense | Flat bonuses: +20 damage, +0.1 attacks/s, +4 px range (10 levels each); Armor / Spell Piercing | Damage %, Attack speed %, Range %, Crit rate, Explosion radius | Aerodynamics, Smart Targeting, Crit damage |
+| Economy | +25 food / material per building per wave, +150 gold per wave (only the Base makes gold), +5 gold per kill (4 levels each) | Food / material / gold production %, gold from kills % | One more % node for each, Scholarship (-4% research cost per level) |
 | Fortification | +100 wall HP per level (5 levels) | Wall HP %, Wall defense (half levels) | Self-Mending Stone (+2% max HP back after each wave), Masonry Guild (-8% repair cost); Halo Spire (unlocks the tower, needs both at max), then Warding Halo (2 levels), then Empowering Halo (5 levels) and Mending Halo |
-| Tower Effects | - | Unlock each of the 9 effects, then its first 5 rate levels | 5 more rate levels per effect, then its Mastery (3 levels); Arcane Mastery |
+| Tower Effects | - | Unlock each of the 9 effects, then its first 5 rate levels | 5 more rate levels per effect; Arcane Mastery; Crossbow / Crystal / Catapult Attunement under it (+5% effect chance per level for that tower, 5 levels); Tower Awakening, then the 9 effect Masteries (3 levels each) |
 | Heroes | - | Hero Scholarship (heroes can learn skills) | Ascension (hero promotion), Battle Tactics, Twin Cast, Arcane Amplifier |
-| Curses | - | Weakening Hex, Withering Curse, Slow / Stun duration, Bleed / Burn damage (half levels) | (full levels) |
+| Curses | - | Weakening Hex, Withering Curse, Slow / Stun duration (half levels) | (full levels) |
 
 **Endless row** (Research Lab Lv 3, at the bottom of the tree): *Masterwork Ammunition* (+5% damage per level, under
 the Damage % node) and *Living Stone* (+5% wall HP per level, under the Wall HP % node) have no max level.
 
-Flat bonuses are added to the base value before the % bonuses.
+**Tower Awakening** (Tower Effects, tier 3, 1 level, `"requiresAll"`): the last step of the tree, below a line of
+its own at the end of tier 3. It needs every technology above that line at max level (endless ones aside): the
+lowest node of every column is linked to it. Below it: the 9 effect Masteries (each under its effect's column) and,
+in the Fortification branch, Warding Halo, then Empowering Halo and Mending Halo (`"afterAwakening"`: not needed for
+Tower Awakening, and they do not need it either). Its info window counts the technologies still missing.
+
+Flat bonuses are added to the base value before the % bonuses. Research costs were lowered by a quarter
+(`baseCost`, Energy Cores unchanged).
 
 **Old saves** (before the tree) keep their technology levels: every node with a level gets its parents at max
 level for free, effect research is split into the Unlock node + the two rate nodes, and *Hero Scholarship* is
@@ -413,7 +421,8 @@ cancel); `<<` and `>>` go to the previous / next skill.
 ## Hero skills and Energy Cores
 
 **Energy Cores** drop from every boss: `2 + floor(wave / 50)` cores per boss (`waves.json` "bossCoreDrop"),
-so later bosses give more. The cores of a wave are listed in the "Wave cleared" window.
+so later bosses give more, and the Base makes **1 Energy Core after every wave** (`building.json` base
+"production"). The cores of a wave are listed in the "Wave cleared" window.
 
 **Skill books** are sold in the Market of the Base, tab **Skill Books** (bottom right): books owned on the
 left, this wave's offers on the right. Every wave brings a new random choice of 4-6 books, paid in gold

@@ -45,7 +45,7 @@
     {
       "id": "base",
       "name": "Base",
-      "description": "Heart of the castle. Produces gold after each wave and limits other buildings.",
+      "description": "Heart of the castle. Produces gold and 1 Energy Core after each wave and limits other buildings.",
       "fixed": true,
       "buildable": false,
       "color": "#c9a227",
@@ -60,7 +60,8 @@
           "level": 1,
           "cost": {},
           "production": {
-            "gold": 120
+            "gold": 120,
+            "core": 1
           },
           "towerLimit": 10,
           "sprite": {
@@ -80,7 +81,8 @@
             "food": 400
           },
           "production": {
-            "gold": 250
+            "gold": 250,
+            "core": 1
           },
           "towerLimit": 20,
           "sprite": {
@@ -100,7 +102,8 @@
             "food": 6000
           },
           "production": {
-            "gold": 900
+            "gold": 900,
+            "core": 1
           },
           "towerLimit": 36,
           "sprite": {

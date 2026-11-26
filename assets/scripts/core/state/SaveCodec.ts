@@ -177,8 +177,9 @@ export class SaveCodec {
     static migrateMastery(research: any): { [id: string]: number } {
         const out: { [id: string]: number } = Object.assign({}, research);
         for (const t of ConfigMgr.research.techs) {
-            if (typeof t.buffKey !== 'string' || t.buffKey.indexOf('effectMastery:') !== 0 || !t.parent) continue;
-            const p = ConfigMgr.techDef(t.parent);
+            if (typeof t.buffKey !== 'string' || t.buffKey.indexOf('effectMastery:') !== 0) continue;
+            // The second chance technology of the effect (the Masteries now hang under Tower Awakening).
+            const p = ConfigMgr.techDef('r_fx_' + t.buffKey.slice('effectMastery:'.length) + '_2');
             if (p && (out[p.id] || 0) >= p.maxLevel) out[t.id] = t.maxLevel;
         }
         return out;
