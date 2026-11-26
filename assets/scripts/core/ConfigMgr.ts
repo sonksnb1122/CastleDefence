@@ -262,7 +262,8 @@ export class ConfigMgr {
                     num('tower.json', lv, 'critRate', where); num('tower.json', lv, 'critDamage', where);
                     cost('tower.json', lv.upgradeCost, where);
                     if (halo) { if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.halo) E.push(`tower.json: ${where} needs "sprite" with weapon/halo`); }
-                    else if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.projectile || !lv.sprite.impact) E.push(`tower.json: ${where} needs "sprite" with weapon/projectile/impact`);
+                    // "impact" (hit effect) is optional: the Crystal has none.
+                    else if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.projectile) E.push(`tower.json: ${where} needs "sprite" with weapon/projectile`);
                     for (const ef of (lv.effects || [])) if (!ConfigMgr.towerEffectDef(ef.id)) E.push(`tower.json: ${where} references unknown effect "${ef.id}"`);
                 }
             }

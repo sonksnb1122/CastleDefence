@@ -394,19 +394,6 @@
               "tip": 4,
               "faceOffset": -45,
               "arc": 0
-            },
-            "impact": {
-              "path": "sprites/towers/t2_l1_impact",
-              "cellW": 64,
-              "cellH": 64,
-              "frameTime": 0.06,
-              "anchorY": 0.41,
-              "frames": [
-                1,
-                2,
-                3,
-                4
-              ]
             }
           }
         },
@@ -469,20 +456,6 @@
               "tip": 4,
               "faceOffset": -45,
               "arc": 0
-            },
-            "impact": {
-              "path": "sprites/towers/t2_l2_impact",
-              "cellW": 64,
-              "cellH": 64,
-              "frameTime": 0.06,
-              "anchorY": 0.41,
-              "frames": [
-                1,
-                2,
-                3,
-                4,
-                5
-              ]
             }
           }
         },
@@ -545,21 +518,6 @@
               "tip": 4,
               "faceOffset": -45,
               "arc": 0
-            },
-            "impact": {
-              "path": "sprites/towers/t2_l3_impact",
-              "cellW": 64,
-              "cellH": 64,
-              "frameTime": 0.06,
-              "anchorY": 0.41,
-              "frames": [
-                1,
-                2,
-                3,
-                4,
-                5,
-                6
-              ]
             }
           }
         }
@@ -725,12 +683,13 @@
               "stoneGap": 5
             },
             "impact": {
-              "path": "sprites/towers/t4_l2_impact",
+              "path": "sprites/towers/t4_l1_impact",
               "cellW": 64,
               "cellH": 64,
               "frameTime": 0.07,
               "anchorY": 0.52,
               "frames": [
+                0,
                 2,
                 3,
                 4,
@@ -804,7 +763,7 @@
               "stoneGap": 5
             },
             "impact": {
-              "path": "sprites/towers/t4_l3_impact",
+              "path": "sprites/towers/t4_l1_impact",
               "cellW": 64,
               "cellH": 64,
               "frameTime": 0.07,
@@ -1003,5 +962,6 @@
     }
   ],
   "_docFlying": "Towers with \"hitsFlying\": false (Catapult) never target flying enemies (enemy.json \"flying\") and their explosions do not hit them.",
-  "_docHalo": "Halo Spire (kind 'halo'): attackSpeed = activations per second (only while enemies are on the field). attackRange = halo radius: a fixed value, range research and buffs never change it (a bigger halo would block every projectile). Each activation sends out one thin ring ('halo': image 'path' of 'size' px with a ring of radius 'ringRadius'): it starts at 'startRadius' (outside the tower) and grows to the halo radius in 'growTime' seconds, fading out at the end; an enemy projectile the ring touches vanishes (not the ones inside the ring), at most 'blockCount' per halo, x (1 + Warding Halo level) (research 'haloBlock'). Boss projectiles are never blocked. Needs research to be built (unlockKey) and for its buff ('aura') and wall mending (mendEvery activations -> mendPct % of the missing wall HP)."
+  "_docHalo": "Halo Spire (kind 'halo'): attackSpeed = activations per second (only while enemies are on the field). attackRange = halo radius: a fixed value, range research and buffs never change it (a bigger halo would block every projectile). Each activation sends out one thin ring ('halo': image 'path' of 'size' px with a ring of radius 'ringRadius'): it starts at 'startRadius' (outside the tower) and grows to the halo radius in 'growTime' seconds, fading out at the end; an enemy projectile the ring touches vanishes (not the ones inside the ring), at most 'blockCount' per halo, x (1 + Warding Halo level) (research 'haloBlock'). Boss projectiles are never blocked. Needs research to be built (unlockKey) and for its buff ('aura') and wall mending (mendEvery activations -> mendPct % of the missing wall HP).",
+  "_docImpact": "sprite.impact: the hit effect where a shot lands (none for the Crystal). Crossbow and Catapult use one effect for every level, and an enemy shows at most one at a time: a new one starts only when the last one on that enemy is over."
 }

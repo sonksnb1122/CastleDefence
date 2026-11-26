@@ -306,6 +306,10 @@ Every tower hit goes through one pipeline (`CombatManager.computeDamage`):
 **Explosions:** a shot hits its target and every enemy whose center is inside the explosion radius; damage and
 crits are rolled for each enemy. The Crossbow radius is fixed (explosion research does not apply).
 
+**Hit effects:** the Crossbow and the Catapult show one hit effect (the same for every level) where the shot lands;
+an enemy shows at most one at a time, and a new one starts only when the last one is over. The Crystal has no hit
+effect (its explosion ring shows the hit).
+
 ### Special effect chance
 
 The chance of an effect on each hit = its two chance technologies (+5% per level, 50% at most) + *Arcane Mastery*
@@ -607,11 +611,12 @@ Creator and are not in the repository; the editor recreates them the first time 
 
 ### Test saves
 
-For testing, **Load Game** also lists nine read-only saves under *Test saves (bot)*: the game as a bot
-played it up to wave 30, 50, 70, 90, 100 and 110, then every 20 waves (130, 150, 170). The bot builds and
-upgrades everything (4 Halo Spires next to the wall from wave 72), recruits heroes, researches every
-technology (Tower Awakening at wave 79, every finite technology by wave 93, then the endless ones) and uses the
-Market. It loses at wave 180.
+For testing, **Load Game** also lists ten read-only saves under *Test saves (bot)*: the game as a bot
+played it up to wave 30, 50, 70, 90, 100 and 110, then every 20 waves (130, 150, 170, 190). The bot builds and
+upgrades everything (4 Halo Spires next to the wall from wave 71), recruits heroes, buys skill books and teaches
+them (Hero Scholarship at wave 17), promotes the heroes to 5 stars, casts the hero skills in battle, researches
+every technology (Tower Awakening at wave 75, every finite technology by wave 84, then the endless ones) and uses
+the Market. It is still alive at wave 200.
 - They are the files `assets/resources/presets/wave_<n>.json` and cannot be deleted in the game.
 - Loading one starts a normal game from that point; the file itself is never changed.
 - To hide them, set `TEST_SAVES = []` in `Main.ts`.
@@ -651,7 +656,7 @@ assets/
 art/                          picture sources that are not shipped as they are (packed into the atlases)
   combat/                     enemies/, towers/, status/: sources of sprites/atlas/combat
   boss/                       one folder per boss (lich/): sources of sprites/atlas/boss
-  halo/                       Halo Spire ring: source of sprites/atlas/halo
+  halo/                       Halo Spire ring and the effect disc: sources of sprites/atlas/halo
   research/                   research icons (96 x 96 PNG): sources of sprites/atlas/research
 ```
 
@@ -674,23 +679,7 @@ art/                          picture sources that are not shipped as they are (
   connects buttons, so layouts are edited in the editor. HUD elements use Widgets to stay on
   the screen edges.
 - **Services.** `ResourceMgr` is a small facade over one service per game system. Screens
-  listen to its change event instead of polling.
-- **Performance.**
-  - **Pooling:** enemies, projectiles, effects and damage numbers are reused instead of being
-    created and destroyed. About 660 nodes are created during wave 100, against more than
-    50,000 before pooling.
-  - **Fewer draw calls:** all combat sprites share one packed atlas texture. HP bars are sprites
-    on the same texture. Damage numbers use the CHAR label cache.
-  - **Loading on demand:** the 27 large hero card sheets are in a separate bundle. A card only
-    keeps its texture while it is visible on screen.
-  - **Smaller files:** the hero card sheets are 256-color PNGs (about 11 MB instead of 38 MB), the
-    castle map is a JPG (about 0.95 MB instead of 7.2 MB), and the atlas sources stay out of
-    `resources` so the build only ships the atlases.
-- **Free placement.** Buildings and towers are placed at any position inside their area,
-  with overlap and spacing checks, and their exact position is saved.
-- **Saves.** Saves are JSON in local storage, with a version number and validation, so a
-  broken or outdated save never crashes the game.
-
+  listen to its change event instead of polling
 ---
 
 ## Tools
@@ -704,8 +693,11 @@ The `tools/` folder is outside the game assets.
   Run it again after changing a sheet or an icon: `python tools/atlas/pack_atlas.py assets/resources
   [combat|halo|boss|research|all]`. Needs Python + Pillow.
 - `tools/towers/prepare_halo.py`: copies the Halo Spire base and crystals of "Spire - Tower Pack 3" into
-  `art/combat/towers` and draws the thin halo ring `art/halo/halo_ring.png` (`--ring <art/halo>` draws only the
-  ring). Needs Python + Pillow + NumPy.
+  `art/combat/towers` and draws the thin halo ring `art/halo/halo_ring.png` and the disc `art/halo/fx_disc.png`
+  (also used by the explosion rings; `--ring <art/halo>` draws only these two). Needs Python + Pillow + NumPy.
+- `tools/enemies/thin_frames.py`: keeps only some frames of a sheet (`every2`: every 2nd frame + the last one).
+  The death animations were thinned with it (Clampbeetle 13 -> 7 frames, Firebug 11 -> 6, Magma Crab 10 -> 6,
+  Scorpion 8 -> 5, Lich King 23 -> 12), and the Flying Demon death keeps only its own 4 frames (the fall was cut).
 - `tools/boss/prepare_lich.py`: makes `art/boss/lich/` from the "AW - Lich King" pack and the two shield sheets:
   mirrors every frame (the pack faces right), crops each animation to what its frames use and prints the
   `"anchor"` of each animation for enemy.json (the ground pivot stays at the same place in every animation; the
@@ -733,7 +725,7 @@ Thanks to the artists whose free assets are used in this game. All packs were do
 |---|---|---|---|
 | [Spire Tower Pack 1](https://foozlecc.itch.io/spire-tower-pack-1), [Spire Tower Pack 2](https://foozlecc.itch.io/spire-tower-pack-2) and Spire Tower Pack 3 | Baldur / [Foozle](https://foozlecc.itch.io) | Defense tower sprites (pack 3: Halo Spire base and crystal) | CC0 |
 | Monster sprites | Baldur / [Foozle](https://foozlecc.itch.io) (same source as the towers) | Monsters | CC0 |
-| Flying Demon | [luizmelo](https://luizmelo.itch.io) | Flying Demon (fly, attack, fall + death) | CC0 |
+| Flying Demon | [luizmelo](https://luizmelo.itch.io) | Flying Demon (fly, attack, death) | CC0 |
 | AW - Lich King 1.0 | [artistworld](https://artistworld.itch.io) | Lich King boss (Frost palette): body animations, Soul Bolt, impact, summoning circle | artistworld license (games and edits allowed, credit appreciated; no resale or redistribution as assets) |
 | Shield Elliptic Magic (Blue) | (pack sent by the owner) | Lich King spell shield: loop and collapse | to be confirmed |
 | PVFX Foundry 1.0.0 | Pixel VFX Studio (made with the [pixelfx](https://github.com/patch-gg/pixelfx) toolkit, MIT) | Active skill effects (`sprites/skills`), Flying Demon fireball and fire impact | CC0 |

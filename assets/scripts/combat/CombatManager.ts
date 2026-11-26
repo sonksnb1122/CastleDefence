@@ -17,7 +17,7 @@ import { ISkillHost, SkillManager } from './SkillManager';
 import { passiveParams } from './EffectScaling';
 
 /** A short visual effect. `kind` says which pool it goes back to. */
-interface Fx { kind: 'impact' | 'ground' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; }
+interface Fx { kind: 'impact' | 'ground' | 'ring' | 'line'; node: Node; anim?: SpriteAnim; g?: Graphics; life: number; total: number; op?: UIOpacity; owner?: Enemy | null; }
 
 export interface CombatEvents {
     onWallChanged(): void;
@@ -82,6 +82,20 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     private enemyPool: Enemy[] = [];
     private projectilePool: Projectile[] = [];
     private fxPool: { impact: Fx[]; ground: Fx[]; ring: Fx[]; line: Fx[] } = { impact: [], ground: [], ring: [], line: [] };
+    /**
+     * Lines (chains): all drawn by ONE Graphics, redrawn every frame while some are alive (one Graphics node per
+     * shape cost one draw call each). Rings (explosion radius, Arcane Rupture): two sprites each (the halo ring
+     * picture tinted and scaled + a light disc), 2 triangles each instead of hundreds for a Graphics circle, and
+     * in the halo layer so they all batch together.
+     */
+    private shapes: Array<{ line: boolean; x: number; y: number; x2: number; y2: number; r: number; color: string; fillA: number; strokeA: number; width: number; life: number; total: number; ring?: Sprite; disc?: Sprite | null }> = [];
+    private ringPool: Sprite[] = [];
+    private discPool: Sprite[] = [];
+    private shapeGfx: Graphics | null = null;
+    private shapesShown = false;
+    /** Halo Spire rings: sprites under one node of their own, so they batch together (halo atlas). */
+    private haloLayer: Node | null = null;
+    private haloPool: Fx[] = [];
     /** Effects drawn under the enemies (big explosions, see impactFx). */
     private groundFxLayer: Node;
     private textPool: CombatText[] = [];
@@ -168,8 +182,9 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         // Visual effects keep running even between waves.
         for (let i = this.fx.length - 1; i >= 0; i--) {
             const f = this.fx[i];
-            if (!this.updateFx(f, dt)) { this.fx.splice(i, 1); f.node.active = false; this.fxPool[f.kind].push(f); }
+            if (!this.updateFx(f, dt)) { this.fx.splice(i, 1); f.node.active = false; if (f.owner) { f.owner.hitFx = false; f.owner = null; } this.fxPool[f.kind].push(f); }
         }
+        this.updateShapes(dt);
         for (let i = this.floats.length - 1; i >= 0; i--) {
             const t = this.floats[i];
             if (t.update(dt)) continue;
@@ -237,8 +252,13 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ground, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
         for (const sh of this.enemyShots) all.push(sh.f.node);
         this.enemyShots.length = 0;
-        for (const h of this.halos) all.push(h.f.node);
-        this.halos.length = 0;
+        for (const h of this.halos.map(x => x.f).concat(this.haloPool)) all.push(h.node);
+        this.halos.length = 0; this.haloPool.length = 0;
+        for (const sh of this.shapes) if (!sh.line) { if (sh.ring) all.push(sh.ring.node); if (sh.disc) all.push(sh.disc.node); }
+        for (const sp of this.ringPool.concat(this.discPool)) all.push(sp.node);
+        this.ringPool.length = 0; this.discPool.length = 0;
+        this.shapes.length = 0; this.shapesShown = false;
+        if (this.shapeGfx && isValid(this.shapeGfx.node)) this.shapeGfx.clear();
         this.summons.length = 0;
         for (const t of this.floats.concat(this.textPool)) all.push(t.node);
         for (const n of all) if (isValid(n)) n.destroy();
@@ -656,7 +676,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             const dx = e.x - x, dy = e.y - y;
             if (e === primary || dx * dx + dy * dy <= r2) hit.push(e);
         }
-        this.impactFx(shot, x, y);
+        this.impactFx(shot, x, y, primary);
         const tower = this.towerByUid(shot.towerUid);
         const st = this.demo ? null : this.stats;
         if (st) st.shot(shot.towerId, hit.length > 0);
@@ -1033,10 +1053,11 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         return { kind, node: n, g: n.addComponent(Graphics), op: n.addComponent(UIOpacity), life: 0, total: 1 };
     }
 
-    private impactFx(shot: ShotInfo, x: number, y: number) {
+    private impactFx(shot: ShotInfo, x: number, y: number, target: Enemy | null = null) {
         if (!Display.effects) return;
         const im = (shot as any).impact;
-        if (im) {
+        // One hit effect per enemy at a time: while one plays on the target, the next hits show none.
+        if (im && !(target && target.hitFx)) {
             const frames = Assets.pick(im.path, im.cellW, im.cellH, im.frames);
             if (frames.length > 0) {
                 // "scaleToExplosion" (Catapult): the blast grows with the explosion (its width is a third of the
@@ -1049,27 +1070,15 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
                 ui.setAnchorPoint(0.5, im.anchorY === undefined ? 0.5 : im.anchorY);
                 f.node.setPosition(x, y, 0);
                 f.anim!.play(frames, im.frameTime, false);
+                if (target) { target.hitFx = true; f.owner = target; }
                 this.fx.push(f);
             }
         }
         if (shot.explosionRange >= 30) {
-            // Ring that shows the real explosion radius.
-            const f = this.takeFx('ring');
-            const g = f.g!;
+            // Ring that shows the real explosion radius. Almost no fill: many explosions at once must not hide
+            // the enemies behind them.
             const c = shot.damageTypes.length > 1 ? '#c8ff7a' : shot.damageTypes[0] === 'magic' ? '#9fe8ff' : '#ffffff';
-            g.clear();
-            // Almost no fill: many explosions at once must not hide the enemies behind them.
-            g.fillColor = hex(c, 8);
-            g.circle(0, 0, shot.explosionRange);
-            g.fill();
-            g.lineWidth = 1.5;
-            g.strokeColor = hex(c, 220);
-            g.circle(0, 0, shot.explosionRange);
-            g.stroke();
-            f.node.setPosition(x, y, 0);
-            f.life = f.total = 0.28;
-            f.op!.opacity = 255;
-            this.fx.push(f);
+            this.addRing(x, y, shot.explosionRange, c, 8, 220, 0.28);
         }
     }
 
@@ -1094,6 +1103,15 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     /** Halos in flight: ring sprite, centre, radius from r0 to r1 over `dur` s, ring radius now / last frame. */
     private halos: Array<{ f: Fx; x: number; y: number; t: number; dur: number; r0: number; r1: number; k: number; alpha: number; r: number; prev: number; left: number }> = [];
 
+    /** A pooled halo sprite, under the halo layer (one batch for every ring). */
+    private takeHalo(): Fx {
+        const f = this.haloPool.pop();
+        if (f) { f.node.active = true; return f; }
+        if (!this.haloLayer || !isValid(this.haloLayer)) this.haloLayer = mk('Halos', this.fxLayer);
+        const sp = sprite(this.haloLayer, null, 1, 1);
+        return { kind: 'impact', node: sp.node, anim: new SpriteAnim(sp), life: 0, total: 1 };
+    }
+
     haloActive(): boolean { return this.active && this.enemies.some(e => e.alive); }
 
     /**
@@ -1107,7 +1125,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         if (h) {
             const size = h.size || 256;
             const frames = Assets.frames(h.path, size, size).slice(0, 1);
-            const f = this.takeFx('impact');
+            const f = this.takeHalo();
             f.node.getComponent(UITransform)!.setAnchorPoint(0.5, 0.5);
             f.node.setPosition(t.cx, t.cy, 0);
             f.node.active = frames.length > 0 && Display.effects;
@@ -1185,7 +1203,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             h.f.node.active = false;
             const sp = h.f.node.getComponent(Sprite);
             if (sp) sp.color = Color.WHITE;
-            this.fxPool.impact.push(h.f);
+            this.haloPool.push(h.f);
         }
     }
 
@@ -1328,36 +1346,71 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     /** A fading circle (Arcane Rupture). */
     private ringFxAt(x: number, y: number, r: number, color: string) {
         if (!Display.effects) return;
-        const f = this.takeFx('ring');
-        const g = f.g!;
-        g.clear();
-        g.fillColor = hex(color, 40);
-        g.circle(0, 0, r);
-        g.fill();
-        g.lineWidth = 2;
-        g.strokeColor = hex(color, 230);
-        g.circle(0, 0, r);
-        g.stroke();
-        f.node.setPosition(x, y, 0);
-        f.life = f.total = 0.35;
-        f.op!.opacity = 255;
-        this.fx.push(f);
+        this.addRing(x, y, r, color, 40, 230, 0.35);
     }
 
     private lineFx(x1: number, y1: number, x2: number, y2: number, color: string) {
         if (!Display.effects) return;
-        const f = this.takeFx('line');
-        const g = f.g!;
+        this.shapes.push({ line: true, x: x1, y: y1, x2, y2, r: 0, color, fillA: 0, strokeA: 255, width: 3, life: 0.2, total: 0.2 });
+    }
+
+    /** A fading ring (two pooled sprites of the halo atlas: the ring line and a light disc). */
+    private addRing(x: number, y: number, r: number, color: string, fillA: number, strokeA: number, life: number) {
+        const ringF = Assets.frames('sprites/towers/halo_ring', 256, 256);
+        const discF = Assets.frames('sprites/towers/fx_disc', 64, 64);
+        if (!ringF.length) return;
+        if (!this.haloLayer || !isValid(this.haloLayer)) this.haloLayer = mk('Halos', this.fxLayer);
+        const take = (pool: Sprite[], frame: any, d: number): Sprite => {
+            const sp = pool.pop() || sprite(this.haloLayer!, frame, 1, 1);
+            sp.spriteFrame = frame;
+            sp.node.active = true;
+            sp.node.setPosition(x, y, 0);
+            sp.node.getComponent(UITransform)!.setContentSize(d, d);
+            return sp;
+        };
+        // The ring picture: radius 124 in 256 px.
+        const ring = take(this.ringPool, ringF[0], 2 * r * 128 / 124);
+        const disc = fillA > 0 && discF.length ? take(this.discPool, discF[0], 2 * r) : null;
+        const sh = { line: false, x, y, x2: 0, y2: 0, r, color, fillA, strokeA, width: 0, life, total: life, ring, disc };
+        this.tintRing(sh, 1);
+        this.shapes.push(sh);
+    }
+
+    private tintRing(sh: any, k: number) {
+        const c = hex(sh.color);
+        sh.ring.color = new Color(c.r, c.g, c.b, Math.round(sh.strokeA * k));
+        if (sh.disc) sh.disc.color = new Color(c.r, c.g, c.b, Math.round(sh.fillA * k));
+    }
+
+    private releaseRing(sh: any) {
+        if (sh.ring) { sh.ring.node.active = false; this.ringPool.push(sh.ring); sh.ring = null; }
+        if (sh.disc) { sh.disc.node.active = false; this.discPool.push(sh.disc); sh.disc = null; }
+    }
+
+    /** Rings: fade out (sprite alpha). Lines: fade out, all redrawn in the one shared Graphics. */
+    private updateShapes(dt: number) {
+        let lines = 0;
+        for (let i = this.shapes.length - 1; i >= 0; i--) {
+            const sh = this.shapes[i];
+            sh.life -= dt;
+            if (sh.life <= 0) { if (!sh.line) this.releaseRing(sh); this.shapes.splice(i, 1); continue; }
+            if (sh.line) lines++;
+            else this.tintRing(sh, sh.life / (sh.total || 1));
+        }
+        if (lines === 0 && !this.shapesShown) return;
+        if (!this.shapeGfx || !isValid(this.shapeGfx.node)) this.shapeGfx = mk('Shapes', this.fxLayer).addComponent(Graphics);
+        const g = this.shapeGfx;
         g.clear();
-        g.lineWidth = 3;
-        g.strokeColor = hex(color);
-        g.moveTo(x1, y1);
-        g.lineTo(x2, y2);
-        g.stroke();
-        f.node.setPosition(0, 0, 0);
-        f.life = f.total = 0.2;
-        f.op!.opacity = 255;
-        this.fx.push(f);
+        this.shapesShown = lines > 0;
+        for (const sh of this.shapes) {
+            if (!sh.line) continue;
+            const k = Math.max(0, sh.life / (sh.total || 1));
+            g.lineWidth = sh.width;
+            g.strokeColor = hex(sh.color, Math.round(sh.strokeA * k));
+            g.moveTo(sh.x, sh.y);
+            g.lineTo(sh.x2, sh.y2);
+            g.stroke();
+        }
     }
 
     /** Returns false when the effect is over (it then goes back to its pool). */

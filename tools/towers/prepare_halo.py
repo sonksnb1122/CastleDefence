@@ -4,7 +4,9 @@ Prepares the Halo Spire art ("Spire - Tower Pack 3" by Baldur / Foozle, CC0: Tow
   art/combat/towers/t6_l<N>_weapon.png  the crystal of each level (as it is)
   art/halo/halo_ring.png                the halo: one thin white ring (drawn here, not from the pack). The game
                                         scales it from the tower up to the halo radius, so it never covers the
-                                        tower (tower.json "halo": ring radius 'ringRadius' in a 'size' px image)
+                                        tower (tower.json "halo": ring radius 'ringRadius' in a 'size' px image).
+                                        The explosion rings of the battle use it too (tinted, scaled)
+  art/halo/fx_disc.png                  a white filled disc (64 px): the light fill of the explosion rings
 Usage: python prepare_halo.py <newtower folder> <art/combat/towers> <art/halo>
        python prepare_halo.py --ring <art/halo>          (only the ring)
 """
@@ -25,6 +27,14 @@ def ring(out_dir):
     img[..., :3] = 255
     img[..., 3] = (a * 255).round().astype(np.uint8)
     Image.fromarray(img, 'RGBA').save(os.path.join(out_dir, 'halo_ring.png'), optimize=True)
+    # Filled disc (white, anti-aliased edge): the light fill of the explosion rings (CombatManager ring sprites).
+    D = 64
+    yy, xx = np.mgrid[0:D, 0:D] + 0.5
+    a = np.clip(D / 2 - np.hypot(xx - D / 2, yy - D / 2), 0, 1)
+    img = np.zeros((D, D, 4), np.uint8)
+    img[..., :3] = 255
+    img[..., 3] = (a * 255).round().astype(np.uint8)
+    Image.fromarray(img, 'RGBA').save(os.path.join(out_dir, 'fx_disc.png'), optimize=True)
 
 if sys.argv[1] == '--ring':
     ring(sys.argv[2])

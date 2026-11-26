@@ -2,14 +2,14 @@
  "image": "sprites/atlas/combat",
  "regions": {
   "sprites/enemies/clampbeetle_dead": [
-   514,
+   2762,
    682,
-   832,
+   448,
    64
   ],
   "sprites/enemies/clampbeetle_move": [
-   578,
-   756,
+   1220,
+   682,
    512,
    64
   ],
@@ -22,18 +22,18 @@
   "sprites/enemies/demon_dead": [
    2496,
    584,
-   783,
+   348,
    87
   ],
   "sprites/enemies/demon_fireball": [
    2133,
-   822,
+   748,
    432,
    32
   ],
   "sprites/enemies/demon_fireimpact": [
    322,
-   822,
+   748,
    704,
    56
   ],
@@ -44,80 +44,80 @@
    87
   ],
   "sprites/enemies/firebug_dead": [
-   3281,
+   3360,
    584,
-   704,
+   384,
    72
   ],
   "sprites/enemies/firebug_move": [
-   0,
-   682,
+   2846,
+   584,
    512,
    72
   ],
   "sprites/enemies/magma_crab_dead": [
-   1348,
+   3212,
    682,
-   640,
+   384,
    64
   ],
   "sprites/enemies/magma_crab_move": [
-   1092,
-   756,
+   1734,
+   682,
    512,
    64
   ],
   "sprites/enemies/scorpion_dead": [
-   1606,
-   756,
-   512,
+   0,
+   748,
+   320,
    64
   ],
   "sprites/enemies/scorpion_move": [
-   2120,
-   756,
+   2248,
+   682,
    512,
    64
   ],
   "sprites/status/status_armor": [
    3053,
-   822,
+   748,
    16,
    16
   ],
   "sprites/status/status_bleed": [
    3071,
-   822,
+   748,
    16,
    16
   ],
   "sprites/status/status_burn": [
    3089,
-   822,
+   748,
    16,
    16
   ],
   "sprites/status/status_mark": [
    3107,
-   822,
+   748,
    16,
    16
   ],
   "sprites/status/status_slow": [
    3125,
-   822,
+   748,
    16,
    16
   ],
   "sprites/status/status_stun": [
    3143,
-   822,
+   748,
    16,
    16
   ],
   "sprites/status/status_vuln": [
    3161,
-   822,
+   748,
    16,
    16
   ],
@@ -146,14 +146,14 @@
    128
   ],
   "sprites/towers/t1_impact": [
-   3084,
-   756,
+   3598,
+   682,
    384,
    64
   ],
   "sprites/towers/t1_l1_proj": [
    2107,
-   822,
+   748,
    24,
    40
   ],
@@ -165,7 +165,7 @@
   ],
   "sprites/towers/t1_l2_proj": [
    2060,
-   822,
+   748,
    45,
    40
   ],
@@ -177,7 +177,7 @@
   ],
   "sprites/towers/t1_l3_proj": [
    1992,
-   822,
+   748,
    66,
    40
   ],
@@ -187,15 +187,9 @@
    576,
    96
   ],
-  "sprites/towers/t2_l1_impact": [
-   0,
-   822,
-   320,
-   64
-  ],
   "sprites/towers/t2_l1_proj": [
    2567,
-   822,
+   748,
    160,
    32
   ],
@@ -205,15 +199,9 @@
    768,
    96
   ],
-  "sprites/towers/t2_l2_impact": [
-   3470,
-   756,
-   384,
-   64
-  ],
   "sprites/towers/t2_l2_proj": [
    2729,
-   822,
+   748,
    160,
    32
   ],
@@ -223,15 +211,9 @@
    1088,
    128
   ],
-  "sprites/towers/t2_l3_impact": [
-   2634,
-   756,
-   448,
-   64
-  ],
   "sprites/towers/t2_l3_proj": [
    2891,
-   822,
+   748,
    160,
    32
   ],
@@ -242,14 +224,14 @@
    128
   ],
   "sprites/towers/t4_l1_impact": [
-   2632,
+   642,
    682,
    576,
    64
   ],
   "sprites/towers/t4_l1_proj": [
    3353,
-   822,
+   748,
    48,
    8
   ],
@@ -259,15 +241,9 @@
    2176,
    128
   ],
-  "sprites/towers/t4_l2_impact": [
-   3210,
-   682,
-   576,
-   64
-  ],
   "sprites/towers/t4_l2_proj": [
    3179,
-   822,
+   748,
    90,
    12
   ],
@@ -277,15 +253,9 @@
    2176,
    128
   ],
-  "sprites/towers/t4_l3_impact": [
-   0,
-   756,
-   576,
-   64
-  ],
   "sprites/towers/t4_l3_proj": [
    3271,
-   822,
+   748,
    80,
    10
   ],
@@ -297,25 +267,25 @@
   ],
   "sprites/towers/t6_l1_weapon": [
    1028,
-   822,
+   748,
    480,
    48
   ],
   "sprites/towers/t6_l2_weapon": [
    1510,
-   822,
+   748,
    480,
    48
   ],
   "sprites/towers/t6_l3_weapon": [
-   1990,
+   0,
    682,
    640,
    64
   ],
   "white": [
    3403,
-   822,
+   748,
    8,
    8
   ]

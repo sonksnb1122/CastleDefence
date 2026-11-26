@@ -1,422 +1,410 @@
 {
  "image": "sprites/atlas/research",
  "regions": {
-  "sprites/research/curse_bleed": [
-   0,
-   0,
-   96,
-   96
-  ],
-  "sprites/research/curse_burn": [
-   98,
-   0,
-   96,
-   96
-  ],
   "sprites/research/curse_edmg": [
-   196,
+   0,
    0,
    96,
    96
   ],
   "sprites/research/curse_ehp": [
-   294,
+   98,
    0,
    96,
    96
   ],
   "sprites/research/curse_slow": [
-   392,
+   196,
    0,
    96,
    96
   ],
   "sprites/research/curse_stun": [
-   490,
+   294,
    0,
    96,
    96
   ],
   "sprites/research/eco_food_1": [
-   588,
+   392,
    0,
    96,
    96
   ],
   "sprites/research/eco_food_2": [
-   686,
+   490,
    0,
    96,
    96
   ],
   "sprites/research/eco_food_3": [
-   784,
+   588,
    0,
    96,
    96
   ],
   "sprites/research/eco_gold_1": [
-   882,
+   686,
    0,
    96,
    96
   ],
   "sprites/research/eco_gold_2": [
-   980,
+   784,
    0,
    96,
    96
   ],
   "sprites/research/eco_gold_3": [
-   1078,
+   882,
    0,
    96,
    96
   ],
   "sprites/research/eco_killgold": [
-   1176,
+   980,
    0,
    96,
    96
   ],
   "sprites/research/eco_killgold_2": [
-   1274,
+   1078,
    0,
    96,
    96
   ],
   "sprites/research/eco_killgold_3": [
-   1372,
+   1176,
    0,
    96,
    96
   ],
   "sprites/research/eco_material_1": [
-   1470,
+   1274,
    0,
    96,
    96
   ],
   "sprites/research/eco_material_2": [
-   1568,
+   1372,
    0,
    96,
    96
   ],
   "sprites/research/eco_material_3": [
-   1666,
+   1470,
    0,
    96,
    96
   ],
   "sprites/research/eco_research_cost": [
-   1764,
+   1568,
    0,
    96,
    96
   ],
   "sprites/research/fx_arcane_vulnerability_1": [
-   1862,
+   1666,
    0,
    96,
    96
   ],
   "sprites/research/fx_arcane_vulnerability_2": [
+   1764,
    0,
-   98,
    96,
    96
   ],
   "sprites/research/fx_arcane_vulnerability_3": [
-   98,
-   98,
+   1862,
+   0,
    96,
    96
   ],
   "sprites/research/fx_armor_break_1": [
-   196,
+   0,
    98,
    96,
    96
   ],
   "sprites/research/fx_armor_break_2": [
-   294,
+   98,
    98,
    96,
    96
   ],
   "sprites/research/fx_armor_break_3": [
-   392,
+   196,
    98,
    96,
    96
   ],
   "sprites/research/fx_bleeding_bolt_1": [
-   490,
+   294,
    98,
    96,
    96
   ],
   "sprites/research/fx_bleeding_bolt_2": [
-   588,
+   392,
    98,
    96,
    96
   ],
   "sprites/research/fx_bleeding_bolt_3": [
-   686,
+   490,
    98,
    96,
    96
   ],
   "sprites/research/fx_chain_lightning_1": [
-   784,
+   588,
    98,
    96,
    96
   ],
   "sprites/research/fx_chain_lightning_2": [
-   882,
+   686,
    98,
    96,
    96
   ],
   "sprites/research/fx_chain_lightning_3": [
-   980,
+   784,
    98,
    96,
    96
   ],
   "sprites/research/fx_effect": [
-   1078,
+   882,
    98,
    96,
    96
   ],
   "sprites/research/fx_frost_explosion_1": [
-   1176,
+   980,
    98,
    96,
    96
   ],
   "sprites/research/fx_frost_explosion_2": [
-   1274,
+   1078,
    98,
    96,
    96
   ],
   "sprites/research/fx_frost_explosion_3": [
-   1372,
+   1176,
    98,
    96,
    96
   ],
   "sprites/research/fx_heavy_impact_1": [
-   1470,
+   1274,
    98,
    96,
    96
   ],
   "sprites/research/fx_heavy_impact_2": [
-   1568,
+   1372,
    98,
    96,
    96
   ],
   "sprites/research/fx_heavy_impact_3": [
-   1666,
+   1470,
    98,
    96,
    96
   ],
   "sprites/research/fx_hunters_mark_1": [
-   1764,
+   1568,
    98,
    96,
    96
   ],
   "sprites/research/fx_hunters_mark_2": [
-   1862,
+   1666,
    98,
    96,
    96
   ],
   "sprites/research/fx_hunters_mark_3": [
-   0,
-   196,
+   1764,
+   98,
    96,
    96
   ],
   "sprites/research/fx_piercing_bolt_1": [
+   1862,
    98,
-   196,
    96,
    96
   ],
   "sprites/research/fx_piercing_bolt_2": [
-   196,
+   0,
    196,
    96,
    96
   ],
   "sprites/research/fx_piercing_bolt_3": [
-   294,
+   98,
    196,
    96,
    96
   ],
   "sprites/research/fx_shockwave_1": [
-   392,
+   196,
    196,
    96,
    96
   ],
   "sprites/research/fx_shockwave_2": [
-   490,
+   294,
    196,
    96,
    96
   ],
   "sprites/research/fx_shockwave_3": [
-   588,
+   392,
    196,
    96,
    96
   ],
   "sprites/research/hero_skill_cd": [
-   686,
+   490,
    196,
    96,
    96
   ],
   "sprites/research/hero_skill_power": [
-   784,
+   588,
    196,
    96,
    96
   ],
   "sprites/research/hero_twin_cast": [
-   882,
+   686,
    196,
    96,
    96
   ],
   "sprites/research/off_aspd": [
-   980,
+   784,
    196,
    96,
    96
   ],
   "sprites/research/off_aspd_flat": [
-   1078,
+   882,
    196,
    96,
    96
   ],
   "sprites/research/off_crit": [
-   1176,
+   980,
    196,
    96,
    96
   ],
   "sprites/research/off_critdmg": [
-   1274,
+   1078,
    196,
    96,
    96
   ],
   "sprites/research/off_damage": [
-   1372,
+   1176,
    196,
    96,
    96
   ],
   "sprites/research/off_damage_inf": [
-   1470,
+   1274,
    196,
    96,
    96
   ],
   "sprites/research/off_dmg_flat": [
-   1568,
+   1372,
    196,
    96,
    96
   ],
   "sprites/research/off_expl": [
-   1666,
+   1470,
    196,
    96,
    96
   ],
   "sprites/research/off_mdef": [
-   1764,
+   1568,
    196,
    96,
    96
   ],
   "sprites/research/off_pdef": [
-   1862,
+   1666,
    196,
    96,
    96
   ],
   "sprites/research/off_projspeed": [
+   1764,
+   196,
+   96,
+   96
+  ],
+  "sprites/research/off_range": [
+   1862,
+   196,
+   96,
+   96
+  ],
+  "sprites/research/off_range_flat": [
    0,
    294,
    96,
    96
   ],
-  "sprites/research/off_range": [
+  "sprites/research/off_smart": [
    98,
    294,
    96,
    96
   ],
-  "sprites/research/off_range_flat": [
+  "sprites/research/wall_def": [
    196,
    294,
    96,
    96
   ],
-  "sprites/research/off_smart": [
-   294,
-   294,
-   96,
-   96
-  ],
-  "sprites/research/wall_def": [
-   392,
-   294,
-   96,
-   96
-  ],
   "sprites/research/wall_hp": [
-   490,
+   294,
    294,
    96,
    96
   ],
   "sprites/research/wall_hp_flat": [
-   588,
+   392,
    294,
    96,
    96
   ],
   "sprites/research/wall_hp_inf": [
-   686,
+   490,
    294,
    96,
    96
   ],
   "sprites/research/wall_regen": [
-   784,
+   588,
    294,
    96,
    96
   ],
   "sprites/research/wall_repair": [
-   882,
+   686,
    294,
    96,
    96

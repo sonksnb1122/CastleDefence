@@ -18,8 +18,8 @@
           "path": "sprites/enemies/clampbeetle_dead",
           "cellW": 64,
           "cellH": 64,
-          "frames": 13,
-          "frameTime": 0.07
+          "frames": 7,
+          "frameTime": 0.09
         }
       },
       "hp": 240,
@@ -61,8 +61,8 @@
           "path": "sprites/enemies/scorpion_dead",
           "cellW": 64,
           "cellH": 64,
-          "frames": 8,
-          "frameTime": 0.07
+          "frames": 5,
+          "frameTime": 0.1
         }
       },
       "hp": 97.5,
@@ -110,8 +110,8 @@
           "path": "sprites/enemies/firebug_dead",
           "cellW": 64,
           "cellH": 72,
-          "frames": 11,
-          "frameTime": 0.07
+          "frames": 6,
+          "frameTime": 0.1
         }
       },
       "hp": 60,
@@ -159,8 +159,8 @@
           "path": "sprites/enemies/magma_crab_dead",
           "cellW": 64,
           "cellH": 64,
-          "frames": 10,
-          "frameTime": 0.07
+          "frames": 6,
+          "frameTime": 0.1
         }
       },
       "hp": 210,
@@ -209,8 +209,8 @@
           "path": "sprites/enemies/demon_dead",
           "cellW": 87,
           "cellH": 87,
-          "frames": 9,
-          "frameTime": 0.09
+          "frames": 4,
+          "frameTime": 0.12
         },
         "attack": {
           "path": "sprites/enemies/demon_attack",
@@ -343,8 +343,8 @@
           "path": "sprites/bosses/lich_dead",
           "cellW": 157,
           "cellH": 132,
-          "frames": 23,
-          "frameTime": 0.1,
+          "frames": 12,
+          "frameTime": 0.12,
           "anchor": [
             0.5478,
             0.4318

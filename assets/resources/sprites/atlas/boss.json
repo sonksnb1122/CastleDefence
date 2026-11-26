@@ -10,18 +10,18 @@
   "sprites/bosses/lich_dead": [
    0,
    509,
-   3611,
+   1884,
    132
   ],
   "sprites/bosses/lich_impact": [
-   3231,
+   1538,
    643,
    290,
    58
   ],
   "sprites/bosses/lich_move": [
-   965,
-   643,
+   2851,
+   509,
    726,
    126
   ],
@@ -38,7 +38,7 @@
    205
   ],
   "sprites/bosses/lich_soulbolt": [
-   3523,
+   1830,
    643,
    306,
    33
@@ -50,7 +50,7 @@
    159
   ],
   "sprites/bosses/lich_summoncircle": [
-   1693,
+   0,
    643,
    1536,
    80
@@ -62,8 +62,8 @@
    146
   ],
   "sprites/bosses/lich_teleportIn": [
-   0,
-   643,
+   1886,
+   509,
    963,
    129
   ],

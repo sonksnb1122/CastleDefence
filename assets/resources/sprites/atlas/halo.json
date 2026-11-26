@@ -1,6 +1,12 @@
 {
  "image": "sprites/atlas/halo",
  "regions": {
+  "sprites/towers/fx_disc": [
+   258,
+   0,
+   64,
+   64
+  ],
   "sprites/towers/halo_ring": [
    0,
    0,

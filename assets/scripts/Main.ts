@@ -47,7 +47,7 @@ const SETTINGS_KEY = 'castle_defense_settings';
  * (tools/harness/prog.js, "full" variant: all research, heroes and Market trades). They are listed in Load Game and cannot be deleted.
  * Temporary, for testing: set to [] to hide them.
  */
-const TEST_SAVES = [30, 50, 70, 90, 100, 110, 130, 150, 170];
+const TEST_SAVES = [30, 50, 70, 90, 100, 110, 130, 150, 170, 190];
 
 interface IScreen { root: Node; update(dt: number): void; destroy(): void; }
 

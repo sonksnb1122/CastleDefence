@@ -59,6 +59,8 @@ export class Enemy {
     removed = false;
     reachedWall = false;
     rewarded = false;
+    /** A tower hit effect is playing on this enemy (one at a time: CombatManager.impactFx). */
+    hitFx = false;
     statuses: StatusInstance[] = [];
     /** Expected damage of the projectiles already flying at this enemy (used to avoid overkill). */
     pendingDamage = 0;
@@ -141,7 +143,7 @@ export class Enemy {
         this.goldReward = stats.goldReward;
         this.physicDef = stats.physicDef;
         this.magicDef = stats.magicDef;
-        this.alive = true; this.removed = false; this.reachedWall = false; this.rewarded = false; this.pushTime = 0;
+        this.alive = true; this.removed = false; this.reachedWall = false; this.rewarded = false; this.pushTime = 0; this.hitFx = false;
         this.statuses.length = 0;
         this.pendingDamage = 0;
         this.waveResist = stats.statusResist || { types: [], value: 0 };
@@ -426,6 +428,9 @@ export class Enemy {
             let lb = this.iconCounts[i];
             if (n > 0 && !lb) {
                 lb = text(sp.node, '', 8, STATUS_ICON / 4 + 1, -STATUS_ICON / 4 + 1, { bold: true });
+                // CHAR cache: the count changes often (every stack); one shared glyph texture instead of a new
+                // texture for every change. The outline makes it look bold (CHAR cannot draw bold glyphs).
+                lb.cacheMode = Label.CacheMode.CHAR;
                 lb.enableOutline = true;
                 lb.outlineColor = new Color(20, 14, 28, 255);
                 lb.outlineWidth = 1;
