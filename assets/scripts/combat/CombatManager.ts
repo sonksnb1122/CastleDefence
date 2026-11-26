@@ -83,6 +83,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     /** Effects drawn under the enemies (big explosions, see impactFx). */
     private groundFxLayer: Node;
     private textPool: CombatText[] = [];
+    /** Projectiles of ranged enemies flying to the wall (their nodes come from the impact fx pool). */
+    private enemyShots: Array<{ f: Fx; x: number; y: number; tx: number; tipX: number; speed: number; damage: number; type: string; impact: any }> = [];
     private sortTimer = 0;
     private gameOver = false;
     private rm = ResourceMgr.inst;
@@ -186,6 +188,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
 
         for (const e of this.enemies) e.update(dt, this);
 
+        this.updateEnemyShots(dt);
+
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             if (p.target && !p.target.alive) this.redirect(p);
@@ -226,6 +230,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         for (const e of this.enemies.concat(this.enemyPool)) all.push(e.node);
         for (const p of this.projectiles.concat(this.projectilePool)) all.push(...p.nodes);
         for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ground, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
+        for (const sh of this.enemyShots) all.push(sh.f.node);
+        this.enemyShots.length = 0;
         for (const t of this.floats.concat(this.textPool)) all.push(t.node);
         for (const n of all) if (isValid(n)) n.destroy();
         this.enemies.length = 0; this.projectiles.length = 0; this.fx.length = 0; this.floats.length = 0;
@@ -240,6 +246,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     // ------------------------------------------------------------------ targeting (shared by every tower)
     isValidTarget(tower: TowerUnit, e: Enemy | null): boolean {
         if (!e || !e.alive) return false;
+        if (e.flying && tower.def.hitsFlying === false) return false;   // the Catapult cannot hit flying enemies
         if (e.x > ConfigMgr.tower.battlefield.worldWidth) return false; // not on the field yet
         const r = tower.stats().range + e.radius;
         const dx = e.x - tower.cx, dy = e.y - tower.cy;
@@ -333,7 +340,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             let total = 0;
             const bossBonus = tower.def.smartBossBonus || 0;
             for (const o of this.enemies) {
-                if (!o.alive) continue;
+                if (!o.alive || (o.flying && tower.def.hitsFlying === false)) continue;
                 const dx = o.x - e.x, dy = o.y - e.y;
                 if (dx * dx + dy * dy <= r2) {
                     const c = Math.max(0, Math.min(1, 1 - (o.x - this.wallRightX) / fieldW));
@@ -571,7 +578,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
                 this.float('+' + cores, e.x + 8, e.y + 18, '#7fd8ff', 18, true, 'core');
             }
         }
-        G.main.playSfx('die_' + e.def.id);
+        G.main.playSfx('die_' + e.def.id, e.def.sfx && e.def.sfx.die);
         G.main.playSfx('coin');
     }
 
@@ -633,8 +640,9 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     explode(shot: ShotInfo, x: number, y: number, primary: Enemy | null, projCfg: any) {
         const hit: Enemy[] = [];
         const r2 = shot.explosionRange * shot.explosionRange;
+        const noFlying = !this.hitsFlying(shot.towerId);
         for (const e of this.enemies) {
-            if (!e.alive) continue;
+            if (!e.alive || (noFlying && e.flying)) continue;
             const dx = e.x - x, dy = e.y - y;
             if (e === primary || dx * dx + dy * dy <= r2) hit.push(e);
         }
@@ -718,6 +726,12 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             if (shot.towerId === 'catapult') G.main.playSfx('explode');
             else G.main.playSfx('hit_' + shot.towerId, shot.isAoe ? 'explode' : 'hit');
         }
+    }
+
+    /** False for towers that cannot hit flying enemies (tower.json "hitsFlying": false, the Catapult). */
+    private hitsFlying(towerId: string): boolean {
+        const t = ConfigMgr.towerDef(towerId);
+        return !t || t.hitsFlying !== false;
     }
 
     /** Next enemy of a chain: the closest one not hit yet; with Conductor a slowed one first. */
@@ -910,22 +924,30 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     // ------------------------------------------------------------------ wall
     /** Called once per enemy when it touches the wall. */
     onEnemyReachedWall(e: Enemy) {
+        this.wallHit(e.wallDamage(), e.def.damageType, e.y);
+    }
+
+    /**
+     * A hit on the wall: an enemy touching it (it dies), or the projectile of a ranged enemy.
+     * `raw`: damage before the wall defense; `y`: where it lands (texts, Barrier Block).
+     */
+    wallHit(raw: number, damageType: string, y: number) {
         if (this.demo) {
             // Immortal wall: only the hit number is shown.
-            this.float('-' + Math.floor(e.wallDamage()), this.wallRightX - 20, e.y + 20, '#ff6b6b', 18, true);
+            this.float('-' + Math.floor(raw), this.wallRightX - 20, y + 20, '#ff6b6b', 18, true);
             return;
         }
         if (this.barrierCharges > 0) {
-            // Barrier Block: the hit is stopped where the enemy touches the wall.
+            // Barrier Block: the hit is stopped where it touches the wall.
             this.barrierCharges--;
-            this.skills.barrierHit(e.y);
-            this.float('BLOCK', this.wallRightX + 10, e.y + 20, '#9fe8ff', 16, true);
+            this.skills.barrierHit(y);
+            this.float('BLOCK', this.wallRightX + 10, y + 20, '#9fe8ff', 16, true);
             return;
         }
-        const type: DamageType = e.def.damageType === 'magic' ? 'magic' : 'physic';
+        const type: DamageType = damageType === 'magic' ? 'magic' : 'physic';
         // Bulwark: the wall defense is multiplied while it lasts (at most 90).
         const def = this.bulwarkTime > 0 ? Math.min(90, this.rm.wallDef(type) * (passiveParams('p_bulwark').mul || 3)) : this.rm.wallDef(type);
-        const amount = Math.max(0, Math.floor(e.wallDamage() * (1 - def / 100)));
+        const amount = Math.max(0, Math.floor(raw * (1 - def / 100)));
         // Last Stand: the wall stays at 1 HP for a while instead of falling.
         if (this.rm.data.wallHp - amount < 1 && this.lastStandTime <= 0 && this.passiveReady('p_last_stand')) {
             this.lastStandTime = passiveParams('p_last_stand').time || 20;
@@ -941,7 +963,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             this.startPassiveCooldown('p_bulwark');
             this.float('BULWARK', this.wallRightX + 10, 330, '#9fe8ff', 22, true);
         }
-        this.float('-' + amount, this.wallRightX - 20, e.y + 20, '#ff6b6b', 18, true);
+        this.float('-' + amount, this.wallRightX - 20, y + 20, '#ff6b6b', 18, true);
         G.main.playSfx('wall_hit', 'hit');
         this.events.onWallChanged();
         if (destroyed && !this.gameOver) {
@@ -1036,6 +1058,53 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             f.op!.opacity = 255;
             this.fx.push(f);
         }
+    }
+
+    // ------------------------------------------------------------------ ranged enemies
+    /** A ranged enemy releases its projectile (enemy.json "ranged.projectile"): it flies straight to the wall. */
+    enemyShoot(e: Enemy) {
+        const rg = e.def.ranged;
+        const pc = rg && rg.projectile;
+        if (!pc) { this.wallHit(e.wallDamage(), e.def.damageType, e.y); return; }
+        const f = this.takeFx('impact');
+        const ui = f.node.getComponent(UITransform)!;
+        ui.setContentSize(pc.cellW, pc.cellH);
+        ui.setAnchorPoint(0.5, 0.5);
+        const x = e.x + (pc.offsetX || 0), y = e.y + (pc.offsetY || 0);
+        f.node.setPosition(x, y, 0);
+        f.anim!.play(Assets.frames(pc.path, pc.cellW, pc.cellH).slice(0, pc.frames || 99), pc.frameTime || 0.06, true);
+        this.enemyShots.push({ f, x, y, tx: this.wallRightX + 6, tipX: pc.tipX || 0, speed: pc.speed || 300, damage: e.wallDamage(), type: e.def.damageType, impact: rg.impact });
+        if (!this.demo) G.main.playSfx('shoot_' + e.def.id, e.def.sfx && e.def.sfx.shoot);
+    }
+
+    private updateEnemyShots(dt: number) {
+        for (let i = this.enemyShots.length - 1; i >= 0; i--) {
+            const s = this.enemyShots[i];
+            s.x -= s.speed * dt;
+            s.f.anim!.update(dt);
+            // "tipX": the front of the fireball, from the node centre (negative = ahead, to the left).
+            if (s.x + s.tipX > s.tx) { s.f.node.setPosition(s.x, s.y, 0); continue; }
+            this.enemyShots.splice(i, 1);
+            s.f.node.active = false;
+            this.fxPool.impact.push(s.f);
+            this.enemyImpactFx(s.tx, s.y, s.impact);
+            // Between waves (wall fight over) a late fireball still lands but does no damage.
+            if (this.active || this.demo) this.wallHit(s.damage, s.type, s.y);
+        }
+    }
+
+    private enemyImpactFx(x: number, y: number, im: any) {
+        if (!im || !Display.effects) return;
+        const frames = Assets.frames(im.path, im.cellW, im.cellH).slice(0, im.frames || 99);
+        if (frames.length === 0) return;
+        const f = this.takeFx('impact');
+        const k = im.scale || 1;
+        const ui = f.node.getComponent(UITransform)!;
+        ui.setContentSize(im.cellW * k, im.cellH * k);
+        ui.setAnchorPoint(0.5, 0.5);
+        f.node.setPosition(x, y, 0);
+        f.anim!.play(frames, im.frameTime || 0.05, false);
+        this.fx.push(f);
     }
 
     /** A fading circle (Arcane Rupture). */

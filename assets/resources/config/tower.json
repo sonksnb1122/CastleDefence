@@ -822,7 +822,9 @@
             }
           }
         }
-      ]
+      ],
+      "hitsFlying": false
     }
-  ]
+  ],
+  "_docFlying": "Towers with \"hitsFlying\": false (Catapult) never target flying enemies (enemy.json \"flying\") and their explosions do not hit them."
 }

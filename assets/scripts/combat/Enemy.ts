@@ -24,6 +24,8 @@ export interface StatusInstance {
 export interface IEnemyHost {
     wallRightX: number;
     onEnemyReachedWall(e: Enemy): void;
+    /** A ranged enemy (enemy.json "ranged") releases its projectile at the wall. */
+    enemyShoot(e: Enemy): void;
     applyDot(e: Enemy, rawDamage: number, type: DamageType, statusType: string, sourceUid?: number, statusId?: string, currentHpPct?: number): void;
 }
 
@@ -70,6 +72,16 @@ export class Enemy {
     frostHits = 0;
     /** Passive "Aftershock": seconds left of the extra damage taken after a Shockwave stun. */
     aftershock = 0;
+    /** Flies (enemy.json "flying"): towers with "hitsFlying": false (Catapult) cannot hit it. */
+    flying = false;
+    /** Ranged enemy (enemy.json "ranged"): distance in front of the wall where it stops to attack. */
+    private stopDist = 0;
+    private attackTimer = 0;
+    /** Playing the attack animation; `shotFired` once the projectile left (at "hitFrame"). */
+    private attacking = false;
+    private shotFired = false;
+    /** At its attack position (stopped in front of the wall). */
+    inPosition = false;
     /** Number given at each spawn: tells a pooled enemy apart from its previous life. */
     serial = 0;
 
@@ -116,6 +128,11 @@ export class Enemy {
         this.immune = {};
         this.flash = 0; this.sprintTimer = 0; this.sprintLeft = 0;
         this.frostHits = 0; this.aftershock = 0; this.deathStatuses = [];
+        this.flying = !!def.flying;
+        const rg = def.ranged;
+        this.stopDist = rg ? Math.max(0, (rg.range || 200) + (Math.random() * 2 - 1) * (rg.rangeSpread || 0)) : 0;
+        this.attackTimer = rg ? (rg.firstAttackDelay || 0) : 0;
+        this.attacking = false; this.shotFired = false; this.inPosition = false;
         const scale = (def.scale || 1) * stats.scale;
         this.radius = (def.radius || 22) * scale;
         this.abilities = (def.specialAbilities || []).filter((a: any) => a.enabled);
@@ -415,6 +432,36 @@ export class Enemy {
         return false;
     }
 
+    /**
+     * Ranged attack: at its position, every "attackInterval" s the attack animation plays and the projectile
+     * leaves at its "hitFrame". A stun pauses everything; an attack that started ends even after a knockback.
+     */
+    private updateRanged(dt: number, host: IEnemyHost, rg: any) {
+        if (this.stunned) return;
+        const at = this.def.animationPaths.attack;
+        if (this.attacking) {
+            const ended = this.anim.update(dt) || this.anim.finished;
+            if (!this.shotFired && (this.anim.index >= (at.hitFrame || 0) || ended)) { this.shotFired = true; host.enemyShoot(this); }
+            if (ended) { this.attacking = false; this.playMove(); }
+            return;
+        }
+        this.anim.update(dt);
+        if (!this.inPosition) return;
+        this.attackTimer -= dt;
+        if (this.attackTimer > 0) return;
+        this.attackTimer = rg.attackInterval || 2;
+        const frames = at ? Assets.frames(at.path, at.cellW, at.cellH).slice(0, at.frames) : [];
+        if (frames.length === 0) { host.enemyShoot(this); return; }   // no attack sheet: shoot at once
+        this.attacking = true; this.shotFired = false;
+        this.anim.play(frames, at.frameTime, false);
+    }
+
+    private playMove() {
+        const mv = this.def.animationPaths.move;
+        const frames = Assets.frames(mv.path, mv.cellW, mv.cellH).slice(0, mv.frames);
+        if (frames.length > 0) this.anim.play(frames, mv.frameTime, true);
+    }
+
     /** Stop moving, drop every status effect and play the death animation. */
     kill() {
         if (!this.alive) return;
@@ -476,7 +523,11 @@ export class Enemy {
         speed *= 1 - this.slowPercent() / 100;
         if (this.stunned) speed = 0;
         speed = Math.max(0, speed);
-        this.x -= speed * dt;
+        // Ranged enemies stop in front of the wall and attack from there.
+        const rg = this.def.ranged;
+        const stopX = rg ? host.wallRightX + this.radius + this.stopDist : -Infinity;
+        if (rg && this.x - speed * dt <= stopX) { this.x = Math.min(this.x, stopX); speed = 0; this.inPosition = this.x <= stopX + 0.5; }
+        else { this.x -= speed * dt; this.inPosition = false; }
         if (this.pushTime > 0) {
             const t = Math.min(dt, this.pushTime);
             this.pushTime -= t;
@@ -485,7 +536,9 @@ export class Enemy {
             this.y = Math.max(bf.enemyLaneY[0], Math.min(bf.enemyLaneY[1], this.y + this.pushVY * t));
         }
         this.node.setPosition(this.x, this.y, 0);
-        if (speed > 0) this.anim.update(dt);
+        if (rg) this.updateRanged(dt, host, rg);
+        // Flying enemies keep flapping while they stand still.
+        else if (speed > 0 || this.flying) this.anim.update(dt);
 
         // Contact with the wall: handled exactly once.
         if (!this.reachedWall && this.x - this.radius <= host.wallRightX) {

@@ -191,6 +191,80 @@
           "value": 50
         }
       ]
+    },
+    {
+      "id": "demon",
+      "name": "Flying Demon (Caster)",
+      "description": "Flies: Catapult stones cannot hit it. Fast, high magic defense. Stops in front of the wall and throws fireballs at it until it is killed.",
+      "spritePath": "sprites/enemies/demon_fly",
+      "animationPaths": {
+        "move": {
+          "path": "sprites/enemies/demon_fly",
+          "cellW": 87,
+          "cellH": 87,
+          "frames": 11,
+          "frameTime": 0.07
+        },
+        "dead": {
+          "path": "sprites/enemies/demon_dead",
+          "cellW": 87,
+          "cellH": 87,
+          "frames": 9,
+          "frameTime": 0.09
+        },
+        "attack": {
+          "path": "sprites/enemies/demon_attack",
+          "cellW": 87,
+          "cellH": 87,
+          "frames": 11,
+          "frameTime": 0.07,
+          "hitFrame": 8
+        }
+      },
+      "hp": 110,
+      "damage": 18,
+      "damageType": "magic",
+      "physicDef": 6,
+      "magicDef": 22,
+      "moveSpeed": 34,
+      "goldReward": 14,
+      "spawnWeight": 3,
+      "scale": 1,
+      "radius": 20,
+      "statusEffectResistance": {},
+      "flying": true,
+      "ranged": {
+        "_doc": "Stops when it is 'range' px (+/- 'rangeSpread') in front of the wall and attacks every 'attackInterval' s: attack animation, then a projectile flies to the wall and deals the enemy's damage on impact.",
+        "range": 230,
+        "rangeSpread": 40,
+        "attackInterval": 2.6,
+        "firstAttackDelay": 0.4,
+        "projectile": {
+          "path": "sprites/enemies/demon_fireball",
+          "cellW": 72,
+          "cellH": 32,
+          "frames": 6,
+          "frameTime": 0.06,
+          "speed": 320,
+          "tipX": -30,
+          "offsetX": -26,
+          "offsetY": -6
+        },
+        "impact": {
+          "path": "sprites/enemies/demon_fireimpact",
+          "cellW": 64,
+          "cellH": 56,
+          "frames": 11,
+          "frameTime": 0.05,
+          "scale": 1.3
+        }
+      },
+      "specialAbilities": [],
+      "sfx": {
+        "_doc": "Sounds used when the enemy has no own sound file (audio/die_<id>, audio/shoot_<id>).",
+        "die": "die_runner",
+        "shoot": "shoot_catapult"
+      }
     }
   ]
 }

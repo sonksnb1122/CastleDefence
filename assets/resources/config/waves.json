@@ -47,12 +47,23 @@
     },
     {
       "fromWave": 10,
-      "toWave": 9999,
+      "toWave": 11,
       "weights": {
         "berserker": 5,
         "runner": 5,
         "tank": 3,
         "juggernaut": 2
+      }
+    },
+    {
+      "fromWave": 12,
+      "toWave": 9999,
+      "weights": {
+        "berserker": 5,
+        "runner": 5,
+        "tank": 3,
+        "juggernaut": 2,
+        "demon": 3
       }
     }
   ],

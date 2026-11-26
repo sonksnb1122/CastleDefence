@@ -89,7 +89,12 @@ export class ConfigMgr {
             out.push(t.base.path);
             for (const lv of t.levels) out.push(lv.sprite.weapon.path, lv.sprite.projectile.path, lv.sprite.impact.path);
         }
-        for (const e of ConfigMgr.enemy.enemies) out.push(e.animationPaths.move.path, e.animationPaths.dead.path);
+        for (const e of ConfigMgr.enemy.enemies) {
+            out.push(e.animationPaths.move.path, e.animationPaths.dead.path);
+            if (e.animationPaths.attack) out.push(e.animationPaths.attack.path);
+            if (e.ranged && e.ranged.projectile) out.push(e.ranged.projectile.path);
+            if (e.ranged && e.ranged.impact) out.push(e.ranged.impact.path);
+        }
         for (const b of ConfigMgr.building.buildings) for (const lv of b.levels) if (lv.sprite) out.push(lv.sprite.path);
         if (ConfigMgr.building.map.path) out.push(ConfigMgr.building.map.path);
         const wall = ConfigMgr.tower.battlefield.wall.sprite;
@@ -261,6 +266,11 @@ export class ConfigMgr {
                 num('enemy.json', e, 'physicDef', e.id); num('enemy.json', e, 'magicDef', e.id);
                 num('enemy.json', e, 'goldReward', e.id); num('enemy.json', e, 'spawnWeight', e.id);
                 if (!e.animationPaths || !e.animationPaths.move || !e.animationPaths.dead) E.push(`enemy.json: "${e.id}" needs animationPaths.move and animationPaths.dead`);
+                if (e.ranged) {
+                    num('enemy.json', e.ranged, 'range', e.id + '.ranged', 0); num('enemy.json', e.ranged, 'attackInterval', e.id + '.ranged', 0.1);
+                    if (!e.ranged.projectile) E.push(`enemy.json: "${e.id}" ranged needs a projectile`);
+                    if (!e.animationPaths || !e.animationPaths.attack) E.push(`enemy.json: "${e.id}" ranged needs animationPaths.attack`);
+                }
             }
         }
 

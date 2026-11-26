@@ -149,8 +149,19 @@ Where a Mastery level gives a share of the hit, the effect uses that share or th
 | **Firebug** (Runner) | Very fast, fragile | 60 | 15 magic | 42.5 | 3 / 3 | 8 |
 | **Clampbeetle** (Tank) | High HP and physical defense, resists stun | 240 | 25 physical | 12.5 | 20 / 5 | 12 |
 | **Magma Crab** (Juggernaut) | Slow, tough, resists stun and slow | 210 | 50 magic | 10 | 15 / 15 | 25 |
+| **Flying Demon** (Caster) | Flies, fast, attacks from range | 110 | 18 magic per fireball | 34 | 6 / 22 | 14 |
 
 Values are for wave 1. All stats grow with the wave number.
+
+**Flying enemies** (enemy.json `"flying"`): towers with `"hitsFlying": false` in tower.json (the Catapult) never aim
+at them, and their explosions pass under them. Crossbows, Crystals and hero skills hit them normally.
+
+**Ranged enemies** (enemy.json `"ranged"`): the Flying Demon stops about 230 px in front of the wall (each one a bit
+closer or farther) and attacks every 2.6 s: attack animation, then a fireball flies to the wall and deals the
+enemy's damage there (wall defense, Barrier Block, Last Stand and Bulwark apply as for a contact hit). Unlike the
+other enemies it does not die on the wall: it keeps attacking until it is killed, so the wave only ends when it is
+dead. A stun stops its attacks; a knockback (Air Burst) pushes it back and it flies in again. While it has no sound
+files of its own, it uses the Firebug death sound and the Catapult shot sound (enemy.json `"sfx"`).
 
 **How waves scale:**
 - **Enemy count:** starts at 24 and grows by 2 every wave. Spawns come faster over time.
@@ -164,6 +175,7 @@ Values are for wave 1. All stats grow with the wave number.
   | 1–3 | Scorpions and Firebugs |
   | from 4 | Clampbeetles join |
   | from 7 | Magma Crabs join |
+  | from 12 | Flying Demons join |
 
 - **Wave 5, "Swarm":** a special wave with many weak Firebugs and Scorpions.
 - **Bosses:** every 10th wave adds a giant Magma Crab boss with ×4 HP, ×3 damage and ×8 gold.
@@ -582,7 +594,8 @@ Thanks to the artists whose free assets are used in this game. All packs were do
 |---|---|---|---|
 | [Spire Tower Pack 1](https://foozlecc.itch.io/spire-tower-pack-1) and [Spire Tower Pack 2](https://foozlecc.itch.io/spire-tower-pack-2) | Baldur / [Foozle](https://foozlecc.itch.io) | Defense tower sprites | CC0 |
 | Monster sprites | Baldur / [Foozle](https://foozlecc.itch.io) (same source as the towers) | Monsters | CC0 |
-| PVFX Foundry 1.0.0 | Pixel VFX Studio (made with the [pixelfx](https://github.com/patch-gg/pixelfx) toolkit, MIT) | Active skill effects (`sprites/skills`) | CC0 |
+| Flying Demon | [luizmelo](https://luizmelo.itch.io) | Flying Demon (fly, attack, fall + death) | CC0 |
+| PVFX Foundry 1.0.0 | Pixel VFX Studio (made with the [pixelfx](https://github.com/patch-gg/pixelfx) toolkit, MIT) | Active skill effects (`sprites/skills`), Flying Demon fireball and fire impact | CC0 |
 | Hero cards | AI generated | Hero pictures | AI generated |
 | Castle buildings, maps, UI | Project author | Everything else | Project-owned |
 

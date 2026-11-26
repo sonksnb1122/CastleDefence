@@ -298,8 +298,8 @@ function infoPopup() {
   refs.content = w.node('Content', p.box, { w: W, h: H });
   w.widget(refs.content, { left: 0, right: 0, top: 0, bottom: 0 });
   refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 0, -H / 2 + 36, 150, 42, C.button, 18, 'game', { widget: { bottom: 15 } });
-  // Optional action (e.g. "Research"): shown by the code, the Close button then moves to the right.
-  refs.actionButton = button(w, p.box, 'ActionButton', 'OK', -95, -H / 2 + 36, 150, 42, C.buttonOk, 18, 'game', { widget: { bottom: 15 } });
+  // Optional action (e.g. "Research"): hidden; infoWindow shows it when asked, the Close button then moves to the right.
+  refs.actionButton = button(w, p.box, 'ActionButton', 'OK', -95, -H / 2 + 36, 150, 42, C.buttonOk, 18, 'game', { widget: { bottom: 15 }, active: false });
   save(w, 'popups/Info', p.root, 'InfoView', 'popups', refs);
 }
 
