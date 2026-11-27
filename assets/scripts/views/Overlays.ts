@@ -6,6 +6,7 @@ import { SaveSlotView } from './items/SaveSlotView';
 import { PauseView } from './popups/PauseView';
 import { SaveLoadView } from './popups/SaveLoadView';
 import { SettingsView } from './popups/SettingsView';
+import { slotButton } from './common/ButtonTemplate';
 import { FillBar, PrefabButton, PrefabUi } from './common/PrefabUi';
 import { confirm, toast } from './common/Popups';
 import { COLORS, ScrollList, text } from './common/UIKit';
@@ -24,6 +25,14 @@ export class PauseOverlay implements IOverlay {
         new PrefabButton(v.saveButton, () => G.main.openOverlay('save')).setEnabled(canSave);
         new PrefabButton(v.loadButton, () => G.main.openOverlay('load'));
         new PrefabButton(v.settingsButton, () => G.main.openOverlay('settings'));
+        // Setting and Tutorials share the Setting row (two half-width buttons).
+        if (v.settingsButton) {
+            const p = v.settingsButton.position, w = PrefabUi.size(v.settingsButton).width, half = (w - 8) / 2;
+            const t = PrefabUi.cloneButton(v.settingsButton, p.x + (w - half) / 2, p.y, half);
+            PrefabUi.setButtonWidth(v.settingsButton, half);
+            v.settingsButton.setPosition(p.x - (w - half) / 2, p.y, 0);
+            new PrefabButton(t, () => G.main.openOverlay('tutorials')).setText('Tutorials');
+        }
         new PrefabButton(v.menuButton, () => confirm(this.root, 'Main Menu', 'Return to the main menu?\nUnsaved progress of the current wave is lost.', () => G.main.goto('menu')));
         new PrefabButton(v.quitButton, () => confirm(this.root, 'Quit Game', 'Quit the game?', () => G.main.quitGame()));
         if (v.saveHint) v.saveHint.node.active = !canSave;
@@ -95,7 +104,7 @@ export class SaveLoadOverlay implements IOverlay {
             if (info.exists) desc = info.valid ? `Wave ${info.wave}  -  ${new Date(info.savedAt).toLocaleString()}` : 'Corrupted save';
             r.slotName!.string = name;
             r.desc!.string = desc;
-            const action = new PrefabButton(r.actionButton);
+            const action = slotButton(r.actionButton, 'Load', { color: COLORS.buttonOk, fontSize: 16 });
             if (this.mode === 'load') {
                 action.setText('Load');
                 action.onClick(() => this.load(slot));
@@ -104,7 +113,7 @@ export class SaveLoadOverlay implements IOverlay {
                 action.setText(info.exists ? 'Overwrite' : 'Save');
                 action.onClick(() => this.save(slot, info.exists));
             }
-            const del = new PrefabButton(r.deleteButton, () => confirm(this.root, 'Delete Save', `Delete ${name}?`, () => { G.main.deleteSlot(slot); this.rebuild(); }));
+            const del = slotButton(r.deleteButton, 'X', { color: COLORS.buttonDanger, fontSize: 16, onClick: () => confirm(this.root, 'Delete Save', `Delete ${name}?`, () => { G.main.deleteSlot(slot); this.rebuild(); }) });
             del.setVisible(slot > 0 && info.exists);
         }
         if (!list) return;
@@ -119,8 +128,7 @@ export class SaveLoadOverlay implements IOverlay {
             y -= 34;
             r.slotName!.string = `Test - Wave ${t.wave}` + (t.seed !== 1 ? ` (seed ${t.seed})` : '');
             r.desc!.string = `Bot seed ${t.seed} up to wave ${t.wave}` + (t.seed === 3 ? ' (falls at 90)' : '') + '  -  read only';
-            new PrefabButton(r.actionButton, () => this.loadTest(i)).setText('Load');
-            new PrefabButton(r.deleteButton).setVisible(false);
+            slotButton(r.actionButton, 'Load', { color: COLORS.buttonOk, fontSize: 16, onClick: () => this.loadTest(i) });
         });
         list.setContentHeight(-y + 4);
     }

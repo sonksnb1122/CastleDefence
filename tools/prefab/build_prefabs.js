@@ -1,6 +1,6 @@
 // Generates every prefab of the game (screens, popups, list items) and the .meta files of
 // the prefabs and of their view scripts. The layouts match the old code-built UI.
-// Usage: node build_prefabs.js <project dir> <ui_frames.json from ui_metas.py>
+// Usage: node build_prefabs.js <project dir> <ui_frames.json from ui_metas.py> [--only=fn1,fn2]
 //
 // The prefabs can be edited in the editor afterwards; running this again overwrites them,
 // so once the layouts are tuned in the editor, edit them there and stop using this script.
@@ -267,51 +267,41 @@ function heroInfoPopup() {
   save(w, 'popups/HeroInfo', p.root, 'HeroInfoView', 'popups', refs);
 }
 
-function confirmPopup() {
-  const w = new PrefabWriter('Confirm');
-  const p = popup(w, 'Confirm', 'Confirm', 460, 280);
-  const refs = p.refs;
-  refs.body = lab(w, label(w, p.box, 'Body', 'Are you sure?', 0, 78, 18, { width: 380, ay: 1, align: 1 }));
-  refs.price = w.node('Price', p.box, { y: -36 });
-  refs.okButton = button(w, p.box, 'OkButton', 'Confirm', -100, -92, 150, 44, C.buttonOk, 18);
-  refs.cancelButton = button(w, p.box, 'CancelButton', 'Cancel', 100, -92, 150, 44, C.buttonDanger, 18);
-  save(w, 'popups/Confirm', p.root, 'ConfirmView', 'popups', refs);
-}
-
-function messagePopup() {
+/**
+ * Template of the simple popups (popups/PopupTemplate): title, a text (Body), a free area for content made in code
+ * (Content, the whole box) and the button bar at the bottom (buttons are items/ButtonTemplate, added in code).
+ * Used by the confirm / message / info windows, the build menus, the tutorial notes and the Guide (common/PopupTemplate.ts).
+ */
+function popupTemplate() {
   const W = 460, H = 300;
-  const w = new PrefabWriter('Message');
-  const p = popup(w, 'Message', 'Message', W, H);
+  const w = new PrefabWriter('PopupTemplate');
+  const p = popup(w, 'PopupTemplate', 'Title', W, H);
   const refs = p.refs;
-  const body = label(w, p.box, 'Body', 'Message text', 0, H / 2 - 62, 17, { width: W - 70, ay: 1, align: 0 });
+  refs.veil = w.objs[p.root]._children.map(r => r.__id__).find(i => w.objs[i]._name === 'Veil');
+  const body = label(w, p.box, 'Body', 'Text', 0, H / 2 - 62, 17, { width: W - 70, ay: 1, align: 0 });
   w.widget(body, { left: 35, right: 35, top: 62 });
   refs.body = lab(w, body);
-  refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 0, -H / 2 + 36, 150, 42, C.button, 18, 'game', { widget: { bottom: 15 } });
-  save(w, 'popups/Message', p.root, 'MessageView', 'popups', refs);
-}
-
-function infoPopup() {
-  const W = 500, H = 400;
-  const w = new PrefabWriter('Info');
-  const p = popup(w, 'Info', 'Info', W, H);
-  const refs = p.refs;
   refs.content = w.node('Content', p.box, { w: W, h: H });
   w.widget(refs.content, { left: 0, right: 0, top: 0, bottom: 0 });
-  refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 0, -H / 2 + 36, 150, 42, C.button, 18, 'game', { widget: { bottom: 15 } });
-  // Optional action (e.g. "Research"): hidden; infoWindow shows it when asked, the Close button then moves to the right.
-  refs.actionButton = button(w, p.box, 'ActionButton', 'OK', -95, -H / 2 + 36, 150, 42, C.buttonOk, 18, 'game', { widget: { bottom: 15 }, active: false });
-  save(w, 'popups/Info', p.root, 'InfoView', 'popups', refs);
+  refs.buttonBar = w.node('ButtonBar', p.box, { y: -H / 2 + 36, w: W - 40, h: 44 });
+  w.widget(refs.buttonBar, { left: 20, right: 20, bottom: 14 });
+  save(w, 'popups/PopupTemplate', p.root, 'PopupTemplateView', 'popups', refs);
 }
 
-function buildPopup() {
-  const W = 540, H = 360;
-  const w = new PrefabWriter('Build');
-  const p = popup(w, 'Build', 'Build', W, H);
-  const refs = p.refs;
-  refs.rows = w.node('Rows', p.box, { w: W, h: H });
-  w.widget(refs.rows, { left: 0, right: 0, top: 0, bottom: 0 });
-  refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 0, -H / 2 + 38, 140, 38, C.button, 18, 'game', { widget: { bottom: 19 } });
-  save(w, 'popups/Build', p.root, 'BuildView', 'popups', refs);
+/**
+ * The one text button of the game's items (items/ButtonTemplate): popup buttons, save slot and build row buttons,
+ * the Build Tower button, the skill book price buttons, the Tutorials topics. Text, color, size are set in code
+ * (common/ButtonTemplate.ts); the item prefabs only keep an empty slot node where the button goes.
+ */
+function buttonTemplate() {
+  const w = new PrefabWriter('ButtonTemplate');
+  const root = button(w, null, 'ButtonTemplate', 'Button', 0, 0, 150, 42, C.button, 18);
+  save(w, 'items/ButtonTemplate', root);
+}
+
+/** Empty node where a ButtonTemplate is put in code (same size as the button). */
+function buttonSlot(w, parent, name, x, y, width, height) {
+  return w.node(name, parent, { x, y, w: width, h: height });
 }
 
 function newHeroPopup() {
@@ -391,8 +381,8 @@ function saveSlotItem() {
   const refs = {};
   refs.slotName = lab(w, label(w, root, 'SlotName', 'Slot 1', -240, 10, 18, { ax: 0, bold: true }));
   refs.desc = lab(w, label(w, root, 'Desc', 'Empty', -240, -13, 14, { ax: 0, color: C.textDim }));
-  refs.actionButton = button(w, root, 'ActionButton', 'Load', 140, 0, 100, 38, C.buttonOk, 16, 'menu');
-  refs.deleteButton = button(w, root, 'DeleteButton', 'X', 225, 0, 38, 38, C.buttonDanger, 16, 'menu');
+  refs.actionButton = buttonSlot(w, root, 'ActionButton', 140, 0, 100, 38);
+  refs.deleteButton = buttonSlot(w, root, 'DeleteButton', 225, 0, 38, 38);
   save(w, 'items/SaveSlot', root, 'SaveSlotView', 'items', refs);
 }
 
@@ -404,7 +394,7 @@ function buildRowItem() {
   refs.icon = spr(w, box(w, root, 'Icon', -198, 0, 50, 50, [255, 255, 255, 255]));
   refs.title = lab(w, label(w, root, 'Title', 'Building  (0/5)', -162, 12, 17, { ax: 0, bold: true }));
   refs.cost = w.node('Cost', root, { x: -162, y: -12 });
-  refs.buildButton = button(w, root, 'BuildButton', 'Build', 172, 0, 96, 38, C.buttonOk, 16);
+  refs.buildButton = buttonSlot(w, root, 'BuildButton', 172, 0, 96, 38);
   save(w, 'items/BuildRow', root, 'BuildRowView', 'items', refs);
 }
 
@@ -464,13 +454,6 @@ function arcButtonItem() {
   w.sprite(w.node('Fill', root, { w: 40, h: 40 }), null);
   w.sprite(w.node('Icon', root, { w: 28, h: 28 }), null);
   save(w, 'items/ArcButton', root);
-}
-
-function towerButtonItem() {
-  const w = new PrefabWriter('TowerButton');
-  const root = button(w, null, 'TowerButton', 'Tower', 0, 0, 164, 44, C.button, 13, 'game', { labelY: 10 });
-  w.node('Cost', root, { y: -9 });
-  save(w, 'items/TowerButton', root);
 }
 
 function toastItem() {
@@ -666,14 +649,95 @@ function tradeScreen() {
   save(w, 'screens/Trade', root, 'TradeView', 'screens', refs);
 }
 
+
+// ------------------------------------------------------------------ tutorials and guide (views/Tutorial.ts, views/Guide.ts)
+
+/**
+ * Tutorial frame (items/TutorialFrame): the dim around the part a note is about (four dark boxes Top / Bottom /
+ * Left / Right) and its red border (BorderTop / BorderBottom / BorderLeft / BorderRight). Tutorial.ts places and
+ * sizes them for every step. The root takes every tap (the screen below stays still).
+ */
+function tutorialFrameItem() {
+  const w = new PrefabWriter('TutorialFrame');
+  const root = w.node('TutorialFrame', null, { w: SCREEN_W, h: SCREEN_H });
+  w.widget(root, { left: 0, right: 0, top: 0, bottom: 0 });
+  w.blockInput(root);
+  const refs = {};
+  for (const k of ['Top', 'Bottom', 'Left', 'Right']) refs['dim' + k] = box(w, root, 'Dim' + k, 0, 0, 100, 100, [0, 0, 0, 165]);
+  for (const k of ['Top', 'Bottom', 'Left', 'Right']) refs['border' + k] = box(w, root, 'Border' + k, 0, 0, 100, 3, hex('#ff3b3b'));
+  save(w, 'items/TutorialFrame', root, 'TutorialFrameView', 'items', refs);
+}
+
+/** Tutorials window (popups/Tutorials): topic list on the left, the notes of the chosen one on the right. */
+function tutorialsPopup() {
+  const W = 800, H = 536;
+  const w = new PrefabWriter('Tutorials');
+  const p = popup(w, 'Tutorials', 'Tutorials', W, H);
+  const refs = p.refs;
+  refs.topicList = w.node('TopicList', p.box, { x: -W / 2 + 30 + 110, y: -4, w: 220, h: H - 150 });
+  w.widget(refs.topicList, { left: 30, top: 70, bottom: 80 });
+  refs.pageArea = w.node('PageArea', p.box, { x: 125, y: -4, w: W - 310, h: H - 150 });
+  w.widget(refs.pageArea, { left: 266, right: 30, top: 70, bottom: 80 });
+  refs.resetButton = button(w, p.box, 'ResetButton', 'Show again', -95, -H / 2 + 36, 150, 42, C.buttonOk, 18, 'game', { widget: { bottom: 15 } });
+  refs.closeButton = button(w, p.box, 'CloseButton', 'Close', 95, -H / 2 + 36, 150, 42, C.button, 18, 'game', { widget: { bottom: 15 } });
+  save(w, 'popups/Tutorials', p.root, 'TutorialsView', 'popups', refs);
+}
+
+/** One goal of the Guide (items/GuideRow): check box (tick when reached), title, detail and the red dot. */
+function guideRowItem() {
+  const RW = 640, RH = 46;
+  const w = new PrefabWriter('GuideRow');
+  const root = w.node('GuideRow', null, { w: RW, h: RH });
+  const refs = {};
+  refs.panel = panel(w, root, 'Panel', 0, 0, RW, RH - 4, C.panelLight);
+  const cb = box(w, root, 'CheckBox', -RW / 2 + 22, 0, 22, 22, hex(C.textDim));
+  box(w, cb, 'Inside', 0, 0, 18, 18, hex('#1c1826'));
+  refs.tick = w.node('Tick', cb, { x: 2, y: 2, w: 22, h: 22, active: false });
+  w.sprite(refs.tick, frameUuid('sprites/ui/check_tick'));
+  refs.title = lab(w, label(w, root, 'Title', 'Goal', -RW / 2 + 44, 9, 16, { ax: 0, bold: true }));
+  refs.detail = lab(w, label(w, root, 'Detail', 'Detail', -RW / 2 + 44, -11, 13, { ax: 0, color: C.textDim }));
+  refs.stars = lab(w, label(w, root, 'Stars', '\u2605\u2605\u2605', RW / 2 - 36, 0, 15, { ax: 1, color: '#ffd35a' }));
+  refs.dot = w.node('Dot', root, { x: RW / 2 - 18, w: 16, h: 16 });
+  w.sprite(refs.dot, frameUuid('sprites/ui/red_dot'));
+  save(w, 'items/GuideRow', root, 'GuideRowView', 'items', refs);
+}
+
+/** Stage title of the Guide list (items/GuideStage): "Before wave 30: ...", the goals reached and a "Now" mark. */
+function guideStageItem() {
+  const RW = 640, RH = 34;
+  const w = new PrefabWriter('GuideStage');
+  const root = w.node('GuideStage', null, { w: RW, h: RH });
+  const refs = {};
+  refs.line = box(w, root, 'Line', 0, -RH / 2 + 3, RW, 2, hex(C.accent));
+  refs.title = lab(w, label(w, root, 'Title', 'Before wave 30', -RW / 2 + 6, 0, 17, { ax: 0, bold: true, color: C.accent }));
+  refs.count = lab(w, label(w, root, 'Count', '0 / 0', RW / 2 - 6, 0, 14, { ax: 1, color: C.textDim }));
+  save(w, 'items/GuideStage', root, 'GuideStageView', 'items', refs);
+}
+
+/** Guide button of the castle (items/GuideButton): the "i" picture, bottom right, with a red dot. */
+function guideButtonItem() {
+  const w = new PrefabWriter('GuideButton');
+  const root = iconButton(w, null, 'GuideButton', 'sprites/ui/btn_info', SCREEN_W / 2 - 34, -SCREEN_H / 2 + 34, 52, { widget: { right: 8, bottom: 8 } });
+  const refs = {};
+  refs.dot = w.node('Dot', root, { x: 20, y: 20, w: 18, h: 18 });
+  w.sprite(refs.dot, frameUuid('sprites/ui/red_dot'));
+  save(w, 'items/GuideButton', root, 'GuideButtonView', 'items', refs);
+}
+
 // ------------------------------------------------------------------ run
 
-[pausePopup, settingsPopup, saveLoadPopup, researchTreePopup, heroInfoPopup, confirmPopup, messagePopup, infoPopup, buildPopup, newHeroPopup,
-  topBarItem, defTabItem, saveSlotItem, buildRowItem, heroCardItem, skillCardItem, levelTagItem, arcButtonItem, towerButtonItem, toastItem,
-  loadingScreen, mainMenuScreen, inCastleScreen, outCastleScreen, heroRecruitScreen, tradeScreen].forEach(f => f());
-viewScript('PopupView', 'popups');
+const ALL = [pausePopup, settingsPopup, saveLoadPopup, researchTreePopup, heroInfoPopup, popupTemplate, buttonTemplate, newHeroPopup,
+  topBarItem, defTabItem, saveSlotItem, buildRowItem, heroCardItem, skillCardItem, levelTagItem, arcButtonItem, toastItem,
+  loadingScreen, mainMenuScreen, inCastleScreen, outCastleScreen, heroRecruitScreen, tradeScreen,
+  tutorialFrameItem, tutorialsPopup, guideStageItem, guideRowItem, guideButtonItem];
+// "--only=a,b": only these generator functions (e.g. new prefabs), so the prefabs tuned in the editor are not overwritten.
+const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
+(only.length ? ALL.filter(f => only.indexOf(f.name) >= 0) : ALL).forEach(f => f());
+if (!only.length) viewScript('PopupView', 'popups');
 for (const cls in VIEW_DIRS) write(`assets/scripts/views/${VIEW_DIRS[cls]}/${cls}.ts.meta`, scriptMeta(uuid('script:' + cls)));
-write('assets/prefabs.meta', bundleFolderMeta(uuid('folder:prefabs'), 'prefabs', 6));
-write('assets/bundles/heroes.meta', bundleFolderMeta(uuid('folder:bundles/heroes'), 'heroes', 5));
+if (!only.length) {
+  write('assets/prefabs.meta', bundleFolderMeta(uuid('folder:prefabs'), 'prefabs', 6));
+  write('assets/bundles/heroes.meta', bundleFolderMeta(uuid('folder:bundles/heroes'), 'heroes', 5));
+}
 fs.writeFileSync(uuidFile, JSON.stringify(uuids, null, 2));
 console.log('wrote ' + written.length + ' files');

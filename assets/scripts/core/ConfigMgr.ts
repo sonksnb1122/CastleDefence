@@ -21,7 +21,10 @@ export class ConfigMgr {
     /** Non fatal problems (missing art, ...). */
     static warnings: string[] = [];
 
-    private static readonly FILES = ['building', 'tower', 'enemy', 'waves', 'heroes', 'herobuff', 'research', 'effects', 'skills'];
+    /** Tutorials (guide.json, views/Tutorial.ts). */
+    static guide: any = null;
+
+    private static readonly FILES = ['building', 'tower', 'enemy', 'waves', 'heroes', 'herobuff', 'research', 'effects', 'skills', 'guide'];
 
     static load(done: () => void) {
         let remaining = ConfigMgr.FILES.length;

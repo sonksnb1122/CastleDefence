@@ -1,3 +1,4 @@
+import { Tutorial } from './Tutorial';
 import { Node, Texture2D, Sprite, SpriteFrame, Label, Color, isValid, EventTouch, BlockInputEvents } from 'cc';
 import { SpriteAnim } from '../combat/SpriteAnim';
 import { Assets } from '../core/Assets';
@@ -10,9 +11,9 @@ import { NewHeroView } from './popups/NewHeroView';
 import { HeroInfoView } from './popups/HeroInfoView';
 import { HeroRecruitView } from './screens/HeroRecruitView';
 import { confirm, toast } from './common/Popups';
-import { InfoView } from './popups/InfoView';
 import { bookCard, skillDescription, skillName, updateSkillArts } from './SkillCards';
 import { HeroSkillService } from '../core/services/HeroSkillService';
+import { openPopup } from './common/PopupTemplate';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, ScrollList, costRow, hex, mk, sprite, text } from './common/UIKit';
 
@@ -136,6 +137,7 @@ export class HeroRecruitScreen {
         this.recruitBtn = new PrefabButton(v.recruitButton, () => this.recruit());
         this.costNode = v.recruitCost!;
         this.rebuild();
+        Tutorial.show('heroes', { recruit: () => v.recruitButton, owned: () => v.ownedArea, locked: () => v.lockedArea });
     }
 
     /** Scroll list filling a list area of the prefab (the area keeps its height, its width follows the screen). */
@@ -288,6 +290,7 @@ export class HeroRecruitScreen {
             if (promoteWhy) v.promoteButtonCaption!.color = hex(COLORS.textDim);
         }
         this.heroWin = { v, art: ca, heroId };
+        if (owned) Tutorial.show('heroInfo', { art: () => v.art, info: () => v.infoArea, learn: () => v.learnButton, promote: () => v.promoteButton });
     }
 
     /**
@@ -334,15 +337,13 @@ export class HeroRecruitScreen {
         this.heroWin = null;
     }
 
-    /** Popup (prefabs/popups/Info) listing the skill books this hero can learn. */
+    /** Popup (PopupTemplate) listing the skill books this hero can learn. */
     private openLearn(heroId: string) {
         const hero = ConfigMgr.heroDef(heroId);
         const sk = this.rm.skills;
         const W = Math.min(760, G.main.W - 60), H = G.main.H - 50;
-        const v = PrefabUi.view('popups/Info', this.root, InfoView);
-        v.setTitle('Learn a skill');
-        v.resize(W, H);
-        const list = new ScrollList(v.content!, 0, 4, W - 40, H - 128, false);
+        const v = openPopup(this.root, { title: 'Learn a skill', width: W, height: H, buttons: [{ text: 'Close' }] });
+        const list = new ScrollList(v.content, 0, 4, W - 40, H - 128, false);
         const host = list.content;
         const slots = sk.freeSlots(heroId);
         const rule = this.rm.heroes.stars(heroId) >= 5 ? '5-star hero: 1 active + 1 passive skill.' : 'Can learn 1 skill (active or passive).';
@@ -365,7 +366,6 @@ export class HeroRecruitScreen {
         }));
         if (books.length === 0) text(host, 'No skill book this hero can learn.\nBuy skill books in the Market of the Base (Skill Books tab).', 15, 0, -top - 40, { color: COLORS.textDim });
         list.setContentHeight(top + Math.max(1, books.length) * (ch + 8) + 10);
-        new PrefabButton(v.closeButton, () => v.close());
     }
 
     private recruit() {

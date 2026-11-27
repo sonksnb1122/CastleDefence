@@ -1,3 +1,4 @@
+import { Node } from 'cc';
 /**
  * Tiny service locator. Screens talk to Main through this object so that
  * screen files never import Main (avoids circular imports).
@@ -28,6 +29,8 @@ export interface IMain {
     /** Background music track (bgm_castle / bgm_battle / bgm_boss). */
     playMusic(key: string): void;
     after(seconds: number, fn: () => void): void;
+    /** Topmost layer (tutorials are drawn here, above the screens and overlays). */
+    readonly topLayer: Node;
 }
 
 export const G: { main: IMain } = { main: null as any };

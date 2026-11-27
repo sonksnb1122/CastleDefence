@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "55382142-bb74-47af-a653-7d3573144e59",
+  "uuid": "cb2a235c-5820-4f51-844f-6f831e775e71",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "Confirm"
+    "syncNodeName": "Tutorials"
   }
 }

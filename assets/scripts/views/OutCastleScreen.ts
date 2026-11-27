@@ -7,6 +7,7 @@ import { SkillManager } from '../combat/SkillManager';
 import { CardArt } from './HeroRecruitScreen';
 import { SkillCardView } from './items/SkillCardView';
 import { skillDescription, skillName } from './SkillCards';
+import { Tutorial, TutorialTargets } from './Tutorial';
 import { WaveMgr } from '../combat/WaveMgr';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
@@ -18,7 +19,8 @@ import { InfoLine, confirm, infoWindow, message, toast } from './common/Popups';
 import { FillBar, PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, costRow, hex, mk, text, toLocal } from './common/UIKit';
 import { BattlefieldGround } from './BattlefieldGround';
-import { BuildView } from './popups/BuildView';
+import { openPopup } from './common/PopupTemplate';
+import { costButton, slotButton } from './common/ButtonTemplate';
 import { BuildRowView } from './items/BuildRowView';
 import { Assets } from '../core/Assets';
 
@@ -137,14 +139,13 @@ export class OutCastleScreen implements CombatEvents {
             this.stopAiming();
         });
 
-        // One "Build" button (prefabs/items/TowerButton) opens the tower list (prefabs/popups/Build), like the
+        // One "Build Tower" button (items/ButtonTemplate, text over the tower count) opens the tower list, like the
         // Build button inside the castle.
         this.buildBar = v.buildBar!;
-        const node = PrefabUi.create('items/TowerButton', this.buildBar);
-        node.setPosition(0, 0, 0);
-        this.buildBtn = new PrefabButton(node, () => this.openTowerBuildMenu());
-        this.buildBtn.setText('Build Tower');
-        this.buildCount = node.getChildByName('Cost');
+        const bb = costButton(this.buildBar, 'Build Tower', { onClick: () => this.openTowerBuildMenu() });
+        bb.btn.node.setPosition(0, 0, 0);
+        this.buildBtn = bb.btn;
+        this.buildCount = bb.cost;
 
         // A touch anywhere but on a hero card hides the skill description (capture phase: buttons stop the event).
         this.root.on(Node.EventType.TOUCH_START, (e: EventTouch) => this.touchOutsideCards(e), this, true);
@@ -153,7 +154,17 @@ export class OutCastleScreen implements CombatEvents {
         this.unsubscribe = this.rm.onChange(() => this.refreshHud());
         this.refreshHud();
         this.setCamera(0);
+        // Tutorials: the battlefield the first time, the battle at the first wave started.
+        const a = bf.constructionArea;
+        const areaMark = mk('AreaMark', this.world, a.x + a.width / 2, a.y + a.height / 2, a.width, a.height);
+        this.tutorialTargets = {
+            area: () => areaMark, build: () => bb.btn.node, wall: () => v.wallBar, armor: () => this.defTab.node, waveInfo: () => v.waveInfo ? v.waveInfo.node : null,
+            start: () => v.startButton, enter: () => v.enterButton, skills: () => v.heroSkillBar, speed: () => v.speedButton, pause: () => v.pauseButton,
+        };
+        if (this.rm.isPreparation) Tutorial.show('outCastle', this.tutorialTargets);
     }
+
+    private tutorialTargets: TutorialTargets = {};
 
     // ------------------------------------------------------------------ towers
     private rebuildTowers() {
@@ -289,18 +300,16 @@ export class OutCastleScreen implements CombatEvents {
         infoWindow(this.root, unit.def.name, lines);
     }
 
-    /** Build popup (prefabs/popups/Build): one row (prefabs/items/BuildRow) per tower of tower.json. */
+    /** Build popup (PopupTemplate): one row (prefabs/items/BuildRow) per tower of tower.json. */
     private openTowerBuildMenu() {
         const rm = this.rm;
         const defs: any[] = ConfigMgr.tower.towers;
         const h = 150 + defs.length * 70;
-        const v = PrefabUi.view('popups/Build', this.root, BuildView);
-        v.resize(PrefabUi.size(v.box!).width, h);
-        v.setTitle(`Build Tower  (${rm.data.towers.length}/${rm.towerLimit})`);
+        const v = openPopup(this.root, { title: `Build Tower  (${rm.data.towers.length}/${rm.towerLimit})`, width: 540, height: h, buttons: [{ text: 'Close', width: 140 }] });
         const top = h / 2 - 62;
         const full = rm.data.towers.length >= rm.towerLimit;
         defs.forEach((def, i) => {
-            const r = PrefabUi.view('items/BuildRow', v.rows!, BuildRowView);
+            const r = PrefabUi.view('items/BuildRow', v.content, BuildRowView);
             r.node.setPosition(0, top - 30 - i * 70, 0);
             // Icon: the level 1 base of the tower (64 x 128), kept in proportion.
             const frames = Assets.frames(def.base.path, def.base.cellW, def.base.cellH);
@@ -311,11 +320,10 @@ export class OutCastleScreen implements CombatEvents {
             const lock = rm.towerBuildLock(def.id);
             r.title!.string = lock ? `${def.name}  -  ${lock}` : def.name;
             costRow(r.cost, def.buildCost, 0, 0, { size: 18, fontSize: 13 });
-            const btn = new PrefabButton(r.buildButton, () => { v.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); });
+            const btn = slotButton(r.buildButton, 'Build', { color: COLORS.buttonOk, fontSize: 16, onClick: () => { v.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); } });
             if (lock) btn.setText('Locked');
             btn.setEnabled(!lock && !full && rm.canAfford(def.buildCost));
         });
-        new PrefabButton(v.closeButton, () => v.close());
     }
 
     // ------------------------------------------------------------------ placement
@@ -688,6 +696,7 @@ export class OutCastleScreen implements CombatEvents {
         this.refreshSkillButton();
         this.showHeroCards();
         toast(this.root, this.combat.plan!.name, true);
+        Tutorial.show('combat', this.tutorialTargets);
         G.main.playSfx('wave_start');
         // Boss waves have their own music until the wave is over.
         if (WaveMgr.defense(this.rm.data.currentWave).hasBoss) G.main.playMusic('bgm_boss');

@@ -1,0 +1,130 @@
+{
+  "_doc": "Tutorials: shown once, step by step, the first time the player opens each part of the game (views/Tutorial.ts). 'target' names a part of that screen that gets a red frame (the rest is dimmed); no target = a centered note. The Tutorials window (main menu / pause menu) lists them all.",
+  "tutorials": [
+    {
+      "id": "inCastle",
+      "title": "The Castle",
+      "steps": [
+        { "title": "Welcome!", "text": "Between battles you grow your castle here: buildings make resources and the Research Lab makes the towers stronger. Then you go outside and hold the wall against the next wave." },
+        { "target": "topBar", "title": "Resources", "text": "Food, material and gold pay for buildings, towers and research. Energy Cores (blue) come from the Base and from bosses. The current wave and phase are on the right." },
+        { "target": "build", "title": "Build", "text": "Build Farms (food), Workshops (material) and the Research Lab. Tap a building to upgrade or move it. The Base opens the heroes and the Market, the Lab opens the research tree." },
+        { "target": "base", "title": "The Base", "text": "Centers the view on your Base. The Base level sets the highest level of the other buildings and towers, and how many of them you can build." },
+        { "target": "guide", "title": "Guide", "text": "What to do next. A red dot on it means something useful can be done right now (and the Enemy armor you need for the next wave is there too)." },
+        { "target": "outside", "title": "Go Outside", "text": "The battlefield: build towers left of the wall and start the next wave." },
+        { "target": "pause", "title": "Menu", "text": "Save, load, settings and these tutorials." }
+      ]
+    },
+    {
+      "id": "outCastle",
+      "title": "The Battlefield",
+      "steps": [
+        { "target": "area", "title": "Defense area", "text": "Towers are built in this area, left of the wall. Tap a tower to upgrade or move it, change its target mode or read its effects." },
+        { "target": "build", "title": "Build Tower", "text": "Crossbow: fast, one target. Crystal: magic. Catapult: area damage, cannot hit flying enemies. Halo Spire (research): buffs the towers around it, raises a shield against projectiles and mends the wall." },
+        { "target": "wall", "title": "The wall", "text": "Enemies that reach the wall damage it; at 0 HP the game is over. Repair it here between waves (Halo Spires with Mending Halo also heal it)." },
+        { "target": "armor", "title": "Enemy armor", "text": "Enemy defense grows with the waves: keep Armor / Spell Piercing up to the needed value. Later waves also resist effects and take less damage from towers, but never from hero skills." },
+        { "target": "waveInfo", "title": "Next wave", "text": "How many enemies are coming. Every 10th wave brings a boss." },
+        { "target": "start", "title": "Start Wave", "text": "Starts the battle. Towers fire on their own; you can cast hero skills during the wave." },
+        { "target": "enter", "title": "Back to the castle", "text": "Spend what you earned between waves." }
+      ]
+    },
+    {
+      "id": "combat",
+      "title": "Battle",
+      "steps": [
+        { "target": "skills", "title": "Hero skills", "text": "Tap a hero card, then the spot (some skills hit the whole field). A skill can be used once every few waves. Skills deal true damage: they ignore every defense and damage reduction. Keep some for the boss waves!" },
+        { "target": "speed", "title": "Game speed", "text": "Speed the battle up (x1 to x10)." },
+        { "target": "pause", "title": "Pause", "text": "Pauses the battle." }
+      ]
+    },
+    {
+      "id": "heroes",
+      "title": "Heroes",
+      "steps": [
+        { "target": "recruit", "title": "Recruit", "text": "Recruit a random hero (3 to 5 stars). Every hero you own makes the next one a bit more expensive." },
+        { "target": "owned", "title": "Your heroes", "text": "Their buffs help every tower and your economy. Tap a card to see a hero, teach it a skill or promote it." },
+        { "target": "locked", "title": "Not recruited yet", "text": "The heroes you can still get." }
+      ]
+    },
+    {
+      "id": "heroInfo",
+      "title": "Hero Info",
+      "steps": [
+        { "target": "art", "title": "The card", "text": "Stars: one random buff per star. Promoted heroes show their new stars on top of the card." },
+        { "target": "info", "title": "Buffs and skills", "text": "The hero's buffs and the skills it learned. Passive skills work all the time and some combine very well with each other: choose them with care." },
+        { "target": "learn", "title": "Learn a skill", "text": "Uses a skill book (bought at the Market) and 1 Energy Core. 5-star heroes learn 1 active + 1 passive skill, the others 1 skill of any kind." },
+        { "target": "promote", "title": "Promote", "text": "Straight to 5 stars (research Ascension first): more buffs and a second skill slot." }
+      ]
+    },
+    {
+      "id": "trade",
+      "title": "Market",
+      "steps": [
+        { "target": "market", "title": "Trade", "text": "Pick what you give and what you get, then the amount. Use it when one resource blocks you while the others pile up." },
+        { "target": "rate", "title": "Rate", "text": "How much you get for what you give." },
+        { "target": "tradeButton", "title": "Trade", "text": "Confirms the trade." },
+        { "target": "booksTab", "title": "Skill Books", "text": "Hero skill books are sold here." }
+      ]
+    },
+    {
+      "id": "books",
+      "title": "Skill Books",
+      "steps": [
+        { "target": "shop", "title": "Book shop", "text": "A new choice of books every wave; prices grow with the waves. Effect passives are sold once their tower effect is unlocked." },
+        { "target": "owned", "title": "Your books", "text": "Teach them to your heroes from the hero window (Base > Heroes > tap a card)." }
+      ]
+    },
+    {
+      "id": "research",
+      "title": "Research",
+      "steps": [
+        { "target": "tree", "title": "The research tree", "text": "Tap a node to see what it does and research it. A node needs its parent at max level; tiers 2 and 3 open with the Research Lab level." },
+        { "target": "tabs", "title": "Branches", "text": "Jump to a branch: offense, economy, fortification, tower effects, heroes, curses." },
+        { "target": "cap", "title": "Research Lab", "text": "What your Lab level allows. Upgrade the Lab in the castle to open more." },
+        { "target": "zoom", "title": "Zoom", "text": "Zoom in and out (you can also drag the tree)." }
+      ]
+    }
+  ],
+  "_doc_guide": "Guide (views/Guide.ts, castle button at the bottom right): the goals of a game by stage. A stage lasts until its 'until' wave (0 = every wave, null = after the last stage). 'priority' 1-5 is shown as stars (5 = do it first). Goal ids: armor, wall, base, farms, workshops, lab, buildings, towers, towerLevel, scholarship, research (target = technologies at max level), researchAll, smart, heroes (target), skills (perHero 1, or 'full' = every slot), halo, awaken, masteries, treeRest, promote, endless (tech, target level). Unfinished goals of a past stage move to the current one (marked late).",
+  "stages": [
+    { "until": 0, "title": "Every wave", "goals": [
+        {"id": "armor", "priority": 5},
+        {"id": "wall", "priority": 4}
+    ] },
+    { "until": 30, "title": "Build the castle", "goals": [
+        {"id": "base", "priority": 5},
+        {"id": "farms", "priority": 5},
+        {"id": "workshops", "priority": 5},
+        {"id": "lab", "priority": 5},
+        {"id": "towers", "priority": 4},
+        {"id": "towerLevel", "priority": 4},
+        {"id": "buildings", "priority": 3},
+        {"id": "scholarship", "priority": 3},
+        {"id": "research", "target": 35, "priority": 3},
+        {"id": "heroes", "target": 2, "priority": 2}
+    ] },
+    { "until": 50, "title": "Finish the research tree", "goals": [
+        {"id": "researchAll", "priority": 5},
+        {"id": "awaken", "priority": 5},
+        {"id": "heroes", "target": 12, "priority": 4},
+        {"id": "halo", "priority": 4},
+        {"id": "smart", "priority": 4},
+        {"id": "skills", "perHero": 1, "priority": 3}
+    ] },
+    { "until": 70, "title": "Masteries and 5-star heroes", "goals": [
+        {"id": "masteries", "priority": 5},
+        {"id": "promote", "priority": 4},
+        {"id": "treeRest", "priority": 4},
+        {"id": "skills", "perHero": "full", "priority": 3},
+        {"id": "endless", "tech": "r_damage_inf", "target": 20, "priority": 2},
+        {"id": "endless", "tech": "r_wallhp_inf", "target": 20, "priority": 2}
+    ] },
+    { "until": 90, "title": "Endless research", "goals": [
+        {"id": "endless", "tech": "r_damage_inf", "target": 50, "priority": 5},
+        {"id": "endless", "tech": "r_wallhp_inf", "target": 50, "priority": 4}
+    ] },
+    { "until": null, "title": "Hold as long as you can", "goals": [
+        {"id": "endless", "tech": "r_damage_inf", "target": 70, "priority": 5},
+        {"id": "endless", "tech": "r_wallhp_inf", "target": 70, "priority": 4}
+    ] }
+  ]
+}

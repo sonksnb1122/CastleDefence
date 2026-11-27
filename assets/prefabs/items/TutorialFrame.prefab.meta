@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "ccf75fcc-6211-407e-bf53-32dca56b3d1e",
+  "uuid": "fee61f96-3277-4b54-8125-e60b0c2c723e",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "Build"
+    "syncNodeName": "TutorialFrame"
   }
 }

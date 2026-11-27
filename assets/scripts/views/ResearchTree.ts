@@ -1,3 +1,4 @@
+import { Tutorial } from './Tutorial';
 import { Node, Label, Graphics, Mask, EventTouch, EventMouse, Vec3, Sprite, Color, isValid, UITransform } from 'cc';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
@@ -136,6 +137,7 @@ export class ResearchOverlay implements IOverlay {
         const first = this.nodes.find(n => !this.rm.techBlock(n.id)) || this.nodes[0];
         if (first) { this.selected = first.id; this.centerOn(first); } else this.panTo(0, 0);
         this.refresh();
+        Tutorial.show('research', { tree: () => v.treeArea, tabs: () => v.tabs, cap: () => v.capLabel ? v.capLabel.node : null, zoom: () => v.zoomInButton });
     }
 
     // ------------------------------------------------------------------ layout

@@ -1,3 +1,4 @@
+import { Tutorial } from './Tutorial';
 import { Node, Label, UITransform } from 'cc';
 import { ConfigMgr } from '../core/ConfigMgr';
 import { G } from '../core/Globals';
@@ -98,6 +99,7 @@ export class TradeScreen {
         this.listW = Math.min(470, G.main.W / 2 - 42);
         this.unsubscribe = this.rm.onChange(() => { this.refresh(); if (this.tab === 'books') this.refreshBooks(); });
         this.setTab('market');
+        Tutorial.show('trade', { market: () => v.marketPanel, rate: () => v.rateLabel ? v.rateLabel.node : null, tradeButton: () => v.tradeButton, booksTab: () => v.booksTab });
     }
 
     // ------------------------------------------------------------------ tabs
@@ -112,6 +114,7 @@ export class TradeScreen {
             if (!this.ownedList) this.ownedList = this.makeList(v.ownedBooksArea!);
             if (!this.shopList) this.shopList = this.makeList(v.shopArea!);
             this.refreshBooks();
+            Tutorial.show('books', { shop: () => v.shopArea, owned: () => v.ownedBooksArea });
         } else this.refresh();
     }
 

@@ -49,6 +49,13 @@ export class MainMenuScreen implements CombatEvents {
         new PrefabButton(v.loadButton, () => G.main.openOverlay('load'));
         new PrefabButton(v.settingsButton, () => G.main.openOverlay('settings'));
         new PrefabButton(v.quitButton, () => G.main.quitGame());
+        // Tutorials: a copy of the Setting button between Setting and Quit Game (Quit moves down one row).
+        if (v.settingsButton && v.quitButton) {
+            const s = v.settingsButton.position, q = v.quitButton.position;
+            const t = PrefabUi.cloneButton(v.settingsButton, s.x, q.y);
+            v.quitButton.setPosition(q.x, q.y - (s.y - q.y), 0);
+            new PrefabButton(t, () => G.main.openOverlay('tutorials')).setText('Tutorials');
+        }
         if (v.warnings) v.warnings.string = ConfigMgr.warnings.slice(0, 4).join('\n');
     }
 

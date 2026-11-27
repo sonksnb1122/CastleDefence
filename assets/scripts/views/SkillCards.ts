@@ -6,6 +6,7 @@ import { Cost } from '../core/GameTypes';
 import { ResourceMgr } from '../core/ResourceMgr';
 import { HeroSkillService } from '../core/services/HeroSkillService';
 import { HeroCardView } from './items/HeroCardView';
+import { costButton } from './common/ButtonTemplate';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
 import { COLORS, costRow, hex, sprite, text } from './common/UIKit';
 
@@ -115,13 +116,10 @@ export function bookCard(parent: Node, skillId: string, x: number, y: number, cw
     b.color = hex('#e6e0f0');
     if (o.price) {
         // Small button at the bottom right of the card: the price only (or a text above the cost).
-        const node = PrefabUi.create('items/TowerButton', v.node);
-        node.setScale(0.78, 0.78, 1);
-        node.setPosition(cw / 2 - 86, -ch / 2 + 30, 0);
-        const btn = new PrefabButton(node, () => { if (o.onBuy) o.onBuy(); });
-        btn.setText(o.buttonText || '');
-        const cost = node.getChildByName('Cost');
-        if (cost && !o.buttonText) cost.setPosition(0, 0, 0);
+        const { btn, cost } = costButton(v.node, o.buttonText || '', { name: 'BuyButton', onClick: () => { if (o.onBuy) o.onBuy(); } });
+        btn.node.setScale(0.78, 0.78, 1);
+        btn.node.setPosition(cw / 2 - 86, -ch / 2 + 30, 0);
+        if (!o.buttonText) cost.setPosition(0, 0, 0);
         costRow(cost, o.price, 0, 0, { align: 'center', size: o.buttonText ? 16 : 20, fontSize: o.buttonText ? 12 : 16, bold: true });
         btn.setEnabled(o.enabled !== undefined ? o.enabled : ResourceMgr.inst.canAfford(o.price) && ResourceMgr.inst.isPreparation);
     }

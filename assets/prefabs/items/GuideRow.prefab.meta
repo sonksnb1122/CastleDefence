@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "f97903bd-b408-4387-9d5a-6c73dc83ef4f",
+  "uuid": "643afd9b-ab31-4714-98ff-502b72baac47",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "Info"
+    "syncNodeName": "GuideRow"
   }
 }

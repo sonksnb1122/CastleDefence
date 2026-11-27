@@ -67,6 +67,29 @@ export class PrefabUi {
         return lines * l.lineHeight;
     }
 
+    /**
+     * A copy of a prefab button next to it (same parent), for the buttons added in code (Tutorials). `width`:
+     * new width, the "Fill" / "Frame" sprites follow (their scale kept).
+     */
+    static cloneButton(template: Node, x: number, y: number, width?: number): Node {
+        const n = instantiate(template);
+        template.parent!.addChild(n);
+        n.setPosition(x, y, 0);
+        if (width) PrefabUi.setButtonWidth(n, width);
+        return n;
+    }
+
+    /** Change the width of a prefab button ("Fill" / "Frame" children keep their scale). */
+    static setButtonWidth(n: Node, width: number) {
+        const h = PrefabUi.size(n).height;
+        PrefabUi.setSize(n, width, h);
+        for (const name of ['Fill', 'Frame']) {
+            const c = n.getChildByName(name);
+            if (c) PrefabUi.setSize(c, width / (c.scale.x || 1), PrefabUi.size(c).height);
+        }
+        PrefabUi.align(n);
+    }
+
     /** Swallow taps on a node so the map behind it never reacts. */
     static blockTaps(node: Node) {
         node.on(Node.EventType.TOUCH_START, (e: EventTouch) => { e.propagationStopped = true; }, node);

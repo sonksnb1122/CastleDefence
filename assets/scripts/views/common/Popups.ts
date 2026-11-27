@@ -1,33 +1,25 @@
 import { Node, Label, Sprite, isValid } from 'cc';
 import { Cost } from '../../core/GameTypes';
 import { G } from '../../core/Globals';
-import { ConfirmView } from '../popups/ConfirmView';
-import { InfoView } from '../popups/InfoView';
-import { MessageView } from '../popups/MessageView';
-import { PrefabButton, PrefabUi } from './PrefabUi';
-import { COLORS, ScrollList, costRow, hex, text } from './UIKit';
+import { openPopup } from './PopupTemplate';
+import { PrefabUi } from './PrefabUi';
+import { COLORS, ScrollList, costRow, hex, mk, text } from './UIKit';
 
-/** Small popups used by every screen. The layouts are the prefabs in assets/prefabs. */
+/** Small popups used by every screen, made from the PopupTemplate (prefabs/popups/PopupTemplate, common/PopupTemplate.ts). */
 
-/** Yes / No confirmation popup (prefabs/popups/Confirm). */
+/** Yes / No confirmation popup. */
 export function confirm(parent: Node, title: string, body: string, onOk: () => void, okText = 'Confirm', cancelText = 'Cancel', price?: { label: string; cost: Cost }) {
-    const v = PrefabUi.view('popups/Confirm', parent, ConfirmView);
-    v.setTitle(title);
-    v.body!.string = body;
+    const d = openPopup(parent, {
+        title, body, bodyAlign: 'center', width: 460, height: 280,
+        buttons: [{ text: okText, color: COLORS.buttonOk, onClick: onOk }, { text: cancelText, color: COLORS.buttonDanger }],
+    });
     // Cost / refund line with resource icons, just above the buttons.
-    if (price) costRow(v.price, price.cost, 0, 0, { align: 'center', label: price.label, size: 24, fontSize: 18, bold: true });
-    new PrefabButton(v.okButton, () => { v.close(); onOk(); }).setText(okText);
-    new PrefabButton(v.cancelButton, () => v.close()).setText(cancelText);
+    if (price) costRow(mk('Price', d.content, 0, -36), price.cost, 0, 0, { align: 'center', label: price.label, size: 24, fontSize: 18, bold: true });
 }
 
-/** Information popup with a single Close button (prefabs/popups/Message). */
+/** Information popup with a single Close button. */
 export function message(parent: Node, title: string, body: string, onClose?: () => void, w = 460, h = 300): Node {
-    const v = PrefabUi.view('popups/Message', parent, MessageView);
-    v.setTitle(title);
-    v.resize(w, h);
-    v.body!.string = body;
-    new PrefabButton(v.closeButton, () => { v.close(); if (onClose) onClose(); });
-    return v.node;
+    return openPopup(parent, { title, body, width: w, height: h, buttons: [{ text: 'Close', onClick: onClose }] }).node;
 }
 
 /** Short message that fades away near the top of the screen (prefabs/items/Toast). */
@@ -53,7 +45,7 @@ export function toast(parent: Node, msg: string, good = false) {
 /** A line of an info window: plain text, or a label followed by a cost / amount with resource icons. */
 export type InfoLine = string | { label: string; cost: Cost };
 
-/** Info window listing lines (prefabs/popups/Info). Long lists become scrollable. */
+/** Info window listing lines. Long lists become scrollable. */
 /** `action`: an optional button next to Close (e.g. "Research"); the window closes when it is used. */
 export function infoWindow(parent: Node, title: string, lines: InfoLine[], action?: { text: string; onTap: () => void }) {
     const W = 500, LINE = 22;
@@ -65,10 +57,9 @@ export function infoWindow(parent: Node, title: string, lines: InfoLine[], actio
     const wanted = 146 + rows * LINE;   // room for the header scroll and the frame border
     const scroll = wanted > maxH;
     const H = scroll ? maxH : wanted;
-    const v = PrefabUi.view('popups/Info', parent, InfoView);
-    v.setTitle(title);
-    v.resize(W, H);
-    let host: Node = v.content!, left = -W / 2 + 32, y = H / 2 - 62;
+    const buttons = action ? [{ text: action.text, color: COLORS.buttonOk, onClick: action.onTap }, { text: 'Close' }] : [{ text: 'Close' }];
+    const d = openPopup(parent, { title, width: W, height: H, buttons });
+    let host: Node = d.content, left = -W / 2 + 32, y = H / 2 - 62;
     if (scroll) {
         const list = new ScrollList(host, 0, 8, W - 30, maxH - 130);
         list.setContentHeight(rows * LINE + 20);
@@ -91,14 +82,4 @@ export function infoWindow(parent: Node, title: string, lines: InfoLine[], actio
         y -= LINE;
     }
     flush();
-    new PrefabButton(v.closeButton, () => v.close());
-    if (v.actionButton) {
-        v.actionButton.active = !!action;
-        if (action) {
-            new PrefabButton(v.actionButton, () => { v.close(); action.onTap(); }).setText(action.text);
-            const c = v.closeButton!.position;
-            v.closeButton!.setPosition(95, c.y, 0);
-            v.actionButton.setPosition(-95, c.y, 0);
-        }
-    }
 }

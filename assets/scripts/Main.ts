@@ -15,6 +15,8 @@ import { OutCastleScreen } from './views/OutCastleScreen';
 import { Display, DisplayKey } from './core/Display';
 import { IOverlay, PauseOverlay, SaveLoadOverlay, SettingsOverlay } from './views/Overlays';
 import { ResearchOverlay } from './views/ResearchTree';
+import { Tutorial, TutorialsOverlay } from './views/Tutorial';
+import { GuideOverlay } from './views/Guide';
 
 const { ccclass } = _decorator;
 
@@ -35,10 +37,11 @@ function sfxGap(name: string): number {
 /** Prefabs of assets/prefabs preloaded at start (every screen, popup and list item of the game). */
 const PREFABS = [
     'screens/Loading', 'screens/MainMenu', 'screens/InCastle', 'screens/OutCastle', 'screens/HeroRecruit', 'screens/Trade',
-    'popups/Pause', 'popups/Settings', 'popups/SaveLoad', 'popups/ResearchTree', 'popups/HeroInfo', 'popups/Confirm', 'popups/Message',
-    'popups/Info', 'popups/Build', 'popups/NewHero',
+    'popups/Pause', 'popups/Settings', 'popups/SaveLoad', 'popups/ResearchTree', 'popups/HeroInfo', 'popups/PopupTemplate', 'items/ButtonTemplate',
+    'popups/NewHero',
     'items/TopBar', 'items/DefTab', 'items/SaveSlot', 'items/BuildRow', 'items/HeroCard',
-    'items/LevelTag', 'items/ArcButton', 'items/Toast', 'items/TowerButton', 'items/SkillCard',
+    'items/LevelTag', 'items/ArcButton', 'items/Toast', 'items/SkillCard',
+    'items/TutorialFrame', 'popups/Tutorials', 'items/GuideStage', 'items/GuideRow', 'items/GuideButton',
 ];
 const SAVE_KEY = 'castle_defense_save_';
 const SETTINGS_KEY = 'castle_defense_settings';
@@ -72,6 +75,8 @@ export class Main extends Component implements IMain {
 
     private screenLayer: Node = null as any;
     private overlayLayer: Node = null as any;
+    /** Above the overlays: tutorials (views/Tutorial.ts). */
+    topLayer: Node = null as any;
     private screen: IScreen | null = null;
     private screenName = '';
     private overlays: IOverlay[] = [];
@@ -95,6 +100,7 @@ export class Main extends Component implements IMain {
         if (!this.node.getComponent(UITransform)) this.node.addComponent(UITransform);
         this.screenLayer = this.makeLayer('Screens');
         this.overlayLayer = this.makeLayer('Overlays');
+        this.topLayer = this.makeLayer('Top');
         this.music = this.makeLayer('Music').addComponent(AudioSource);
         this.sfx = this.makeLayer('Sfx').addComponent(AudioSource);
         this.loadSettings();
@@ -119,7 +125,7 @@ export class Main extends Component implements IMain {
         this.W = w;
         this.H = h;
         // Screen / popup prefabs stretch to the layers with Widgets, so the layers are as big as the screen.
-        for (const l of [this.screenLayer, this.overlayLayer]) if (l) l.getComponent(UITransform)!.setContentSize(w, h);
+        for (const l of [this.screenLayer, this.overlayLayer, this.topLayer]) if (l) l.getComponent(UITransform)!.setContentSize(w, h);
         return true;
     }
 
@@ -188,6 +194,7 @@ export class Main extends Component implements IMain {
     // ------------------------------------------------------------------ screens & overlays
     goto(name: string, _arg?: any) {
         this.refreshSize();
+        Tutorial.close();
         while (this.overlays.length > 0) this.overlays.pop()!.destroy();
         if (this.screen) { this.screen.destroy(); this.screen = null; }
         this.screenName = name;
@@ -210,6 +217,8 @@ export class Main extends Component implements IMain {
             case 'load': o = new SaveLoadOverlay(this.overlayLayer, 'load'); break;
             case 'save': o = new SaveLoadOverlay(this.overlayLayer, 'save'); break;
             case 'research': o = new ResearchOverlay(this.overlayLayer); break;
+            case 'tutorials': o = new TutorialsOverlay(this.overlayLayer); break;
+            case 'guide': o = new GuideOverlay(this.overlayLayer); break;
         }
         if (o) this.overlays.push(o);
     }
@@ -222,7 +231,8 @@ export class Main extends Component implements IMain {
 
     /** The game is paused while any overlay (pause menu, settings, ...) is open. */
     update(dt: number) {
-        if (this.screen && this.overlays.length === 0) this.screen.update(dt);
+        // A tutorial step on screen pauses the game too.
+        if (this.screen && this.overlays.length === 0 && !Tutorial.active) this.screen.update(dt);
     }
 
     after(seconds: number, fn: () => void) { this.scheduleOnce(fn, seconds); }

@@ -337,6 +337,7 @@
   "uiIcons": {
     "size": 96,
     "pause": "sprites/ui/btn_pause",
+    "info": "sprites/ui/btn_info",
     "play": "sprites/ui/btn_play",
     "bubble": "sprites/ui/arc_bubble",
     "act_upgrade": "sprites/ui/icon_act_upgrade",

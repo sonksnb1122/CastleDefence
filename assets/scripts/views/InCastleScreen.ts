@@ -5,10 +5,13 @@ import { ConfigMgr } from '../core/ConfigMgr';
 import { BuildingSave } from '../core/GameTypes';
 import { G } from '../core/Globals';
 import { ResourceMgr } from '../core/ResourceMgr';
-import { DefTab } from './common/DefTab';
+import { Guide } from './Guide';
+import { GuideButtonView } from './items/GuideButtonView';
+import { Tutorial } from './Tutorial';
 import { TopBar, arcMenu } from './common/TopBar';
 import { BuildRowView } from './items/BuildRowView';
-import { BuildView } from './popups/BuildView';
+import { openPopup } from './common/PopupTemplate';
+import { slotButton } from './common/ButtonTemplate';
 import { InCastleView } from './screens/InCastleView';
 import { InfoLine, confirm, infoWindow, toast } from './common/Popups';
 import { PrefabButton, PrefabUi } from './common/PrefabUi';
@@ -25,7 +28,8 @@ export class InCastleScreen {
     private rm = ResourceMgr.inst;
     private cfg = ConfigMgr.building.map;
     private topBar: TopBar;
-    private defTab: DefTab;
+    /** Guide button (bottom right) and its red dot (something useful can be done now). */
+    private guideDot: Node | null = null;
     private world: Node;
     private areaNode: Node;
     private buildingLayer: Node;
@@ -98,7 +102,9 @@ export class InCastleScreen {
 
         // ---- HUD (prefab, fixed on screen)
         this.topBar = new TopBar(v.topBarSlot!);
-        this.defTab = new DefTab(v.defTabSlot!, -W / 2 + 6, H / 2 - 50);
+        // The Enemy armor of the next wave is one of the goals of the Guide (the battlefield keeps its tab).
+        if (v.defTabSlot) v.defTabSlot.active = false;
+        const guideBtn = this.makeGuideButton();
         new PrefabButton(v.outsideButton, () => G.main.goto('outCastle'));
         new PrefabButton(v.pauseButton, () => G.main.openOverlay('pause'));
         new PrefabButton(v.baseButton, () => this.centerOnBase());
@@ -109,7 +115,22 @@ export class InCastleScreen {
         this.unsubscribe = this.rm.onChange(() => this.rebuild());
         this.rebuild();
         this.centerOnBase();
+        Tutorial.show('inCastle', {
+            topBar: () => this.topBar.node, build: () => v.buildButton, base: () => v.baseButton, guide: () => guideBtn,
+            outside: () => v.outsideButton, pause: () => v.pauseButton,
+        });
     }
+
+    /** Guide button (prefabs/items/GuideButton, bottom right of the screen) with its red dot. */
+    private makeGuideButton(): Node {
+        const v = PrefabUi.view('items/GuideButton', this.root, GuideButtonView);
+        new PrefabButton(v.node, () => G.main.openOverlay('guide'));
+        this.guideDot = v.dot;
+        this.refreshGuideDot();
+        return v.node;
+    }
+
+    private refreshGuideDot() { if (this.guideDot) this.guideDot.active = Guide.hasReady(); }
 
     // ------------------------------------------------------------------ camera
     private setCamera(x: number, y: number) {
@@ -144,6 +165,7 @@ export class InCastleScreen {
     }
 
     private rebuild() {
+        this.refreshGuideDot();
         this.buildingLayer.destroyAllChildren();
         this.anims.length = 0;
         const list = this.rm.data.buildings.slice().sort((p, q) => q.y - p.y);
@@ -308,17 +330,16 @@ export class InCastleScreen {
         infoWindow(this.root, def.name, lines);
     }
 
-    /** Build popup (prefabs/popups/Build): one row (prefabs/items/BuildRow) per buildable building. */
+    /** Build popup (PopupTemplate): one row (prefabs/items/BuildRow) per buildable building. */
     private openBuildMenu() {
         const defs: any[] = ConfigMgr.building.buildings.filter((d: any) => d.buildable);
         const h = 150 + defs.length * 70;
-        const v = PrefabUi.view('popups/Build', this.root, BuildView);
-        v.resize(PrefabUi.size(v.box!).width, h);
+        const v = openPopup(this.root, { title: 'Build', width: 540, height: h, buttons: [{ text: 'Close', width: 140 }] });
         const top = h / 2 - 62;
         defs.forEach((def, i) => {
             const count = this.rm.countBuildings(def.id), max = this.rm.maxBuildingCount(def.id);
             const cost = def.levels[0].cost;
-            const r = PrefabUi.view('items/BuildRow', v.rows!, BuildRowView);
+            const r = PrefabUi.view('items/BuildRow', v.content, BuildRowView);
             r.node.setPosition(0, top - 30 - i * 70, 0);
             const sp = def.levels[0].sprite;
             const frames = sp ? Assets.frames(sp.path, sp.cellW, sp.cellH) : [];
@@ -326,10 +347,9 @@ export class InCastleScreen {
             else r.icon!.color = hex(def.color || '#888888');
             r.title!.string = `${def.name}  (${count}/${max})`;
             costRow(r.cost, cost, 0, 0, { size: 18, fontSize: 13 });
-            const btn = new PrefabButton(r.buildButton, () => { v.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); });
+            const btn = slotButton(r.buildButton, 'Build', { color: COLORS.buttonOk, fontSize: 16, onClick: () => { v.close(); this.selectedUid = 0; this.startPlacing(def.id, 0); } });
             btn.setEnabled(count < max && this.rm.canAfford(cost));
         });
-        new PrefabButton(v.closeButton, () => v.close());
     }
 
     update(dt: number) {
@@ -339,7 +359,6 @@ export class InCastleScreen {
     destroy() {
         this.unsubscribe();
         this.topBar.destroy();
-        this.defTab.destroy();
         this.root.destroy();
     }
 }

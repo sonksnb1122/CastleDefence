@@ -53,6 +53,45 @@ If the wall's HP reaches 0, the game is over.
 **Saving:** one autosave slot (written after every wave and when the app goes to the background)
 and three manual slots. Saving is only possible during preparation.
 
+**Tutorials** (`config/guide.json`, `views/Tutorial.ts`): the first time the player opens a part of the game
+(castle, battlefield, first battle, heroes, hero window, Market, skill books, research tree), notes pop up one after
+the other. The part a note is about gets a red frame and the rest of the screen is dimmed; *Next* goes to the next
+note, *Got it* gives the game back (the game is paused meanwhile). Which tutorials were seen is kept on the device,
+not in the saves. The **Tutorials** button of the main menu and of the pause menu lists them all; *Show again* makes
+them pop up again. Prefabs: `items/TutorialFrame` (dark boxes and red border, sized in code around the framed part)
+and `popups/Tutorials` (Tutorials window; its topics are ButtonTemplate buttons with a "NEW" mark); each note is a
+PopupTemplate (see below) without its veil.
+
+**Guide** (`views/Guide.ts`, `config/guide.json` "stages"): the "i" button at the bottom right of the castle opens
+the goals of a game by stage, in the order a good player reaches them (like the progression bot):
+
+| Stage | Goals (priority) |
+|---|---|
+| Every wave | Enemy armor of the next wave: Armor / Spell Piercing (5), wall above 70% (4) |
+| Before wave 30: Build the castle | Base at max level, Farms, Workshops, Research Lab (5); all towers, towers at Lv 3 (4); buildings at the Base level, Hero Scholarship, 35 technologies at max level (3); 2 heroes (2) |
+| Before wave 50: Finish the research tree | Every technology above the Awakening line, Tower Awakening (5); 12 heroes, 4 Halo Spires, Smart Targeting (4); a skill for every hero (3) |
+| Before wave 70: Masteries and 5-star heroes | Effect Masteries (5); 5-star heroes, rest of the tree (4); every skill slot (3); endless research Lv 20 (2) |
+| Before wave 90: Endless research | Masterwork Ammunition Lv 50 (5), Living Stone Lv 50 (4) |
+| After wave 90 | Masterwork Ammunition Lv 70 (5), Living Stone Lv 70 (4) |
+
+The priority 1-5 is shown as stars (5 = do it first). The current stage is marked *now*; when all its goals are
+reached early, the next stage becomes the current one. Unfinished goals of a past stage move to the current stage,
+marked *late*. Reached goals are greyed out with a tick; a red dot marks the goals of the current and past stages
+that can be done right now (not the future ones), and the castle button gets a red dot when there is at least one.
+The window is a PopupTemplate (see below); prefabs `items/GuideStage` (stage title), `items/GuideRow` (one goal,
+with its stars) and `items/GuideButton` (castle button). Stages, goals and priorities are tuned in guide.json.
+
+**Popup and button templates**: `prefabs/popups/PopupTemplate` (`views/common/PopupTemplate.ts`) is the one prefab of
+every simple popup (confirm, message, info windows, wave statistics, learn a skill, the build menus, the tutorial
+notes, the Guide). It has the popup frame, the title scroll, a text (`Body`), a free area for content made in code
+(`Content`) and a button bar; `openPopup(parent, { title, body, width, height, veil, buttons: [{ text, color, width,
+onClick, keepOpen }] })` sets the texts and adds the buttons side by side, centered. `prefabs/items/ButtonTemplate`
+(`views/common/ButtonTemplate.ts`) is the one text button of the items: popup buttons, save slot Load / X buttons,
+build row Build buttons (the item prefabs keep an empty slot node: `slotButton(slot, text, options)`), the Build Tower
+button and the skill book price buttons (`costButton`: text over a cost row), the Tutorials topics
+(`templateButton(parent, text, { color, width, height, fontSize, onClick })`). The popups with their own layout
+(Pause, Settings, Save / Load, Hero window, research tree, New Hero, Tutorials) keep their prefab.
+
 ---
 
 ## Castle buildings
@@ -265,7 +304,7 @@ files of its own, it uses the Firebug death sound and the Catapult shot sound (e
 - **Enemy armour:**
   - From wave 12, enemy defense rises by 5 every 3 waves, up to 70 (bosses up to 90): Armor / Spell Piercing I, II
     and III (Research Lab Lv 1 / 2 / 3) are needed to keep up.
-  - The *Enemy armor* tab in the top left corner shows how much Armor / Spell Piercing the next wave needs
+  - The *Enemy armor* tab in the top left corner of the battlefield (and the castle Guide) shows how much Armor / Spell Piercing the next wave needs
     compared with what you have.
 - **Status limits** (so enemies are never stunned or slowed without a break):
   - After a Stun, an enemy cannot be stunned again for the stun time + 0.5 s (`"immunityAfter"` in `effects.json`).
@@ -693,8 +732,9 @@ assets/
       Enemy.ts, TowerUnit.ts, Projectile.ts, WaveMgr.ts, HpBar.ts, CombatText.ts, SpriteAnim.ts
     views/                    screen controllers: MainMenu, InCastle, OutCastle, HeroRecruit, Loading, Overlays
       screens/ popups/ items/ view components of the prefabs (references to their nodes)
-      common/                 PrefabUi, Popups (confirm, message, toast, info), TopBar, DefTab, UIKit
+      common/                 PrefabUi, PopupTemplate, ButtonTemplate, Popups (confirm, message, toast, info), TopBar, DefTab, UIKit
   prefabs/                    asset bundle "prefabs": screens/, popups/, items/
+                              popups/PopupTemplate, items/ButtonTemplate: see "Popup and button templates"
   bundles/heroes/             asset bundle "heroes": hero card sheets (256-color PNG), loaded only when shown
   resources/
     config/                   all balancing data (.json)
@@ -748,6 +788,8 @@ The `tools/` folder is outside the game assets.
   (also used by the explosion rings; `--ring <art/halo>` draws only these two). Needs Python + Pillow + NumPy.
 - `tools/research/make_tree_parts.py`: draws the research tree pictures (`art/research/tree_*.png`: node square,
   frame, line, dashed line), packed into the research atlas with the icons.
+- `tools/ui/make_info_button.py`: makes `sprites/ui/btn_info.png` (castle Guide button) from `btn_pause.png`: the bars
+  are painted over and a pixel "i" is drawn: `python tools/ui/make_info_button.py <btn_pause.png> <btn_info.png>`.
 - `tools/enemies/thin_frames.py`: keeps only some frames of a sheet (`every2`: every 2nd frame + the last one).
   The death animations were thinned with it (Clampbeetle 13 -> 7 frames, Firebug 11 -> 6, Magma Crab 10 -> 6,
   Scorpion 8 -> 5, Lich King 23 -> 12), and the Flying Demon death keeps only its own 4 frames (the fall was cut).
@@ -766,7 +808,10 @@ The `tools/` folder is outside the game assets.
   - Converts everything to small MP3 files: about 3.8 MB in total, against about 115 MB of original WAV files.
 - `tools/audio/rock_sfx.py`: generates the stone impact sounds (needs Python + NumPy + SciPy).
 - `tools/prefab/`: the generator that made the first version of the prefabs, and the UI
-  sprite-frame metas. Running it again overwrites changes made in the editor.
+  sprite-frame metas. Running it again overwrites changes made in the editor, so new prefabs are made one by one with
+  `--only`: `node build_prefabs.js <project> ui_frames.json --only=guidePopup,guideRowItem` (function names).
+  `new_ui_meta.py` writes the sprite-frame meta of a new `sprites/ui` picture and adds it to `ui_frames.json`.
+- `tools/ui/make_guide_icons.py`: draws `sprites/ui/red_dot.png` and `sprites/ui/check_tick.png` (Guide red dot and tick).
 
 ---
 

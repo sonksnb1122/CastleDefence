@@ -2,8 +2,7 @@ import { Node } from 'cc';
 import { Cost } from '../core/GameTypes';
 import { G } from '../core/Globals';
 import { WaveStats } from '../combat/WaveStats';
-import { InfoView } from './popups/InfoView';
-import { PrefabButton, PrefabUi } from './common/PrefabUi';
+import { openPopup } from './common/PopupTemplate';
 import { COLORS, ScrollList, costRow, panel, text } from './common/UIKit';
 
 /** Tower order of the tables. */
@@ -31,10 +30,8 @@ interface Column { title: string; x: number; align: 'left' | 'right'; }
  */
 export function waveStatsWindow(parent: Node, title: string, rewards: Array<{ label: string; cost: Cost } | string>, st: WaveStats) {
     const W = Math.min(820, G.main.W - 60), H = G.main.H - 50;
-    const v = PrefabUi.view('popups/Info', parent, InfoView);
-    v.setTitle(title);
-    v.resize(W, H);
-    const list = new ScrollList(v.content!, 0, 4, W - 40, H - 128, false);
+    const d = openPopup(parent, { title, width: W, height: H, buttons: [{ text: 'Close' }] });
+    const list = new ScrollList(d.content, 0, 4, W - 40, H - 128, false);
     const host = list.content;
     const left = -(W - 40) / 2 + 14, right = (W - 40) / 2 - 14;
     let y = -6;
@@ -103,5 +100,4 @@ export function waveStatsWindow(parent: Node, title: string, rewards: Array<{ la
     y -= ROW;
 
     list.setContentHeight(-y + 6);
-    new PrefabButton(v.closeButton, () => v.close());
 }
