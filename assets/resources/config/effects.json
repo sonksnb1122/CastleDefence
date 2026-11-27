@@ -83,8 +83,9 @@
       "id": "armor_break",
       "type": "armorBreak",
       "name": "Armor Break",
-      "description": "Removes value points of effective defense.",
+      "description": "Removes value points of effective defense. Only the first hit can be resisted: an enemy that already has Armor Break gets every new one (its time is refreshed).",
       "duration": 4,
+      "resistFirstStackOnly": true,
       "value": 20,
       "damageTypes": [
         "physic",
@@ -102,7 +103,7 @@
       "id": "hunter_mark",
       "type": "mark",
       "name": "Hunter's Mark",
-      "description": "Takes value % more damage from Crossbow towers per stack (max 5, shared by all Crossbows). At 5 stacks every Crossbow hit also deals 1% of the current HP (1/3 on bosses, at most 10x the hit).",
+      "description": "Takes value % more damage from Crossbow towers per stack (shared by all Crossbows). With the technology under its Mastery, at full stacks every Crossbow hit also deals a share of the current HP (1/3 on bosses, at most 10x the hit).",
       "duration": 5,
       "value": 50,
       "towerIds": [
@@ -114,9 +115,6 @@
         "label": "MARK",
         "color": "#ffffff",
         "icon": "sprites/status/status_mark"
-      },
-      "atMaxStacks": {
-        "currentHpPct": 1
       }
     },
     {
@@ -223,7 +221,7 @@
     {
       "id": "hunters_mark",
       "name": "Hunter's Mark",
-      "description": "The target takes more Crossbow damage per stack (shared by all Crossbows). Mastery: more stacks, +50% per stack, then +1% current HP per hit at full stacks.",
+      "description": "The target takes more Crossbow damage per stack (shared by all Crossbows). Mastery: more stacks, longer, more per stack; the technology under it: a share of the current HP per hit at full stacks.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "hunter_mark",
@@ -233,32 +231,72 @@
       "targetType": "enemy",
       "scaling": {
         "value": [
-          3,
-          30
+          1.5,
+          15
         ],
         "base": {
           "status": {
-            "maxStacks": 3,
-            "duration": 3,
+            "maxStacks": 1,
+            "duration": 2,
             "atMaxStacks": null
           }
         },
         "mastery": [
           {
             "status": {
-              "maxStacks": 5,
-              "duration": 5
+              "maxStacks": 2,
+              "duration": 3,
+              "value": 20
             }
           },
           {
             "status": {
+              "maxStacks": 4,
+              "duration": 4,
+              "value": 35
+            }
+          },
+          {
+            "status": {
+              "maxStacks": 6,
+              "duration": 5,
               "value": 50
+            }
+          }
+        ],
+        "plus": [
+          {
+            "status": {
+              "atMaxStacks": {
+                "currentHpPct": 0.3
+              }
             }
           },
           {
             "status": {
               "atMaxStacks": {
-                "currentHpPct": 1
+                "currentHpPct": 0.6
+              }
+            }
+          },
+          {
+            "status": {
+              "atMaxStacks": {
+                "currentHpPct": 0.9
+              }
+            }
+          },
+          {
+            "status": {
+              "atMaxStacks": {
+                "currentHpPct": 1.2
+              }
+            }
+          },
+          {
+            "status": {
+              "atMaxStacks": {
+                "currentHpPct": 1.5
               }
             }
           }
@@ -346,7 +384,7 @@
     {
       "id": "arcane_vulnerability",
       "name": "Arcane Vulnerability",
-      "description": "Enemies hit take more magic damage per stack. Mastery: more stacks, longer, then +30% per stack.",
+      "description": "Enemies hit take more magic damage per stack (not the Chain Lightning targets). Mastery: more stacks, longer, more per stack; the technology under it: it also lands on Chain Lightning targets, whose jumps hit harder.",
       "trigger": "onHit",
       "kind": "status",
       "statusId": "arcane_mark",
@@ -356,8 +394,8 @@
       "targetType": "enemy",
       "scaling": {
         "value": [
-          1.5,
-          15
+          1,
+          8
         ],
         "flat": [
           10,
@@ -365,26 +403,53 @@
         ],
         "base": {
           "status": {
-            "maxStacks": 3,
+            "maxStacks": 1,
             "duration": 3
           }
         },
         "mastery": [
           {
             "status": {
+              "maxStacks": 2,
+              "duration": 3,
+              "value": 10
+            }
+          },
+          {
+            "status": {
+              "maxStacks": 3,
+              "duration": 4,
+              "value": 20
+            }
+          },
+          {
+            "status": {
               "maxStacks": 4,
-              "duration": 4
-            }
-          },
-          {
-            "status": {
-              "maxStacks": 5
-            }
-          },
-          {
-            "status": {
+              "duration": 4,
               "value": 30
             }
+          }
+        ],
+        "plus": [
+          {
+            "chainTargets": 1,
+            "chainDmgPct": 10
+          },
+          {
+            "chainTargets": 2,
+            "chainDmgPct": 15
+          },
+          {
+            "chainTargets": 3,
+            "chainDmgPct": 25
+          },
+          {
+            "chainTargets": 4,
+            "chainDmgPct": 30
+          },
+          {
+            "chainTargets": 5,
+            "chainDmgPct": 40
           }
         ]
       }
@@ -437,7 +502,7 @@
     {
       "id": "heavy_impact",
       "name": "Heavy Impact",
-      "description": "Bonus damage on every hit: flat, or a share of the max HP with Mastery (at most 5 normal hits, 1/3 on bosses).",
+      "description": "Bonus damage on every hit: flat (through defense), or with Mastery a share of the max HP when that is more (at most a few normal hits, less on bosses).",
       "trigger": "onHit",
       "kind": "bonusMaxHp",
       "chance": 100,
@@ -445,24 +510,51 @@
       "maxTargets": 99,
       "cooldown": 0,
       "targetType": "enemy",
-      "capHitMul": 5,
+      "capHitMul": 3,
       "scaling": {
         "flat": [
-          30,
-          300
+          8,
+          80
         ],
         "base": {
           "value": 0
         },
         "mastery": [
           {
-            "value": 2
+            "value": 1,
+            "flatSet": 100,
+            "capHitMul": 3,
+            "bossMul": 0.3
           },
           {
-            "value": 4
+            "value": 2,
+            "flatSet": 200
           },
           {
-            "value": 6
+            "value": 3,
+            "flatSet": 300
+          }
+        ],
+        "plus": [
+          {
+            "capHitMul": 4,
+            "bossMul": 0.4
+          },
+          {
+            "capHitMul": 5,
+            "bossMul": 0.55
+          },
+          {
+            "capHitMul": 6,
+            "bossMul": 0.7
+          },
+          {
+            "capHitMul": 7,
+            "bossMul": 0.85
+          },
+          {
+            "capHitMul": 8,
+            "bossMul": 1.0
           }
         ]
       }
@@ -509,7 +601,7 @@
     }
   ],
   "effectScaling": {
-    "_doc": "Tower effects grow with their research. Effect level 1-10 = levels of the two chance technologies (Chance I + Chance II); Mastery 0-3 = the Mastery technology. At level L, [a, b] means a at level 1 up to b at level 10 (linear). 'flat' is damage, multiplied by towerLevelMul of the tower level, through defense, never crits. 'base' fields apply from level 1, each 'mastery' entry adds its fields on top (Mastery 3 = the full effect). 'hitPct': share of the hit (with crits) used when it beats the flat damage. 'status': fields of the status effect replaced for this effect (value there wins over the 'value' range).",
+    "_doc": "Tower effects grow with their research. Effect level 1-10 = levels of the two chance technologies (Chance I + Chance II); Mastery 0-3 = the Mastery technology. At level L, [a, b] means a at level 1 up to b at level 10 (linear). 'flat' is damage, multiplied by towerLevelMul of the tower level, through defense, never crits. 'base' fields apply from level 1, each 'mastery' entry adds its fields on top (Mastery 3 = the full effect). 'hitPct': share of the hit (with crits) used when it beats the flat damage. 'status': fields of the status effect replaced for this effect (value there wins over the 'value' range). 'plus': one entry per level of the technology under the Mastery (full values of that level; needs the Mastery at max). 'flatSet': flat damage of a Mastery level instead of the research range (x towerLevelMul too).",
     "levels": 10,
     "towerLevelMul": [
       1,

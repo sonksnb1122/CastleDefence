@@ -1,7 +1,7 @@
 {
   "version": 2,
   "battlefield": {
-    "worldWidth": 1429,
+    "worldWidth": 2350,
     "worldHeight": 576,
     "constructionArea": {
       "x": 115,
@@ -25,7 +25,7 @@
       110,
       420
     ],
-    "spawnX": 1469,
+    "spawnX": 2390,
     "towerMinSpacing": 46,
     "towerSelectRadius": 40,
     "towerScale": 0.7,
@@ -89,8 +89,8 @@
       "levels": [
         {
           "level": 1,
-          "damage": 108,
-          "attackSpeed": 0.9,
+          "damage": 75,
+          "attackSpeed": 0.7,
           "attackRange": 384,
           "explosionRange": 20,
           "critRate": 5,
@@ -164,8 +164,8 @@
         },
         {
           "level": 2,
-          "damage": 204,
-          "attackSpeed": 1.8,
+          "damage": 145,
+          "attackSpeed": 1.45,
           "attackRange": 461,
           "explosionRange": 20,
           "critRate": 15,
@@ -240,8 +240,8 @@
         },
         {
           "level": 3,
-          "damage": 288,
-          "attackSpeed": 3.6,
+          "damage": 200,
+          "attackSpeed": 2.9,
           "attackRange": 553,
           "explosionRange": 20,
           "critRate": 25,
@@ -338,8 +338,8 @@
       "levels": [
         {
           "level": 1,
-          "damage": 101,
-          "attackSpeed": 0.45,
+          "damage": 70,
+          "attackSpeed": 0.35,
           "attackRange": 384,
           "explosionRange": 40,
           "critRate": 5,
@@ -399,8 +399,8 @@
         },
         {
           "level": 2,
-          "damage": 202,
-          "attackSpeed": 0.9,
+          "damage": 140,
+          "attackSpeed": 0.7,
           "attackRange": 461,
           "explosionRange": 60,
           "critRate": 15,
@@ -461,8 +461,8 @@
         },
         {
           "level": 3,
-          "damage": 403,
-          "attackSpeed": 1.8,
+          "damage": 280,
+          "attackSpeed": 1.45,
           "attackRange": 553,
           "explosionRange": 80,
           "critRate": 25,
@@ -545,8 +545,8 @@
       "levels": [
         {
           "level": 1,
-          "damage": 42,
-          "attackSpeed": 0.25,
+          "damage": 30,
+          "attackSpeed": 0.2,
           "attackRange": 600,
           "explosionRange": 70,
           "critRate": 10,
@@ -622,8 +622,8 @@
         },
         {
           "level": 2,
-          "damage": 90,
-          "attackSpeed": 0.5,
+          "damage": 65,
+          "attackSpeed": 0.4,
           "attackRange": 750,
           "explosionRange": 95,
           "critRate": 20,
@@ -702,8 +702,8 @@
         },
         {
           "level": 3,
-          "damage": 330,
-          "attackSpeed": 1.0,
+          "damage": 230,
+          "attackSpeed": 0.8,
           "attackRange": 900,
           "explosionRange": 120,
           "critRate": 40,
@@ -787,7 +787,7 @@
       "id": "halo",
       "name": "Halo Spire",
       "kind": "halo",
-      "description": "Support tower (no damage). Each activation sends out a white halo: enemy projectiles it touches vanish at once. Research makes it strengthen the base stats of the closest towers and mend the wall.",
+      "description": "Support tower (no damage). It raises a magic shield around itself: enemy projectiles (boss ones too) that reach it hit the shield instead of the wall. Research makes the shield stronger, strengthens the base stats of the closest towers and mends the wall.",
       "damageTypes": [],
       "explosionBuffable": false,
       "base": {
@@ -811,15 +811,17 @@
         {
           "level": 1,
           "damage": 0,
-          "attackSpeed": 0.8,
+          "attackSpeed": 0.65,
           "attackRange": 200,
           "explosionRange": 0,
           "critRate": 0,
           "critDamage": 0,
           "buffTargets": 2,
-          "blockCount": 1,
+          "shieldHpPct": 20,
+          "shieldDefPct": 20,
           "mendEvery": 30,
           "mendPct": 0.5,
+          "mendAfterWavePct": 5,
           "upgradeCost": {
             "gold": 300,
             "material": 200,
@@ -848,28 +850,42 @@
               "fireFrame": 7,
               "faceOffset": 0
             },
-            "halo": {
-              "path": "sprites/towers/halo_ring",
-              "size": 256,
-              "ringRadius": 124,
-              "startRadius": 36,
-              "growTime": 0.9,
-              "opacity": 235
+            "shield": {
+              "loop": {
+                "path": "sprites/towers/shield_loop",
+                "frames": 10,
+                "frameTime": 0.27,
+                "cellW": 108,
+                "cellH": 256
+              },
+              "collapse": {
+                "path": "sprites/towers/shield_collapse",
+                "frames": 8,
+                "frameTime": 0.21,
+                "cellW": 108,
+                "cellH": 256
+              },
+              "ringRadius": 104.6,
+              "opacity": 215,
+              "centerX": -20,
+              "keepFrom": 0.2
             }
           }
         },
         {
           "level": 2,
           "damage": 0,
-          "attackSpeed": 1.0,
+          "attackSpeed": 0.8,
           "attackRange": 200,
           "explosionRange": 0,
           "critRate": 0,
           "critDamage": 0,
           "buffTargets": 4,
-          "blockCount": 2,
+          "shieldHpPct": 40,
+          "shieldDefPct": 40,
           "mendEvery": 20,
           "mendPct": 1,
+          "mendAfterWavePct": 10,
           "upgradeCost": {
             "gold": 420,
             "material": 500,
@@ -898,28 +914,42 @@
               "fireFrame": 7,
               "faceOffset": 0
             },
-            "halo": {
-              "path": "sprites/towers/halo_ring",
-              "size": 256,
-              "ringRadius": 124,
-              "startRadius": 36,
-              "growTime": 0.9,
-              "opacity": 235
+            "shield": {
+              "loop": {
+                "path": "sprites/towers/shield_loop",
+                "frames": 10,
+                "frameTime": 0.27,
+                "cellW": 108,
+                "cellH": 256
+              },
+              "collapse": {
+                "path": "sprites/towers/shield_collapse",
+                "frames": 8,
+                "frameTime": 0.21,
+                "cellW": 108,
+                "cellH": 256
+              },
+              "ringRadius": 104.6,
+              "opacity": 215,
+              "centerX": -20,
+              "keepFrom": 0.2
             }
           }
         },
         {
           "level": 3,
           "damage": 0,
-          "attackSpeed": 1.25,
+          "attackSpeed": 1.0,
           "attackRange": 200,
           "explosionRange": 0,
           "critRate": 0,
           "critDamage": 0,
           "buffTargets": 8,
-          "blockCount": 3,
+          "shieldHpPct": 60,
+          "shieldDefPct": 60,
           "mendEvery": 10,
           "mendPct": 2,
+          "mendAfterWavePct": 15,
           "upgradeCost": {
             "gold": 2600,
             "material": 2900,
@@ -948,13 +978,25 @@
               "fireFrame": 7,
               "faceOffset": 0
             },
-            "halo": {
-              "path": "sprites/towers/halo_ring",
-              "size": 256,
-              "ringRadius": 124,
-              "startRadius": 36,
-              "growTime": 0.9,
-              "opacity": 235
+            "shield": {
+              "loop": {
+                "path": "sprites/towers/shield_loop",
+                "frames": 10,
+                "frameTime": 0.27,
+                "cellW": 108,
+                "cellH": 256
+              },
+              "collapse": {
+                "path": "sprites/towers/shield_collapse",
+                "frames": 8,
+                "frameTime": 0.21,
+                "cellW": 108,
+                "cellH": 256
+              },
+              "ringRadius": 104.6,
+              "opacity": 215,
+              "centerX": -20,
+              "keepFrom": 0.2
             }
           }
         }
@@ -962,6 +1004,6 @@
     }
   ],
   "_docFlying": "Towers with \"hitsFlying\": false (Catapult) never target flying enemies (enemy.json \"flying\") and their explosions do not hit them.",
-  "_docHalo": "Halo Spire (kind 'halo'): attackSpeed = activations per second (only while enemies are on the field). attackRange = halo radius: a fixed value, range research and buffs never change it (a bigger halo would block every projectile). Each activation sends out one thin ring ('halo': image 'path' of 'size' px with a ring of radius 'ringRadius'): it starts at 'startRadius' (outside the tower) and grows to the halo radius in 'growTime' seconds, fading out at the end; an enemy projectile the ring touches vanishes (not the ones inside the ring), at most 'blockCount' per halo, x (1 + Warding Halo level) (research 'haloBlock'). Boss projectiles are never blocked. Needs research to be built (unlockKey) and for its buff ('aura') and wall mending (mendEvery activations -> mendPct % of the missing wall HP).",
+  "_docHalo": "Halo Spire (kind 'halo'): attackSpeed = activations per second (only while enemies are on the field); its first activation of a wave raises its shield: one shield per spire per wave (a broken one stays down until the next wave); the buff of the nearby towers and the mending go on. attackRange = shield radius (fixed, range research never changes it). Shield HP = shieldHpPct % of the wall max HP, shield defense = shieldDefPct % of the wall defense (90 at most), both + 10 per Warding Halo level (research 'haloShield'). Only enemy projectiles are stopped (boss ones too). 'shield': loop / collapse sheets (played in real time, whatever the game speed); only the right part of the bubble is drawn and blocks (the side of the enemies): cells of cellW x cellH px, bubble center 'centerX' px from the left of a cell, the part right of center + 'keepFrom' x radius (bubble radius 'ringRadius' px in a cell). Needs research to be built (unlockKey), for its buff ('aura') and wall mending (mendEvery activations -> mendPct % of the missing wall HP).",
   "_docImpact": "sprite.impact: the hit effect where a shot lands (none for the Crystal). Crossbow and Catapult use one effect for every level, and an enemy shows at most one at a time: a new one starts only when the last one on that enemy is over."
 }

@@ -26,8 +26,6 @@ export interface CombatEvents {
 }
 
 const MAX_FLOAT_TEXTS = 70;
-/** Halo Spire: half width of the band in which the ring touches a projectile (line + projectile size). */
-const HALO_EDGE = 10;
 /** Damage texts on one enemy are stacked in rows above its head (newest at the bottom). */
 const TEXT_ROWS = 3;
 const TEXT_ROW_H = 19;
@@ -88,7 +86,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
      * picture tinted and scaled + a light disc), 2 triangles each instead of hundreds for a Graphics circle, and
      * in the halo layer so they all batch together.
      */
-    private shapes: Array<{ line: boolean; x: number; y: number; x2: number; y2: number; r: number; color: string; fillA: number; strokeA: number; width: number; life: number; total: number; ring?: Sprite; disc?: Sprite | null }> = [];
+    private shapes: Array<{ line: boolean; x: number; y: number; x2: number; y2: number; r: number; color: string; fillA: number; strokeA: number; width: number; life: number; total: number; ring?: Sprite; disc?: Sprite | null; rgb?: any; fx?: boolean }> = [];
     private ringPool: Sprite[] = [];
     private discPool: Sprite[] = [];
     private shapeGfx: Graphics | null = null;
@@ -132,6 +130,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
 
     // ------------------------------------------------------------------ wave control
     startWave(wave: number) {
+        this.shieldRaised.clear();   // every Halo Spire raises one shield per wave
         this.wave = wave;
         this.plan = WaveMgr.build(wave);
         this.queue = this.plan.entries.slice();
@@ -167,6 +166,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             physicDef: Math.min(defMax, def.physicDef + entry.defAdd),
             magicDef: Math.min(defMax, def.magicDef + entry.defAdd),
             statusResist: this.demo ? undefined : WaveMgr.statusResist(this.wave, entry.boss),
+            finalReduce: this.demo ? 0 : WaveMgr.finalReduce(this.wave, entry.boss),
+            mutant: entry.mutant,
         };
         const y = at ? at.y : bf.enemyLaneY[0] + Math.random() * (bf.enemyLaneY[1] - bf.enemyLaneY[0]);
         const e = this.enemyPool.pop() || new Enemy(this.enemyLayer);
@@ -195,7 +196,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         const host = this.active ? this : null;
         this.assignHalos();
         for (const t of this.towers) t.update(dt, host);
-        this.updateHalos(dt);
+        this.updateShields(dt);
 
         if (this.active) {
             if (this.lastStandTime > 0) this.lastStandTime -= dt;
@@ -240,6 +241,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             for (const p of this.projectiles) { p.release(); this.projectilePool.push(p); }
             this.projectiles.length = 0;
             this.skills.clear();
+            // The Halo Spire shields go down with the wave (a new wave starts with new ones).
+            for (const sh of this.shields) if (sh.state !== 'collapse') { sh.state = 'collapse'; this.playShield(sh, 'collapse'); }
             this.events.onWaveCleared(this.wave, this.goldFromKills);
         }
     }
@@ -252,8 +255,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         for (const f of this.fx.concat(this.fxPool.impact, this.fxPool.ground, this.fxPool.ring, this.fxPool.line)) all.push(f.node);
         for (const sh of this.enemyShots) all.push(sh.f.node);
         this.enemyShots.length = 0;
-        for (const h of this.halos.map(x => x.f).concat(this.haloPool)) all.push(h.node);
-        this.halos.length = 0; this.haloPool.length = 0;
+        for (const h of this.shields.map(x => x.f).concat(this.haloPool)) all.push(h.node);
+        this.shields.length = 0; this.haloPool.length = 0; this.shieldRaised.clear();
         for (const sh of this.shapes) if (!sh.line) { if (sh.ring) all.push(sh.ring.node); if (sh.disc) all.push(sh.disc.node); }
         for (const sp of this.ringPool.concat(this.discPool)) all.push(sp.node);
         this.ringPool.length = 0; this.discPool.length = 0;
@@ -384,6 +387,8 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         }
         // Crossbow: its job is the enemy closest to the wall (skipping the ones the shots in flight will kill).
         if (tower.def.smartRole === 'closestToWall') {
+            // Flying casters (Bats) first when no standing Halo shield covers their lane: their fireballs would hit the wall.
+            if (e.def.ranged && !e.boss && !this.shieldCovers(e.y)) return 20 - (e.x - this.wallRightX) / fieldW;
             return 10 - (e.x - this.wallRightX) / fieldW;
         }
         // Single target (Crystal): enemies close to the wall get a much higher priority
@@ -419,7 +424,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             if (d > normal) normal = d;
         }
         if (shot.isAoe) normal *= 1 - e.abilityValue('aoeReduction') / 100;
-        return Math.max(1, Math.floor(normal));
+        return Math.max(1, Math.floor(normal * (1 - e.finalReduce / 100)));
     }
 
     /**
@@ -502,12 +507,12 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         // Passives: Bitter Cold (Crystal vs slowed enemies), Aftershock (after a Shockwave stun).
         let more = 1;
         if (shot.towerId === 'crystal' && e.slowed && this.hasPassive('p_bitter_cold')) more += (passiveParams('p_bitter_cold').crystalDamage || 15) / 100;
-        if (e.aftershock > 0 && this.hasPassive('p_aftershock')) more += (passiveParams('p_aftershock').damage || 30) / 100;
+        if (e.aftershock > 0 && this.hasPassive('p_aftershock')) more += (passiveParams('p_aftershock').damage || 50) / 100;
         normal *= more; amp *= more;
         normal += flatBonus;
         const critRate = Math.max(0, Math.min(100, shot.critRate + this.buff('critRate', shot.towerId)));
         let critDamage = shot.critDamage + this.buff('critDamage', shot.towerId);
-        if (e.armorBroken && this.hasPassive('p_exposed')) critDamage += passiveParams('p_exposed').critDamage || 25;
+        if (e.exposed > 0 && this.hasPassive('p_exposed')) critDamage += passiveParams('p_exposed').critDamage || 50;
         const crit = Math.random() * 100 < critRate;
         const mul = crit ? critDamage / 100 : 1;
         const final = normal * mul;
@@ -526,6 +531,13 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     private applyDamage(e: Enemy, res: DamageResult) {
         if (!e.alive) return;
         if (res.dodged) { this.enemyFloat(e, 'MISS', '#cccccc', 13); return; }
+        // Final damage reduction (late waves): every damage but the hero skills, which deal true damage.
+        // The effect parts of the hit (Heavy Impact, Hunter's Instinct, mark bonus) shrink with it, so the wave
+        // statistics still give them their share.
+        if (e.finalReduce > 0 && this.ctxTower !== 'skill') {
+            const amount = this.reduceFinal(e, res.amount), k = res.amount > 0 ? amount / res.amount : 1;
+            res = { amount, crit: res.crit, dodged: false, flat: res.flat ? res.flat * k : res.flat, amp: res.amp ? res.amp * k : res.amp, ampType: res.ampType };
+        }
         if (!this.demo && this.ctxTower) this.recordHit(e, res);
         const shielded = e.shieldHp > 0;
         const died = e.takeDamage(res.amount);
@@ -534,6 +546,11 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         else if (res.crit) this.enemyFloat(e, res.amount + '!', '#ff3030', 19, 3);
         else this.enemyFloat(e, String(res.amount), '#ffffff', 15);
         if (died) this.onEnemyKilled(e);
+    }
+
+    /** Damage left after the enemy's final damage reduction (at least 1). */
+    reduceFinal(e: Enemy, amount: number): number {
+        return e.finalReduce > 0 ? Math.max(1, Math.floor(amount * (1 - e.finalReduce / 100))) : amount;
     }
 
     // ------------------------------------------------------------------ skills (ISkillHost)
@@ -583,7 +600,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         if (res.amp) {
             // Extra damage of a damage mark: Hunter's Mark (Crossbow) or Arcane Vulnerability (magic).
             const hunter = res.ampType !== 'magic';
-            st.effectDamage((hunter ? 'amp_hunter_' : 'amp_arcane_') + tower, hunter ? "Hunter's Mark (bonus damage)" : 'Arcane Vulnerability (bonus damage)', tower, res.amp * k, false);
+            st.effectDamage((hunter ? 'amp_hunter_' : 'amp_arcane_') + tower, hunter ? "Hunter's Mark (bonus damage)" : 'Arcane Vulnerability (bonus damage)', tower, res.amp * k, false, true);
         }
     }
 
@@ -648,7 +665,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         const buff = this.buff(statusType === 'bleed' ? 'bleedDamage' : 'burnDamage');
         // Hemorrhage (Bleeding Bolt Mastery 3): + a share of the current HP per tick, not reduced by defense.
         const extra = currentHpPct > 0 ? e.hp * currentHpPct / 100 * this.percentHpMul(e) : 0;
-        const amount = Math.max(1, Math.floor(rawDamage * (1 + buff / 100) * this.defenseMultiplier(e, type) + extra));
+        const amount = this.reduceFinal(e, Math.max(1, Math.floor(rawDamage * (1 + buff / 100) * this.defenseMultiplier(e, type) + extra)));
         if (!this.demo) {
             const src = this.towerByUid(sourceUid);
             const tower = src ? src.save.id : 'other';
@@ -704,7 +721,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             const mb = this.markHpBonus(shot, e);
             if (mb > 0) {
                 bonus += mb;
-                if (st) { st.trigger('hunter_full', "Hunter's Mark x5 (+1% current HP)", shot.towerId, true); this.ctxFlat.push({ key: 'hunter_full', name: "Hunter's Mark x5 (+1% current HP)", amount: mb }); }
+                if (st) { st.trigger('hunter_full', "Hunter's Mark at full stacks (current HP)", shot.towerId, true); this.ctxFlat.push({ key: 'hunter_full', name: "Hunter's Mark at full stacks (current HP)", amount: mb }); }
             }
             this.applyDamage(e, this.computeDamage(shot, e, 1, bonus));
             this.ctxFlat.length = 0;
@@ -726,6 +743,10 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             const conductor = lightning && this.hasPassive('p_conductor');
             const overload = lightning && this.hasPassive('p_overload') ? (passiveParams('p_overload').perJump || 10) : 0;
             const skewer = ef.id === 'piercing_bolt' && this.hasPassive('p_skewer');
+            // Arcane Vulnerability (technology under its Mastery): lands on the first jumps too, and the jumps hit harder.
+            const arc = lightning ? shot.effects.find(x => x.id === 'arcane_vulnerability') : null;
+            const arcTargets = arc && ready(arc) ? arc.chainTargets || 0 : 0;
+            const jumpMul = 1 + (arc ? arc.chainDmgPct || 0 : 0) / 100;
             let fromX = x, fromY = y;
             for (let n = 0; n < (ef.maxTargets || 1); n++) {
                 const next = this.nextJump(hit, fromX, fromY, ef.range, conductor);
@@ -736,14 +757,19 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
                 jumped = true;
                 // Flat damage (through defense, no crit), or a share of the hit with Mastery, whichever is bigger.
                 // Overload: every jump deals perJump % more (of the hit: + perJump points).
-                const k = 1 + overload * n / 100;
+                const k = (1 + overload * n / 100) * jumpMul;
                 const flat = this.flatHit(next, ef.flat * k, shot.damageTypes);
-                const share = ef.hitPct > 0 ? this.computeDamage(shot, next, (ef.hitPct + overload * n) / 100, this.markHpBonus(shot, next)) : null;
+                const share = ef.hitPct > 0 ? this.computeDamage(shot, next, (ef.hitPct + overload * n) / 100 * jumpMul, this.markHpBonus(shot, next)) : null;
                 this.ctxEffect = { key: ef.id, name: ef.name };
                 this.applyDamage(next, share && share.amount > flat.amount ? share : flat);
                 this.ctxEffect = null;
                 if (!next.alive) continue;
                 if (conductor && next.slowed) this.stunFor(next, passiveParams('p_conductor').stun || 0.3, shot.towerUid);
+                if (arc && n < arcTargets && Math.random() * 100 < chance(arc)) {
+                    const def = arc.status || ConfigMgr.statusDef(arc.statusId);
+                    const landed = this.applyStatusFromTower(next, def, shot.towerUid, hitDamage);
+                    if (st && landed === 'landed') st.trigger(arc.id, arc.name + ' (chain)', shot.towerId);
+                }
                 // Skewer: the pierced enemies can get the Crossbow's status effects too.
                 // (their own count: the shot's status limits are for the explosion targets).
                 if (skewer) this.rollStatuses(shot, next, {}, chance, ready, hitDamage);
@@ -787,12 +813,18 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     /** Heavy Impact bonus: flat (after defense), or a share of the max HP (Mastery) when bigger; Crusher / Giant Slayer passives. */
     private heavyBonus(ef: any, shot: ShotInfo, e: Enemy): number {
         let pct = 0;
-        if (ef.value > 0) pct = Math.min(ef.capHitMul ? shot.damage * ef.capHitMul : (ef.cap || Infinity), e.maxHp * ef.value / 100 * this.percentHpMul(e));
+        // "bossMul" (Mastery levels / the technology under it): share of the HP part on bosses, instead of the default.
+        const hpMul = e.boss && ef.bossMul !== undefined ? ef.bossMul : this.percentHpMul(e);
+        // Crusher: on an enemy with Armor Break or stunned, the max HP share is doubled (3% -> 6%) and its limit
+        // goes up to 15 hits (skills.json p_crusher "hpMul" / "capHitMul").
+        const crush = (e.armorBroken || e.stunned) && this.hasPassive('p_crusher') ? passiveParams('p_crusher') : null;
+        const value = (ef.value || 0) * (crush ? crush.hpMul || 2 : 1);
+        const capHits = ef.capHitMul ? Math.max(ef.capHitMul, crush ? crush.capHitMul || 15 : 0) : 0;
+        if (value > 0) pct = Math.min(capHits ? shot.damage * capHits : (ef.cap || Infinity), e.maxHp * value / 100 * hpMul);
         // The flat bonus goes through defense (best of the shot's damage types) like the other flat effect damage;
         // the share of the max HP (Mastery) does not.
         const flat = ef.flat > 0 ? this.flatHit(e, ef.flat, shot.damageTypes).amount : 0;
         let b = Math.max(flat, pct);
-        if ((e.armorBroken || e.stunned) && this.hasPassive('p_crusher')) b *= passiveParams('p_crusher').mul || 1.667;
         if (e.boss && this.hasPassive('p_giant_slayer')) b *= passiveParams('p_giant_slayer').bossMul || 1.5;
         return b;
     }
@@ -816,8 +848,11 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             if (def.type === 'stun') {
                 // Shockwave: flat damage on every enemy it reaches (stunned or immune).
                 if (ef.flat > 0 && e.alive) this.hitAsEffect(e, this.flatHit(e, ef.flat, shot.damageTypes).amount, ef.id + '_flat', ef.name + ' (damage)', shot.towerId, false);
-                if (landed === 'landed' && this.hasPassive('p_aftershock')) e.aftershock = def.duration + (passiveParams('p_aftershock').time || 1);
+                // Aftershock: 7 s of extra damage from the stun, started again by every new stun.
+                if (landed === 'landed' && this.hasPassive('p_aftershock')) e.aftershock = passiveParams('p_aftershock').time || 7;
             }
+            // Exposed: 7 s of extra crit damage from every Armor Break that lands (new or refreshed).
+            if (def.type === 'armorBreak' && landed === 'landed' && this.hasPassive('p_exposed')) e.exposed = passiveParams('p_exposed').time || 7;
             if (landed !== 'landed' || !e.alive) continue;
             if (def.id === 'slow' && this.hasPassive('p_deep_freeze')) {
                 // Deep Freeze: a slowed enemy hit by Frost again `hits` times is frozen.
@@ -957,14 +992,14 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     // ------------------------------------------------------------------ wall
     /** Called once per enemy when it touches the wall. */
     onEnemyReachedWall(e: Enemy) {
-        this.wallHit(e.wallDamage(), e.def.damageType, e.y);
+        this.wallHit(e.wallDamage(), e.def.damageType, e.y, e.boss ? 'boss' : e.mutant ? 'mutant' : '');
     }
 
     /**
      * A hit on the wall: an enemy touching it (it dies), or the projectile of a ranged enemy.
      * `raw`: damage before the wall defense; `y`: where it lands (texts, Barrier Block).
      */
-    wallHit(raw: number, damageType: string, y: number) {
+    wallHit(raw: number, damageType: string, y: number, kind = '') {
         if (this.demo) {
             // Immortal wall: only the hit number is shown.
             this.float('-' + Math.floor(raw), this.wallRightX - 20, y + 20, '#ff6b6b', 18, true);
@@ -980,7 +1015,14 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         const type: DamageType = damageType === 'magic' ? 'magic' : 'physic';
         // Bulwark: the wall defense is multiplied while it lasts (at most 90).
         const def = this.bulwarkTime > 0 ? Math.min(90, this.rm.wallDef(type) * (passiveParams('p_bulwark').mul || 3)) : this.rm.wallDef(type);
-        const amount = Math.max(0, Math.floor(raw * (1 - def / 100)));
+        let amount = Math.max(0, Math.floor(raw * (1 - def / 100)));
+        // waves.json "wallHitCap": one hit never takes more than this % of the wall max HP (bosses, mutants, others),
+        // so a handful of enemies cannot bring the wall down on their own.
+        const cap = ConfigMgr.waves.wallHitCap;
+        if (cap) {
+            const pct = kind === 'boss' ? cap.bossPct : kind === 'bossRanged' ? (cap.bossRangedPct || cap.bossPct) : kind === 'mutant' ? cap.mutantPct : kind === 'ranged' ? (cap.rangedPct || cap.pct) : cap.pct;
+            if (pct > 0) amount = Math.min(amount, Math.floor(this.rm.wallMaxHp() * pct / 100));
+        }
         // Last Stand: the wall stays at 1 HP for a while instead of falling.
         if (this.rm.data.wallHp - amount < 1 && this.lastStandTime <= 0 && this.passiveReady('p_last_stand')) {
             this.lastStandTime = passiveParams('p_last_stand').time || 20;
@@ -1087,7 +1129,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     enemyShoot(e: Enemy) {
         const rg = e.def.ranged;
         const pc = rg && rg.projectile;
-        if (!pc) { this.wallHit(e.wallDamage(), e.def.damageType, e.y); return; }
+        if (!pc) { this.wallHit(e.wallDamage(), e.def.damageType, e.y, e.boss ? 'bossRanged' : 'ranged'); return; }
         const f = this.takeFx('impact');
         const ui = f.node.getComponent(UITransform)!;
         ui.setContentSize(pc.cellW, pc.cellH);
@@ -1100,10 +1142,16 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
     }
 
     // ------------------------------------------------------------------ Halo Spire
-    /** Halos in flight: ring sprite, centre, radius from r0 to r1 over `dur` s, ring radius now / last frame. */
-    private halos: Array<{ f: Fx; x: number; y: number; t: number; dur: number; r0: number; r1: number; k: number; alpha: number; r: number; prev: number; left: number }> = [];
+    /**
+     * Halo Spire shields: a hex bubble around the spire ("attackRange" = its radius). It stops the enemy
+     * projectiles (boss ones too) that reach it: their damage, reduced by the shield defense, comes off the
+     * shield HP; at 0 HP it breaks. Melee enemies are not stopped.
+     */
+    /** Halo Spires that raised their shield this wave: one shield per spire per wave (a broken one stays down). */
+    private shieldRaised = new Set<TowerUnit>();
+    private shields: Array<{ t: TowerUnit; x: number; y: number; r: number; hp: number; max: number; defPct: number; f: Fx; state: 'loop' | 'collapse'; cfg: any }> = [];
 
-    /** A pooled halo sprite, under the halo layer (one batch for every ring). */
+    /** A pooled sprite under the halo layer (shields and explosion rings: one batch, halo atlas). */
     private takeHalo(): Fx {
         const f = this.haloPool.pop();
         if (f) { f.node.active = true; return f; }
@@ -1114,31 +1162,55 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
 
     haloActive(): boolean { return this.active && this.enemies.some(e => e.alive); }
 
+    /** Shield HP and defense of a spire, in % of the wall max HP / defense: level value + Warding Halo. */
+    shieldPct(t: TowerUnit): { hp: number; def: number } {
+        const ward = this.demo ? 0 : this.buff('haloShield');
+        return { hp: (t.lv.shieldHpPct || 0) + ward, def: (t.lv.shieldDefPct || 0) + ward };
+    }
+
+    /** True when a standing Halo shield lies on the way of a projectile thrown at the wall at this height. */
+    shieldCovers(y: number): boolean {
+        return this.shields.some(h => h.state !== 'collapse' && Math.abs(y - h.y) < h.r * 0.9);
+    }
+
+    /** The standing shield of a spire (not one that is breaking), or null. */
+    shieldOf(t: TowerUnit) { return this.shields.find(s => s.t === t && s.state !== 'collapse') || null; }
+
+    private playShield(sh: { f: Fx; cfg: any }, kind: 'loop' | 'collapse') {
+        const a = sh.cfg[kind];
+        const frames = a ? Assets.frames(a.path, a.cellW || a.cell, a.cellH || a.cell).slice(0, a.frames || 99) : [];
+        sh.f.anim!.play(frames, a ? a.frameTime || 0.08 : 0.08, kind === 'loop');
+        if (frames.length === 0) sh.f.anim!.finished = true;
+    }
+
     /**
-     * A Halo Spire activates: one thin ring grows from just outside the tower ("startRadius") to the halo
-     * radius (the level's fixed "attackRange") in "growTime" s and fades out. Every activation counts for the
+     * A Halo Spire activates: its first activation of the wave raises its shield (once per wave: a broken shield
+     * is not raised again before the next wave). The buff of the nearby towers does not depend on the shield. Every activation counts for the
      * wall mending (research "Mending Halo"): every "mendEvery" activations it restores "mendPct" % of the
      * missing wall HP. Several spires mend one after the other (each one from the wall HP left by the previous one).
      */
     emitHalo(t: TowerUnit) {
-        const h = t.lv.sprite.halo;
-        if (h) {
-            const size = h.size || 256;
-            const frames = Assets.frames(h.path, size, size).slice(0, 1);
+        const cfg = t.lv.sprite.shield;
+        if (cfg && !this.shieldRaised.has(t)) {
+            this.shieldRaised.add(t);
+            const pct = this.shieldPct(t);
+            const max = Math.max(1, Math.floor(this.rm.wallMaxHp() * pct.hp / 100));
             const f = this.takeHalo();
-            f.node.getComponent(UITransform)!.setAnchorPoint(0.5, 0.5);
-            f.node.setPosition(t.cx, t.cy, 0);
-            f.node.active = frames.length > 0 && Display.effects;
-            f.anim!.play(frames, 999, false);
-            const r1 = t.stats().range;
-            this.halos.push({
-                f, x: t.cx, y: t.cy, t: 0, dur: Math.max(0.05, h.growTime || 0.9),
-                r0: Math.min(r1, h.startRadius || 0), r1, k: size / 2 / (h.ringRadius || size / 2),
-                alpha: h.opacity === undefined ? 255 : h.opacity, r: 0, prev: 0, left: this.haloBlocks(t),
-            });
-            const nh = this.halos[this.halos.length - 1];
-            this.placeHalo(nh);
-            nh.prev = nh.r;
+            const r = t.stats().range;
+            // Only the right part of the bubble is drawn (cells cut at "keepFrom" x radius right of the center):
+            // the cell is placed so the bubble center stays on the spire.
+            const k = r / (cfg.ringRadius || 65);
+            const cw = cfg.loop.cellW || cfg.loop.cell, ch = cfg.loop.cellH || cfg.loop.cell;
+            const ui = f.node.getComponent(UITransform)!;
+            ui.setAnchorPoint(0.5, 0.5);
+            ui.setContentSize(cw * k, ch * k);
+            f.node.setPosition(t.cx + (cw / 2 - (cfg.centerX === undefined ? cw / 2 : cfg.centerX)) * k, t.cy, 0);
+            f.node.active = Display.effects;
+            const sp = f.node.getComponent(Sprite);
+            if (sp) sp.color = new Color(255, 255, 255, cfg.opacity === undefined ? 255 : cfg.opacity);
+            const sh = { t, x: t.cx, y: t.cy, r, hp: max, max, defPct: pct.def, f, state: 'loop' as const, cfg };
+            this.playShield(sh, 'loop');
+            this.shields.push(sh);
         }
         if (this.demo) return;
         t.haloCount++;
@@ -1155,55 +1227,48 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         }
     }
 
-    /** Ring size and fade for its time: grows fast then slower (ease out), fades in quickly and out at the end. */
-    private placeHalo(h: { f: Fx; t: number; dur: number; r0: number; r1: number; k: number; alpha: number; r: number; prev: number; left: number }) {
-        const p = Math.min(1, h.t / h.dur);
-        const r = h.r0 + (h.r1 - h.r0) * (1 - (1 - p) * (1 - p));
-        h.r = r;
-        const d = 2 * r * h.k;
-        h.f.node.getComponent(UITransform)!.setContentSize(d, d);
-        const fade = Math.min(1, p / 0.12, (1 - p) / 0.35);
-        const sp = h.f.node.getComponent(Sprite);
-        // A halo that has blocked all it can goes on, dimmed.
-        if (sp) sp.color = new Color(255, 255, 255, Math.round(h.alpha * Math.max(0, fade) * (h.left > 0 ? 1 : 0.35)));
-    }
-
-    /** Projectiles one halo can block: "blockCount" of the level x (1 + Warding Halo level). */
-    haloBlocks(t: TowerUnit): number {
-        return (t.lv.blockCount || 1) * (1 + (this.demo ? 0 : this.buff('haloBlock')));
+    /**
+     * Shields: an enemy projectile whose tip enters a standing shield is stopped there. Its damage minus the
+     * shield defense (a share of the wall defense, 90 at most) comes off the shield HP (blue number); the
+     * "collapse" animation plays when the HP runs out. A broken shield stays down until the next wave.
+     */
+    private updateShields(_dt: number) {
+        for (let j = this.enemyShots.length - 1; j >= 0; j--) {
+            const s = this.enemyShots[j];
+            const tipX = s.x + s.tipX;
+            // Only the drawn (right) part of the bubble stops projectiles.
+            const sh = this.shields.find(h => h.state !== 'collapse' && tipX >= h.x + (h.cfg.keepFrom || 0) * h.r
+                && (tipX - h.x) * (tipX - h.x) + (s.y - h.y) * (s.y - h.y) <= h.r * h.r);
+            if (!sh) continue;
+            this.enemyShots.splice(j, 1);
+            s.f.node.active = false;
+            this.fxPool.impact.push(s.f);
+            const type: DamageType = s.type === 'magic' ? 'magic' : 'physic';
+            const def = Math.min(90, this.rm.wallDef(type) * sh.defPct / 100);
+            const amount = Math.max(0, Math.floor(s.damage * (1 - def / 100)));
+            sh.hp -= amount;
+            sh.t.flashHalo();
+            this.float('-' + amount, tipX, s.y + 14, '#8fd8ff', 15, true);
+            if (!this.demo) this.stats.trigger('halo_block', 'Halo shield: enemy projectiles stopped', 'halo');
+            if (sh.hp <= 0) { sh.hp = 0; sh.state = 'collapse'; this.playShield(sh, 'collapse'); }
+        }
     }
 
     /**
-     * Halo rings: an enemy projectile the ring touches vanishes, i.e. one in the band the ring crossed this frame
-     * (from its last radius to the new one, plus HALO_EDGE px on each side for the line and the projectile).
-     * Projectiles inside the ring, or arriving after it passed, keep flying. Each halo blocks at most
-     * haloBlocks() projectiles; boss projectiles are never blocked.
+     * Shield animations in REAL time (the screen calls it once per frame, whatever the game speed): a shield that
+     * flickered faster at x2..x10 would be distracting. A broken shield only finishes its collapse here (the game
+     * logic does not wait for it).
      */
-    private updateHalos(dt: number) {
-        for (let i = this.halos.length - 1; i >= 0; i--) {
-            const h = this.halos[i];
-            h.t += dt;
-            h.prev = h.r;
-            this.placeHalo(h);
-            const lo = Math.max(0, h.prev - HALO_EDGE), hi = h.r + HALO_EDGE;
-            for (let j = this.enemyShots.length - 1; j >= 0 && h.left > 0; j--) {
-                const s = this.enemyShots[j];
-                if (s.boss) continue;
-                const tipX = s.x + s.tipX;
-                const d2 = (tipX - h.x) * (tipX - h.x) + (s.y - h.y) * (s.y - h.y);
-                if (d2 < lo * lo || d2 > hi * hi) continue;
-                this.enemyShots.splice(j, 1);
-                h.left--;
-                s.f.node.active = false;
-                this.fxPool.impact.push(s.f);
-                if (!this.demo) this.stats.trigger('halo_block', 'Halo: enemy projectiles blocked', 'halo');
-            }
-            if (h.t < h.dur) continue;
-            this.halos.splice(i, 1);
-            h.f.node.active = false;
-            const sp = h.f.node.getComponent(Sprite);
+    updateShieldVisuals(dt: number) {
+        for (let i = this.shields.length - 1; i >= 0; i--) {
+            const sh = this.shields[i];
+            const ended = sh.f.anim!.update(dt) || sh.f.anim!.finished;
+            if (!ended || sh.state !== 'collapse') continue;
+            this.shields.splice(i, 1);
+            sh.f.node.active = false;
+            const sp = sh.f.node.getComponent(Sprite);
             if (sp) sp.color = Color.WHITE;
-            this.haloPool.push(h.f);
+            this.haloPool.push(sh.f);
         }
     }
 
@@ -1325,7 +1390,7 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
             this.fxPool.impact.push(s.f);
             this.enemyImpactFx(s.tx, s.y, s.impact);
             // Between waves (wall fight over) a late fireball still lands but does no damage.
-            if (this.active || this.demo) this.wallHit(s.damage, s.type, s.y);
+            if (this.active || this.demo) this.wallHit(s.damage, s.type, s.y, s.boss ? 'bossRanged' : 'ranged');
         }
     }
 
@@ -1343,10 +1408,20 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         this.fx.push(f);
     }
 
-    /** A fading circle (Arcane Rupture). */
+    /**
+     * A fading circle line (Arcane Rupture), no fill so the enemies inside stay visible. Many ruptures at once
+     * (fast Crystals) share their rings: none within 40 px of a ring started less than 0.1 s ago, 12 at most.
+     */
     private ringFxAt(x: number, y: number, r: number, color: string) {
         if (!Display.effects) return;
-        this.addRing(x, y, r, color, 40, 230, 0.35);
+        let n = 0;
+        for (const sh of this.shapes) {
+            if (sh.line || !sh.fx) continue;
+            if (++n >= 12) return;
+            if (sh.total - sh.life < 0.1 && (sh.x - x) * (sh.x - x) + (sh.y - y) * (sh.y - y) < 1600) return;
+        }
+        this.addRing(x, y, r, color, 0, 200, 0.3);
+        this.shapes[this.shapes.length - 1].fx = true;
     }
 
     private lineFx(x1: number, y1: number, x2: number, y2: number, color: string) {
@@ -1371,16 +1446,19 @@ export class CombatManager implements IEnemyHost, ITowerHost, ISkillHost {
         // The ring picture: radius 124 in 256 px.
         const ring = take(this.ringPool, ringF[0], 2 * r * 128 / 124);
         const disc = fillA > 0 && discF.length ? take(this.discPool, discF[0], 2 * r) : null;
-        const sh = { line: false, x, y, x2: 0, y2: 0, r, color, fillA, strokeA, width: 0, life, total: life, ring, disc };
+        const sh = { line: false, x, y, x2: 0, y2: 0, r, color, fillA, strokeA, width: 0, life, total: life, ring, disc, rgb: hex(color) };
         this.tintRing(sh, 1);
         this.shapes.push(sh);
     }
 
+    /** Fade a ring: one shared Color (the sprite copies it), the color parsed once in addRing. */
     private tintRing(sh: any, k: number) {
-        const c = hex(sh.color);
-        sh.ring.color = new Color(c.r, c.g, c.b, Math.round(sh.strokeA * k));
-        if (sh.disc) sh.disc.color = new Color(c.r, c.g, c.b, Math.round(sh.fillA * k));
+        const c = sh.rgb, t = this.tintTmp;
+        t.set(c.r, c.g, c.b, Math.round(sh.strokeA * k));
+        sh.ring.color = t;
+        if (sh.disc) { t.a = Math.round(sh.fillA * k); sh.disc.color = t; }
     }
+    private tintTmp = new Color();
 
     private releaseRing(sh: any) {
         if (sh.ring) { sh.ring.node.active = false; this.ringPool.push(sh.ring); sh.ring = null; }

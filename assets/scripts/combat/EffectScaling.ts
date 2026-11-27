@@ -11,6 +11,8 @@ import { ConfigMgr } from '../core/ConfigMgr';
 export interface EffectCtx {
     level: number;
     mastery: number;
+    /** Level of the technology under the Mastery (research "effectPlus:<id>"), 0 = none. */
+    plus?: number;
     towerLevel: number;
     /** True when a hero owns this passive (skills.json id). */
     has: (passiveId: string) => boolean;
@@ -48,7 +50,7 @@ export class EffectScaling {
 
     static resolve(def: any, ctx: EffectCtx): any {
         const pas = PASSIVES_IN_RESOLVE.filter(p => ctx.has(p));
-        const key = `${def.id}|${ctx.level}|${ctx.mastery}|${ctx.towerLevel}|${pas.join(',')}`;
+        const key = `${def.id}|${ctx.level}|${ctx.mastery}|${ctx.plus || 0}|${ctx.towerLevel}|${pas.join(',')}`;
         const hit = EffectScaling.cache.get(key);
         if (hit) return hit;
         const out = EffectScaling.build(def, ctx, (p: string) => pas.indexOf(p) >= 0);
@@ -62,6 +64,7 @@ export class EffectScaling {
         delete out.scaling;
         out.level = ctx.level;
         out.mastery = ctx.mastery;
+        out.plus = ctx.plus || 0;
         out.hitPct = 0;
         const base = def.kind === 'status' ? ConfigMgr.statusDef(def.statusId) : null;
         const st: any = base ? Object.assign({}, base) : null;
@@ -78,7 +81,11 @@ export class EffectScaling {
         apply(sc.base);
         const mastery: any[] = sc.mastery || [];
         for (let i = 0; i < Math.min(ctx.mastery, mastery.length); i++) apply(mastery[i]);
-        out.flat = EffectScaling.lerp(sc.flat, ctx.level) * EffectScaling.towerLevelMul(ctx.towerLevel);
+        // "plus": one entry per level of the technology under the Mastery (each entry holds the full values).
+        const plus: any[] = sc.plus || [];
+        if (ctx.plus && ctx.plus > 0 && plus.length) apply(plus[Math.min(ctx.plus, plus.length) - 1]);
+        // "flatSet" (a Mastery level): the flat damage of that level instead of the research range.
+        out.flat = (out.flatSet !== undefined ? out.flatSet : EffectScaling.lerp(sc.flat, ctx.level)) * EffectScaling.towerLevelMul(ctx.towerLevel);
         if (st && sc.value && !statusValueSet) st.value = EffectScaling.lerp(sc.value, ctx.level);
         const full = ctx.mastery >= mastery.length;
 
@@ -141,16 +148,17 @@ export class EffectScaling {
                     (st.burstAtMaxStacks ? `; at ${st.burstAtMaxStacks.stacks || st.maxStacks} stacks it bursts for ${n(st.burstAtMaxStacks.maxHpPct)}% of the max HP (1/3 on bosses)` : '') + '.';
             case 'hunters_mark':
                 return `the target takes +${n(st.value)}% damage from every Crossbow per stack for ${sec(st.duration)}${stacks(st.maxStacks)}` +
-                    (st.atMaxStacks ? `; at ${st.maxStacks} stacks each Crossbow hit also deals ${n(st.atMaxStacks.currentHpPct)}% of the current HP` : '') + '.';
+                    (st.atMaxStacks ? `; at ${st.maxStacks} stacks each Crossbow hit also deals ${n(st.atMaxStacks.currentHpPct)}% of the current HP (1/3 on bosses, at most 10 hits)` : '') + '.';
             case 'frost_explosion':
                 return `every enemy in the explosion moves ${n(st.value)}% slower for ${sec(st.duration)}.`;
             case 'arcane_vulnerability':
-                return `enemies hit take +${n(st.value)}% magic damage per stack for ${sec(st.duration)}${stacks(st.maxStacks)}.`;
+                return `enemies hit take +${n(st.value)}% magic damage per stack for ${sec(st.duration)}${stacks(st.maxStacks)}` +
+                    (r.chainTargets > 0 ? `; it also lands on the first ${r.chainTargets} enemies of a Chain Lightning, whose jumps deal +${n(r.chainDmgPct || 0)}%` : ' (not on Chain Lightning targets)') + '.';
             case 'shockwave':
                 return `enemies hit take ${f} damage and are stunned for ${sec(st.duration)} (then immune to stun for ${sec(st.immunityAfter || 0)})` +
                     (st.immuneHit ? `; an enemy immune to stun loses ${n(st.immuneHit.maxHpPct)}% of its max HP instead (1/3 on bosses)` : '') + '.';
             case 'heavy_impact':
-                return `+${f} damage on every hit` + (r.value > 0 ? `, or ${n(r.value)}% of the target's max HP when that is more (1/3 on bosses, at most ${r.capHitMul || 5} normal hits)` : '') + '.';
+                return `+${f} damage on every hit (through defense)` + (r.value > 0 ? `, or ${n(r.value)}% of the target's max HP when that is more (${Math.round((r.bossMul !== undefined ? r.bossMul : 1 / 3) * 100)}% on bosses, at most ${r.capHitMul || 5} normal hits)` : '') + '.';
             case 'armor_break':
                 return `enemies hit lose ${n(st.value)} defense for ${sec(st.duration)}${st.stacking === 'StackValue' ? stacks(st.maxStacks) : ''} (each point removed = about +1% damage taken).`;
         }

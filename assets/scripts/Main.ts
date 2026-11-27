@@ -43,11 +43,15 @@ const PREFABS = [
 const SAVE_KEY = 'castle_defense_save_';
 const SETTINGS_KEY = 'castle_defense_settings';
 /**
- * Test saves (assets/resources/presets/wave_<n>.json) made by the progression bot
- * (tools/harness/prog.js, "full" variant: all research, heroes and Market trades). They are listed in Load Game and cannot be deleted.
+ * Test saves made by the progression bot (tools/harness/prog.js, "full" variant: all research, heroes and Market
+ * trades), listed in Load Game (they cannot be deleted): seed 1 (assets/resources/presets/wave_<n>.json, falls at
+ * wave 130) and seed 3 (seed3_wave_<n>.json, a weaker run that falls at wave 90).
  * Temporary, for testing: set to [] to hide them.
  */
-const TEST_SAVES = [30, 50, 70, 90, 100, 110, 130, 150, 170, 190];
+const TEST_SAVES: Array<{ file: string; wave: number; seed: number }> = [
+    ...[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(wave => ({ file: 'wave_' + wave, wave, seed: 1 })),
+    ...[10, 20, 30, 40, 50, 60, 70, 80, 90].map(wave => ({ file: 'seed3_wave_' + wave, wave, seed: 3 })),
+];
 
 interface IScreen { root: Node; update(dt: number): void; destroy(): void; }
 
@@ -276,19 +280,19 @@ export class Main extends Component implements IMain {
         return { exists: true, wave: parsed.data.currentWave, savedAt: parsed.data.savedAt, valid: true };
     }
 
-    testSaves: Array<{ wave: number; data: any }> = [];
+    testSaves: Array<{ wave: number; seed: number; data: any }> = [];
 
     /** Read the bot test saves; a missing file is skipped. */
     private loadTestSaves(done: () => void) {
         let left = TEST_SAVES.length;
         if (left === 0) { done(); return; }
-        const found: Array<{ wave: number; data: any }> = [];
-        for (const wave of TEST_SAVES) {
-            Assets.loadJson('presets/wave_' + wave, (err, data) => {
+        const found: Array<{ wave: number; seed: number; data: any }> = [];
+        for (const t of TEST_SAVES) {
+            Assets.loadJson('presets/' + t.file, (err, data) => {
                 if (err) console.warn('[Main] test save missing: ' + err);
-                else found.push({ wave, data });
+                else found.push({ wave: t.wave, seed: t.seed, data });
                 if (--left === 0) {
-                    this.testSaves = found.sort((a, b) => a.wave - b.wave);
+                    this.testSaves = found.sort((a, b) => a.seed - b.seed || a.wave - b.wave);
                     done();
                 }
             });

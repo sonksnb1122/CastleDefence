@@ -15,7 +15,7 @@ export interface IMain {
     slotInfo(slot: number): { exists: boolean; wave: number; savedAt: number; valid: boolean };
     deleteSlot(slot: number): void;
     /** Read-only test saves made by the bot (assets/resources/presets). */
-    testSaves: Array<{ wave: number; data: any }>;
+    testSaves: Array<{ wave: number; seed: number; data: any }>;
     loadTestSave(index: number): string | null;
     quitGame(): void;
     musicVolume: number;

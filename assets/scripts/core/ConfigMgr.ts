@@ -89,7 +89,8 @@ export class ConfigMgr {
             out.push(t.base.path);
             for (const lv of t.levels) {
                 const sp = lv.sprite;
-                for (const k of ['weapon', 'projectile', 'impact', 'halo']) if (sp[k] && sp[k].path) out.push(sp[k].path);
+                for (const k of ['weapon', 'projectile', 'impact']) if (sp[k] && sp[k].path) out.push(sp[k].path);
+                if (sp.shield) for (const k of ['loop', 'collapse']) if (sp.shield[k] && sp.shield[k].path) out.push(sp.shield[k].path);
             }
         }
         for (const e of ConfigMgr.enemy.enemies) {
@@ -261,7 +262,7 @@ export class ConfigMgr {
                     num('tower.json', lv, 'attackRange', where); num('tower.json', lv, 'explosionRange', where);
                     num('tower.json', lv, 'critRate', where); num('tower.json', lv, 'critDamage', where);
                     cost('tower.json', lv.upgradeCost, where);
-                    if (halo) { if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.halo) E.push(`tower.json: ${where} needs "sprite" with weapon/halo`); }
+                    if (halo) { if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.shield || !lv.sprite.shield.loop) E.push(`tower.json: ${where} needs "sprite" with weapon/shield`); }
                     // "impact" (hit effect) is optional: the Crystal has none.
                     else if (!lv.sprite || !lv.sprite.weapon || !lv.sprite.projectile) E.push(`tower.json: ${where} needs "sprite" with weapon/projectile`);
                     for (const ef of (lv.effects || [])) if (!ConfigMgr.towerEffectDef(ef.id)) E.push(`tower.json: ${where} references unknown effect "${ef.id}"`);

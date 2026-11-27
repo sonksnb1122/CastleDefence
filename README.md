@@ -95,34 +95,43 @@ The Crossbow is strong early on. The Catapult starts weak but becomes the main d
 
 **Halo Spire** (support, tower.json `"halo"`, kind `"halo"`): it has no target and deals no damage. It must be
 unlocked first (research *Halo Spire*, Fortification tier 3, needs Self-Mending Stone and Masonry Guild at max
-level). While enemies are on the field it activates regularly and sends out one thin white ring that grows slowly from
-just outside the tower to the halo radius and fades out:
+level). While enemies are on the field it activates regularly; without a shield, an activation raises a magic
+**shield** around the spire:
 
 | | Lv 1 | Lv 2 | Lv 3 |
 |---|---|---|---|
 | Build / upgrade cost | 300 gold, 200 material, 100 food | 420 gold, 500 material, 320 food | 2600 gold, 2900 material, 2200 food |
 | Activations per second | 0.8 | 1.0 | 1.25 |
-| Halo radius (px, fixed: range research and buffs never change it) | 200 | 200 | 200 |
-| Projectiles blocked per halo (*Warding Halo* Lv 0 / 1 / 2) | 1 / 2 / 3 | 2 / 4 / 6 | 3 / 6 / 9 |
+| Shield radius (px, fixed: range research and buffs never change it) | 200 | 200 | 200 |
+| Shield HP (% of the wall max HP; *Warding Halo* Lv 0 / 4) | 20% / 60% | 40% / 80% | 60% / 100% |
+| Shield defense (% of the wall defense, 90 at most; *Warding Halo* Lv 0 / 4) | 20% / 60% | 40% / 80% | 60% / 100% |
 | Towers buffed (*Empowering Halo*) | 2 | 4 | 8 |
 | Wall mending (*Mending Halo*) | every 30 activations, 0.5% of the missing HP | every 20, 1% | every 10, 2% |
 
-- **Block** (always): an enemy projectile (Flying Demon fireball) touched by the growing ring
-  vanishes at once, up to the halo's block count (table; a spent halo goes on dimmed). Projectiles already inside
-  the ring, or arriving after it passed, keep flying, and boss projectiles (the Lich's Soul Bolt, a boss Flying
-  Demon) are never blocked.
-- **Warding Halo** (research under *Halo Spire*, 2 levels): x2 then x3 projectiles blocked per halo. *Empowering
-  Halo* and *Mending Halo* are under it.
+- **Shield** (always): an enemy projectile (Flying Demon fireball, Lich Soul Bolt: boss ones too) that reaches the
+  bubble is stopped there. Its damage, minus the shield defense, comes off the shield HP (blue number). At 0 HP
+  the shield breaks ("collapse" animation; that projectile is still stopped) and stays down until the next wave;
+  the spire still buffs the nearby towers and mends the wall. Enemies on foot are not stopped. The shields go down when a wave ends; the Info
+  window of the spire shows its shield HP now.
+- **Warding Halo** (research under *Halo Spire*, 4 levels): +10% of the wall HP and +10% of the wall defense for
+  every shield per level. *Empowering Halo* and *Mending Halo* are under it.
 - **Empowering Halo** (research under *Warding Halo*, 5 levels): the closest other towers (not Halo Spires) get
   +6% base damage and +4% base attack speed per level. The base is the tower level value plus the flat research
   and hero bonuses; the % buffs come after. A tower near several spires keeps the strongest buff (no stacking). Their Info window shows it.
   Four Lv 3 spires are enough for a full field: each sits in the middle of 8 towers (4 + 4 × 8 = 36).
 - **Mending Halo** (research under *Warding Halo*): every N activations the spire restores a share of the missing
-  wall HP. Several spires mend one after the other (each one from what the previous one left), so it does not
-  add up to more than the missing HP.
-- The halo is one ring picture (`art/halo/halo_ring.png`, own atlas `sprites/atlas/halo`) scaled by the game:
-  tower.json `"halo"` gives its `startRadius`, `growTime` and `opacity`. The radius stays small on purpose: a
-  bigger halo would block every projectile.
+  wall HP. Time between two mends = activations needed / activations per second (the spire's attack speed, flat
+  and % research included): at the base speed Lv 1 30 / 0.65 = 46 s, Lv 2 20 / 0.8 = 25 s, Lv 3 10 / 1 = 10 s.
+  The spire's Info window and the research node show the time with the current buffs. Several spires mend one
+  after the other (each one from what the previous one left), so it does not add up to more than the missing HP.
+  **Out of combat**, after each wave, every spire also restores 5% / 10% / 15% (Lv 1 / 2 / 3) of the wall **max**
+  HP (tower.json `"mendAfterWavePct"`): four Lv 3 spires give back 60% of it.
+- The crystal of the spire stays idle and flashes only when its shield is hit.
+- The shield sheets (`art/halo/shield_loop.png`, `shield_collapse.png`, atlas `sprites/atlas/halo`)
+  are scaled so the bubble fits the shield radius (tower.json `"shield"`: `ringRadius`). Only the right 2/5 of the
+  bubble is kept (the side the projectiles come from; the rest covered the towers): it is drawn and it blocks. They play
+  slowly (0.27 s / 0.21 s per frame) and in real time: the game speed (x2..x10) does not make the shields flicker
+  faster. A broken shield's collapse is only a picture (the game does not wait for it).
 
 **Target modes** (switch with the *Target* button of a selected tower):
 - **First:** the enemy closest to the wall.
@@ -132,7 +141,8 @@ just outside the tower to the halo radius and fades out:
     (`"smartBossBonus"` in `tower.json`).
   - Shots never waste damage on an enemy that is already going to die.
   - Enemies near the wall get priority.
-  - A Crossbow with Smart mode always hits the enemy closest to the wall.
+  - A Crossbow with Smart mode hits the Flying Demons first when no standing Halo Spire shield covers their lane
+    (their fireballs would hit the wall), otherwise the enemy closest to the wall.
 
 **No wasted shots:**
 - Every shot reserves its expected damage (no crit) on its target; an area shot (Crystal, Catapult) also reserves it
@@ -162,15 +172,24 @@ The tower's *Info* window lists its three effects with their current chance and 
 |---|---|---|---|
 | Crossbow | Piercing Bolt | 2 more enemies, 20 to 200 damage | 3 enemies, 50% of the hit / 4 enemies, 75% / 100% |
 | Crossbow | Bleeding Bolt | 8 to 80 damage per second per stack, 3 stacks, 3 s | 5 stacks, 4 s / +20% of the hit / bursts at 5 stacks (4% max HP) |
-| Crossbow | Hunter's Mark | +3% to +30% Crossbow damage per stack, 3 stacks, 3 s | 5 stacks, 5 s / +50% per stack / at 5 stacks +1% current HP per hit |
+| Crossbow | Hunter's Mark | +1.5% to +15% Crossbow damage, 1 stack, 2 s | 2 stacks, 3 s, +20% per stack / 4 stacks, 4 s, +35% / 6 stacks, 5 s, +50% |
 | Crystal | Frost Explosion | Slow 10% to 25%, 1.5 s | 2 s / 2.5 s / slow 35% |
 | Crystal | Chain Lightning | 2 jumps, 15 to 150 damage | 3 jumps, 40% of the hit / 4 jumps, 60% / 5 jumps, 80% |
-| Crystal | Arcane Vulnerability | +1.5% to +15% magic damage per stack, 3 stacks, 3 s | 4 stacks, 4 s / 5 stacks / +30% per stack |
+| Crystal | Arcane Vulnerability | +1% to +8% magic damage, 1 stack, 3 s (not on Chain Lightning targets) | 2 stacks, 3 s, +10% per stack / 3 stacks, 4 s, +20% / 4 stacks, 4 s, +30% |
 | Catapult | Shockwave | 15 to 150 damage, 0.1 s stun | 0.3 s stun / 2% max HP when immune to stun / 4% |
-| Catapult | Heavy Impact | +30 to +300 damage | 2% / 4% / 6% max HP (when bigger than the flat damage) |
+| Catapult | Heavy Impact | +8 to +80 damage | +100 or 1% max HP / +200 or 2% / +300 or 3% (at most 3 hits, bosses 30%) |
 | Catapult | Armor Break | -2 to -12 defense, 2 s | 3 s / 4 s / -20 defense |
 
 Where a Mastery level gives a share of the hit, the effect uses that share or the flat damage, whichever is bigger.
+
+Three effects have one more technology under their Mastery (5 levels, `effects.json` scaling `"plus"`, buff
+`effectPlus:<effect>`):
+
+| Technology | Effect | Level 1 / 2 / 3 / 4 / 5 |
+|---|---|---|
+| Hunter's Instinct | Hunter's Mark | at full stacks every Crossbow hit also deals 0.3 / 0.6 / 0.9 / 1.2 / 1.5% of the current HP |
+| Arcane Conduit | Arcane Vulnerability | also applies to the first 1 / 2 / 3 / 4 / 5 Chain Lightning targets; jumps deal +10 / 15 / 25 / 30 / 40% |
+| Crushing Weight | Heavy Impact | at most 4 / 5 / 6 / 7 / 8 hits; bosses take 40 / 55 / 70 / 85 / 100% |
 
 ---
 
@@ -178,25 +197,25 @@ Where a Mastery level gives a share of the hit, the effect uses that share or th
 
 | Enemy | Role | HP | Wall damage | Speed | Phys / Magic def | Gold |
 |---|---|---|---|---|---|---|
-| **Scorpion** (Berserker) | Hits the wall hard | 97.5 | 55 physical | 20 | 5 / 8 | 10 |
-| **Firebug** (Runner) | Very fast, fragile | 60 | 15 magic | 42.5 | 3 / 3 | 8 |
-| **Clampbeetle** (Tank) | High HP and physical defense, resists stun | 240 | 25 physical | 12.5 | 20 / 5 | 12 |
-| **Magma Crab** (Juggernaut) | Slow, tough, resists stun and slow | 210 | 50 magic | 10 | 15 / 15 | 25 |
-| **Flying Demon** (Caster) | Flies, fast, attacks from range | 110 | 18 magic per fireball | 34 | 6 / 22 | 14 |
-| **Lich King** (boss from wave 70) | Floats, very slow, Soul Bolt from anywhere, spells below 30% HP | 300 (x4 as boss) | 40 magic per Soul Bolt (x2) | 5 | 25 / 25 | 30 (x8) |
+| **Scorpion** (Berserker) | Hits the wall hard | 97.5 | 55 physical | 40 | 5 / 8 | 10 |
+| **Firebug** (Runner) | Very fast, fragile | 60 | 15 magic | 85 | 3 / 3 | 8 |
+| **Clampbeetle** (Tank) | High HP and physical defense, resists stun | 240 | 25 physical | 25 | 20 / 5 | 12 |
+| **Magma Crab** (Juggernaut) | Slow, tough, resists stun and slow | 210 | 50 magic | 20 (boss ×0.5) | 15 / 15 | 25 |
+| **Flying Demon** (Caster) | Flies, fast, attacks from range (a fireball every 1.3 s) | 70 | 6 magic per fireball | 68 | 6 / 22 | 14 |
+| **Lich King** (boss from wave 50) | Floats, very slow, Soul Bolt from anywhere, spells below 30% HP | 450 (x4 as boss) | 40 magic per Soul Bolt (x2) | 5 | 25 / 25 | 30 (x8) |
 
 Values are for wave 1. All stats grow with the wave number.
 
 **Flying enemies** (enemy.json `"flying"`): towers with `"hitsFlying": false` in tower.json (the Catapult) never aim
 at them, and their explosions pass under them. Crossbows, Crystals and hero skills hit them normally.
 
-**Lich King** (boss from wave 70; enemy.json `"lich"`): it floats a little above the ground but is not a flying
-enemy (Catapult stones hit it). It is half size at wave 70 and grows at every boss wave after it (+0.1, up to 1.2;
+**Lich King** (boss from wave 50; enemy.json `"lich"`): it floats a little above the ground but is not a flying
+enemy (Catapult stones hit it). It is half size at wave 50 and grows at every boss wave after it (+0.1, up to 1.2;
 waves.json `bossRule.byWave` "scale", "scaleGrowth", "maxScale"). It moves very slowly and walks to the wall like
 the other bosses (it hits the wall when it gets there), but:
-- **Soul Bolt** every 20 s (first after 3 s), from anywhere on the field: the bolt always reaches the wall
+- **Soul Bolt** every 5 s (first after 3 s), from anywhere on the field: the bolt always reaches the wall
   (enemy.json `"ranged"."anyRange"`).
-- **Teleport** every 9 s (first after 5 s): it vanishes and appears 150 px closer to the wall.
+- **Teleport** every 30 s (first after 5 s): it vanishes and appears 150 px closer to the wall.
 - Below **30% HP**, once each (enemy.json spell `"hpBelowPct"`), the boss stops and casts:
   - **Spell shield**: a frost burst at its feet, then a magic shield that absorbs damage equal to 20% of its max HP
     for 12 s (light blue damage numbers, light blue HP bar). When it breaks or ends it collapses with dust.
@@ -205,18 +224,28 @@ the other bosses (it hits the wall when it gets there), but:
     within 280 px (the minions too) moves 40% faster for 6 s.
 A stun pauses its casting.
 
-**Ranged enemies** (enemy.json `"ranged"`): the Flying Demon stops about 230 px in front of the wall (each one a bit
-closer or farther) and attacks every 2.6 s: attack animation, then a fireball flies to the wall and deals the
+**Ranged enemies** (enemy.json `"ranged"`): the Flying Demon stops about 640 px in front of the wall (560 to 720 px, so
+the front Crossbows / Crystals with range research reach it) and attacks every 1.3 s: attack animation, then a fireball flies to the wall and deals the
 enemy's damage there (wall defense, Barrier Block, Last Stand and Bulwark apply as for a contact hit). Unlike the
 other enemies it does not die on the wall: it keeps attacking until it is killed, so the wave only ends when it is
 dead. A stun stops its attacks; a knockback (Air Burst) pushes it back and it flies in again. While it has no sound
 files of its own, it uses the Firebug death sound and the Catapult shot sound (enemy.json `"sfx"`).
 
 **How waves scale:**
-- **Enemy count:** starts at 24 and grows by 2 every wave. Spawns come faster over time.
-- **Stats:** HP follows a curve tuned by segments. Damage, speed and gold grow every 3 waves.
-  From wave 86, HP grows much faster (×1.115 per wave) and gets an extra ×1.2 after wave 100:
-  a player with every upgrade usually loses between wave 100 and 120.
+- **Enemy count:** starts at 24 and grows by 2 every wave. A new enemy every 0.18 s (0.15 s at least): the field
+  outside the wall is long (worldWidth 2350 px), so the waves arrive as a stream.
+- **Stats:** HP follows a curve tuned by segments (`waves.json` "hpCurve", written by `tools/balance/set_curve.py`):
+  about ×2 at wave 1, ×12 at 10, ×200 at 20, ×1,100 at 30, ×2,000 at 40, ×3,300 at 50, ×13,500 at 70 and
+  ×55,000 at 70, ×74,000 at 100 and ×82,000 at 120, with the *final damage reduction* (below, 70% at most) on top. Damage (×1.1), speed and gold grow every 3 waves.
+- **Damage boost** (`waves.json` "damageBoost"): from wave 30 the damage of the walking enemies (not the Flying
+  Demons and the Lich, who keep shooting while they live) is multiplied once more, ×1.5 at
+  wave 55, ×2.5 at wave 100 and ×3.5 from wave 130 (linear in between): late enemies that reach the wall hurt.
+- **Wall hit cap** (`waves.json` "wallHitCap"): one hit, after the wall defense, takes at most 2% of the wall max HP
+  (Flying Demon fireballs 1.5%, mutants 4%, Lich Soul Bolts 5%, a boss reaching the wall 25%), so a handful of enemies cannot bring the wall down on their own.
+- **Mutants** (`waves.json` "mutants"): from wave 5, about 4% of the walking enemies (not bosses, not Flying
+  Demons) are mutants: bigger (×1.35) and tinted red. For now there is one kind, the **Swift Mutant**: ×2.6 speed,
+  ×6 HP, ×2 damage, ×4 gold. They are the main source of wall damage: tough and fast, some of them get through, but
+  their hits are small (4% at most each).
 - **Enemy types:**
 
   | Waves | Enemies |
@@ -224,23 +253,29 @@ files of its own, it uses the Firebug death sound and the Catapult shot sound (e
   | 1–3 | Scorpions and Firebugs |
   | from 4 | Clampbeetles join |
   | from 7 | Magma Crabs join |
-  | from 50 | Flying Demons join (they attack the wall from range) |
+  | from 50 | Flying Demons join (about 1/6 of the wave; they attack the wall from range) |
 
 - **Wave 5, "Swarm":** a special wave with many weak Firebugs and Scorpions.
-- **Bosses:** every 10th wave adds a giant Magma Crab boss with ×4 HP, ×3 damage and ×8 gold. From wave 70 the
+- **Bosses:** every 10th wave adds a giant Magma Crab boss with ×4 HP, ×3 damage and ×8 gold. From wave 50 the
   boss is the **Lich King** instead (×4 HP, ×2 damage, ×8 gold; waves.json `bossRule.byWave`).
 - **Milestones:** waves 10, 30 and 70 are sieges with more enemies and extra bosses.
   - Wave 10: **Siege**
   - Wave 30: **Great Siege**
   - Wave 70: **Doom Siege**
 - **Enemy armour:**
-  - From wave 10, enemy defense rises by 5 every 6 waves, up to 70 (bosses up to 90).
+  - From wave 12, enemy defense rises by 5 every 3 waves, up to 70 (bosses up to 90): Armor / Spell Piercing I, II
+    and III (Research Lab Lv 1 / 2 / 3) are needed to keep up.
   - The *Enemy armor* tab in the top left corner shows how much Armor / Spell Piercing the next wave needs
     compared with what you have.
 - **Status limits** (so enemies are never stunned or slowed without a break):
   - After a Stun, an enemy cannot be stunned again for the stun time + 0.5 s (`"immunityAfter"` in `effects.json`).
-  - From wave 70, enemies get +1.5% Stun and Slow resistance per wave, up to 70% (wave 116); bosses get +20% more
-    (`"statusResistance"` in `waves.json`). This adds to the enemy's own resistance (Clampbeetle, Magma Crab).
+  - From wave 60, enemies resist stun, slow, bleed, marks and armor break: +2.3% per wave, 70% from wave 90; bosses
+    get +20% more (`"statusResistance"` in `waves.json`). This adds to the enemy's own resistance.
+- **Final damage reduction** (`"finalDamageReduction"` in `waves.json`): from wave 10 every enemy takes less damage
+  from every tower hit, effect and damage over time: 1% at wave 10, 20% at wave 50, 30% at most before wave 55, then
+  50% at wave 60, 62% at 65 and 70% (its maximum) from wave 70 (linear in between). It is applied last, after defense and every bonus. **Hero skills deal true damage**: they ignore it,
+  like they ignore defense, so later waves need the skills and passives that work together. The *Enemy armor* tab
+  shows it.
 - **Enemy abilities:** they are implemented but switched off (`"enabled": false` in `enemy.json`).
   - Iron Skin
   - Rage
@@ -270,7 +305,7 @@ Flat bonuses are added to the value of the tower level first, then the % bonuses
   hero flat damage. Damage %: *Sharpened Ammunition* and hero buffs.
 - Halo %: *Empowering Halo*, on the whole base (level value + flat bonuses).
 - The Halo Spire itself uses the attack speed formula for its activations (flat and % attack speed research apply).
-- Example: a Lv 3 Catapult (330) with +200 flat and +78% damage hits for (330 + 200) × 1.78 ≈ 943 before defense.
+- Example: a Lv 3 Catapult (230) with +100 flat and +30% damage hits for (230 + 100) × 1.3 = 429 before defense.
 
 ### Damage of a hit
 
@@ -283,25 +318,30 @@ Every tower hit goes through one pipeline (`CombatManager.computeDamage`):
 4. **Damage types:** a tower with two types (Catapult) computes both and keeps the higher one.
 5. **Marks:** Hunter's Mark (Crossbow) and Arcane Vulnerability (magic) add their % per stack.
 6. **Enemy abilities:** physical damage reduction, area damage reduction (area shots only).
-7. **Passives:** Bitter Cold (Crystal vs slowed enemies), Aftershock (after a Shockwave stun).
+7. **Passives:** Bitter Cold (Crystal vs slowed enemies), Aftershock (7 s after a Shockwave stun).
 8. **Effect bonus** is added: Heavy Impact (its flat bonus after defense, or its share of the max HP), Hunter's
-   Mark x5 (share of the current HP).
+   Instinct (share of the current HP at full Hunter's Mark stacks).
 9. **Critical hit:** a roll on the crit rate; a crit multiplies everything by the crit damage
-   (Exposed passive: +25% crit damage on enemies with Armor Break).
-10. Round down, at least 1. A spell shield (Lich) absorbs the damage first.
+   (Exposed passive: +50% crit damage for 7 s after an Armor Break).
+10. Round down, at least 1.
+11. **Final damage reduction** of the wave (from wave 10, see How waves scale): the result × (1 − reduction %),
+    at least 1. Damage over time and effect damage get it too; hero skills do not (true damage). A spell shield
+    (Lich) absorbs the damage first.
 
 **Other damage:**
 - **Effect damage** (Chain Lightning, Shockwave and other flat effect damage): goes through defense (best of the
   tower's damage types), never crits. The flat Heavy Impact bonus also goes through defense, then it is added to the
   hit (so it can crit with it). Flat effect damage is ×1.5 on Lv 2 towers and ×2 on Lv 3 towers.
 - **Damage over time** (Bleed, Burn): goes through defense, never crits.
-- **Damage based on HP** (Heavy Impact Mastery, Bleed burst, Hunter's Mark x5, stun-immune hit, Arcane Rupture):
+- **Damage based on HP** (Heavy Impact Mastery, Bleed burst, Hunter's Instinct, stun-immune hit, Arcane Rupture):
   bosses take 1/3 of it (`effects.json` "bossPercentHpMul"), and it is never more than 4× the damage of the hit
   that caused it (10× for the Crossbow; "percentHpCapHitMul" / "percentHpCapByTower"). That hit damage is the
   full tower damage before defense: base (level + flat research, Masterwork included) × Halo × damage %.
-  Heavy Impact Mastery is limited by its own "capHitMul" × the base damage (level + flat research, × Halo).
+  Heavy Impact Mastery is limited by its own "capHitMul" × the base damage (level + flat research, × Halo) and
+  uses its own boss share ("bossMul": 30%, up to 100% with Crushing Weight).
 - **Hero skills:** true damage, a share of the max HP (bosses take half), +*Arcane Amplifier* %; no defense,
-  no crit.
+  no final damage reduction, no crit. Their description says so ("True damage: ignores every defense and damage
+  reduction").
 
 **Explosions:** a shot hits its target and every enemy whose center is inside the explosion radius; damage and
 crits are rolled for each enemy. The Crossbow radius is fixed (explosion research does not apply).
@@ -319,9 +359,9 @@ The tower Info window shows where the chance comes from. Some effects have a coo
 **Status effects** (slow, stun, bleed, burn, armor break, marks) have a duration and a stacking rule (replace if
 stronger, refresh, or stack). Enemies may resist them:
 - some enemies resist some effects (`enemy.json` "statusEffectResistance");
-- from wave 50 every enemy gets +1.6% resistance per wave to stun, slow, bleed, marks and armor break (70% at
-  most, bosses +20% more, 95% at most in total; `waves.json` "statusResistance");
-- Bleed: only the first stack can be resisted. Stun: a short immunity follows every stun.
+- from wave 60 every enemy gets +2.3% resistance per wave to stun, slow, bleed, marks and armor break (70% from
+  wave 90, bosses +20% more, 95% at most in total; `waves.json` "statusResistance");
+- Bleed and Armor Break: only the first one can be resisted (an enemy that already has it gets every new stack or refresh). Stun: a short immunity follows every stun.
 - *Lingering Frost* / *Concussion* make slows / stuns last longer.
 
 ### Enemy defense
@@ -335,7 +375,9 @@ Enemy defense grows by +5 every 6 waves from wave 10 (70 at most, bosses +10 and
 - **Energy Cores:** each boss killed drops `2 + floor(wave / 50)`; the Base makes 1 after every wave. A boss that
   reaches the wall dies **without** dropping cores.
 - A wave ends when every enemy is dead or has reached the wall. After it: building production, wall regen
-  (*Self-Mending Stone*), then the "Wave cleared" window.
+  (*Self-Mending Stone*, then the Halo Spires' out-of-combat mending), then the "Wave cleared" window: rewards, damage per tower type, and the damage sources
+  (one *Normal hits* row per tower type + every effect and skill; their shares add up to 100%, the mark bonus rows
+  in brackets are part of the normal hits).
 
 ### The wall
 
@@ -345,8 +387,8 @@ Enemy defense grows by +5 every 6 waves from wave 10 (70 at most, bosses +10 and
 - **Damage taken** = enemy damage × (1 − wall defense / 100), rounded down.
   - An enemy that touches the wall hits it once (its damage, + abilities like more damage at low HP or vs walls)
     and dies.
-  - Ranged enemies (Flying Demon, Lich) shoot projectiles at it from afar; a Halo Spire can stop them (not the
-    boss ones). Barrier Block stops whole hits.
+  - Ranged enemies (Flying Demon, Lich) shoot projectiles at it from afar; a Halo Spire shield stops them (boss
+    ones too) until it breaks. Barrier Block stops whole hits.
   - Last Stand passive: the wall stays at 1 HP for a while instead of falling.
 - **Repair** (preparation only): missing HP × (0.5 gold + 0.5 material) × 1 / 3 / 8 (Base Lv 1 / 2 / 3)
   × (1 − *Masonry Guild* discount).
@@ -382,8 +424,8 @@ Heroes are recruited at the Base. Each recruit is a random pick among the heroes
   close it.
 - **Promotion** (research *Ascension*, Research Lab Lv 3): a hero below 5 stars goes straight to 5 stars and gets
   1 random buff it does not have yet per star gained: **2 buffs from 3 stars, 1 buff from 4 stars**. Cost (`heroes.json`
-  "promotion"): from 3 stars 28,000 gold + 21,000 material + 21,000 food + 6 Energy Cores; from 4 stars 20,000 gold
-  + 15,000 material + 15,000 food + 4 Energy Cores. A promoted hero gets the 5-star skill slots (1 active + 1 passive),
+  "promotion"): from 3 stars 12,000 gold + 15,000 material + 15,000 food + 5 Energy Cores; from 4 stars 8,000 gold
+  + 10,000 material + 10,000 food + 3 Energy Cores. A promoted hero gets the 5-star skill slots (1 active + 1 passive),
   and the 5-star bar is drawn over the stars printed on its card (`sprites/ui/star_tab_5`).
 - **Price:** each recruit costs 600 gold + 600 material + 600 food, plus 400 of each per hero you already own.
 
@@ -410,7 +452,8 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 - **Tier N needs Research Lab Lv N.**
 - **A node needs its parent** (the node above it in the same branch) **at max level.**
 - Some tier 2 nodes give only **half of their levels** until the Lab reaches Lv 3 (`"halfCap"`).
-  *Armor Piercing* and *Spell Piercing* keep their old limits: 2 / 5 / 10 levels at Lab Lv 1 / 2 / 3 (`"labCaps"`).
+  *Armor Piercing* and *Spell Piercing* have three nodes each: I (tier 1, 2 levels), II (tier 2, 3 levels) and
+  III (tier 3, 5 levels), -10 enemy def per level (100 in all). Old saves get their level split over the three.
 - The tree window (`prefabs/popups/ResearchTree`): the whole height of the tree fits on screen at first. Drag to
   move around; zoom with the **- / +** buttons, the mouse wheel or two fingers; the branch buttons at the top jump to
   a branch. Tap a node: a confirm window shows what it does, its level and its cost (*Research* / *Cancel*); a locked
@@ -424,9 +467,9 @@ Research is a **tree** (`research.json`): 6 branches side by side, 3 tiers from 
 
 | Branch | Tier 1 (Lab Lv 1) | Tier 2 (Lab Lv 2) | Tier 3 (Lab Lv 3) |
 |---|---|---|---|
-| Offense | Flat bonuses: +20 damage, +0.1 attacks/s, +4 px range (10 levels each); Armor / Spell Piercing | Damage %, Attack speed %, Range %, Crit rate, Explosion radius | Aerodynamics, Smart Targeting, Crit damage |
+| Offense | Flat bonuses: +10 damage, +0.05 attacks/s, +4 px range (10 levels each); Armor / Spell Piercing I | Damage % (+3%), Attack speed % (+3%), Range %, Crit rate (+2%), Explosion radius; Armor / Spell Piercing II | Aerodynamics, Smart Targeting, Crit damage; Armor / Spell Piercing III |
 | Economy | +25 food / material per building per wave, +150 gold per wave (only the Base makes gold), +5 gold per kill (4 levels each) | Food / material / gold production %, gold from kills % | One more % node for each, Scholarship (-4% research cost per level) |
-| Fortification | +100 wall HP per level (5 levels) | Wall HP %, Wall defense (half levels) | Self-Mending Stone (+2% max HP back after each wave), Masonry Guild (-8% repair cost); Halo Spire (unlocks the tower, needs both at max), then Warding Halo (2 levels), then Empowering Halo (5 levels) and Mending Halo |
+| Fortification | +100 wall HP per level (5 levels) | Wall HP %, Wall defense (half levels) | Self-Mending Stone (+2% max HP back after each wave), Masonry Guild (-8% repair cost); Halo Spire (unlocks the tower, needs both at max), then Warding Halo (4 levels, shield HP and defense), then Empowering Halo (5 levels) and Mending Halo |
 | Tower Effects | - | Unlock each of the 9 effects, then its first 5 rate levels | 5 more rate levels per effect; Arcane Mastery; Crossbow / Crystal / Catapult Attunement under it (+5% effect chance per level for that tower, 5 levels); Tower Awakening, then the 9 effect Masteries (3 levels each) |
 | Heroes | - | Hero Scholarship (heroes can learn skills) | Ascension (hero promotion), Battle Tactics, Twin Cast, Arcane Amplifier |
 | Curses | - | Weakening Hex, Withering Curse, Slow / Stun duration (half levels) | (full levels) |
@@ -440,8 +483,11 @@ lowest node of every column is linked to it. Below it: the 9 effect Masteries (e
 in the Fortification branch, Warding Halo, then Empowering Halo and Mending Halo (`"afterAwakening"`: not needed for
 Tower Awakening, and they do not need it either). Its info window counts the technologies still missing.
 
-Flat bonuses are added to the base value before the % bonuses. Research costs were lowered by a quarter
-(`baseCost`, Energy Cores unchanged).
+Flat bonuses are added to the base value before the % bonuses. Research costs are much lower than in earlier
+versions so the whole tree above the awakening line, Tower Awakening and every building can be done before wave 50,
+and the rest before wave 80: technologies above the awakening line x0.18, Tower Awakening x0.4, the ones under it
+x0.5, rounded to nice numbers (`baseCost`; Energy Cores and the endless technologies unchanged;
+`tools/balance/scale_costs.py`).
 
 **Old saves** (before the tree) keep their technology levels: every node with a level gets its parents at max
 level for free, effect research is split into the Unlock node + the two rate nodes, and *Hero Scholarship* is
@@ -532,12 +578,12 @@ that effect is unlocked. Numbers are in each passive's `"params"`.
 | Chain Lightning | Overload | Every jump deals 10% more than the one before. |
 | Arcane Vulnerability | Arcane Rupture | At full stacks the enemy explodes (radius 100): 4% max HP with Mastery 3, flat damage before; the stacks are removed. |
 | Arcane Vulnerability | Spell Weave | Arcane stacks raise hero skill damage by half of their value. |
-| Shockwave | Aftershock | A stunned enemy takes +30% damage until 1 s after the stun. |
+| Shockwave | Aftershock | A stunned enemy takes +50% damage for 7 s; every new stun starts the 7 s again. |
 | Shockwave | Tremor | Stun +0.2 s, stun-immune hit 4% to 6% max HP (before Mastery 2: +50% Shockwave damage). |
-| Heavy Impact | Crusher | x10/6 damage on enemies with Armor Break or stunned. |
+| Heavy Impact | Crusher | On an enemy that has Armor Break or is stunned at that moment: Heavy Impact's max HP share x2 (3% -> 6%), limit 15 hits (instead of 3 / up to 8). |
 | Heavy Impact | Giant Slayer | +50% on bosses. |
 | Armor Break | Sunder | Stacks up to 3 times. |
-| Armor Break | Exposed | Enemies with Armor Break take +25% critical damage. |
+| Armor Break | Exposed | An enemy that gets Armor Break takes +50% critical damage for 7 s; every new or refreshed Armor Break starts the 7 s again. |
 | - | Last Stand | The wall stays at 1 HP for 20 s instead of falling. Recharges in 15 waves. |
 | - | Bulwark | Below 50% HP the wall defense is tripled (max 90) for 30 s. Recharges in 10 waves. |
 | - | Spoils of War | After a boss is defeated, the next building production is x10. |
@@ -611,15 +657,17 @@ Creator and are not in the repository; the editor recreates them the first time 
 
 ### Test saves
 
-For testing, **Load Game** also lists ten read-only saves under *Test saves (bot)*: the game as a bot
-played it up to wave 30, 50, 70, 90, 100 and 110, then every 20 waves (130, 150, 170, 190). The bot builds and
-upgrades everything (4 Halo Spires next to the wall from wave 71), recruits heroes, buys skill books and teaches
-them (Hero Scholarship at wave 17), promotes the heroes to 5 stars, casts the hero skills in battle, researches
-every technology (Tower Awakening at wave 75, every finite technology by wave 84, then the endless ones) and uses
-the Market. It is still alive at wave 200.
-- They are the files `assets/resources/presets/wave_<n>.json` and cannot be deleted in the game.
+For testing, **Load Game** also lists ten read-only saves under *Test saves (bot)*: the game as the bot (seed 1)
+played it up to wave 10, 20, 30, …, 100 with the current balance. The bot builds and upgrades everything (4 Halo
+Spires next to the wall), recruits heroes, buys skill books and teaches them, promotes the heroes to 5 stars, casts
+the hero skills in battle, researches every technology (every building at max at wave 37, Tower Awakening at wave
+50, every finite technology by wave 65, all 12 heroes at 5 stars at wave 67 with their 24 skills at wave 68) and
+uses the Market. It falls at wave 130 (the two other test seeds at 100 and 90).
+Below them, nine more saves of the weaker **seed 3** run (fewer good heroes) at waves 10 to 90
+(`presets/seed3_wave_<n>.json`, "Test - Wave N (seed 3)"): it falls at wave 90, the Lich wave.
+- They are the files `assets/resources/presets/wave_<n>.json` and `seed3_wave_<n>.json` and cannot be deleted in the game.
 - Loading one starts a normal game from that point; the file itself is never changed.
-- To hide them, set `TEST_SAVES = []` in `Main.ts`.
+- To hide them, empty `TEST_SAVES` in `Main.ts`.
 
 ---
 
@@ -656,7 +704,7 @@ assets/
 art/                          picture sources that are not shipped as they are (packed into the atlases)
   combat/                     enemies/, towers/, status/: sources of sprites/atlas/combat
   boss/                       one folder per boss (lich/): sources of sprites/atlas/boss
-  halo/                       Halo Spire ring and the effect disc: sources of sprites/atlas/halo
+  halo/                       Halo Spire shield sheets, ring and effect disc: sources of sprites/atlas/halo
   research/                   research icons (96 x 96 PNG): sources of sprites/atlas/research
 ```
 
@@ -692,6 +740,9 @@ The `tools/` folder is outside the game assets.
   (`sprites/towers/base_t1`, `sprites/research/off_damage`), which are looked up in the atlas manifests.
   Run it again after changing a sheet or an icon: `python tools/atlas/pack_atlas.py assets/resources
   [combat|halo|boss|research|all]`. Needs Python + Pillow.
+- `tools/towers/prepare_shield.py`: makes the Halo Spire shield sheets of `art/halo` (loop 10, collapse 8 frames,
+  2 rows each; cells 108 x 256 px: the right 2/5 of the bubble, cut edge faded) from the two "Shield Round Magic" 512 px sheets and prints the bubble radius for tower.json.
+  The halo atlas uses linear filtering, so the shield (drawn bigger than its cells) stays smooth instead of blocky.
 - `tools/towers/prepare_halo.py`: copies the Halo Spire base and crystals of "Spire - Tower Pack 3" into
   `art/combat/towers` and draws the thin halo ring `art/halo/halo_ring.png` and the disc `art/halo/fx_disc.png`
   (also used by the explosion rings; `--ring <art/halo>` draws only these two). Needs Python + Pillow + NumPy.
@@ -708,6 +759,8 @@ The `tools/` folder is outside the game assets.
   exact alpha), about 4x smaller: `python tools/atlas/quantize_cards.py <in.png> <out.png>`, or a folder to
   convert every `*_card_sheet.png` in place. Run it on the full-color source only, not on a sheet that is
   already converted. Needs Python + Pillow + NumPy.
+- `tools/balance/scale_costs.py`: scales the research costs from a reference `research.json` and rounds them to nice
+  numbers; `tools/balance/set_curve.py`: writes the enemy HP curve of `waves.json` from target values at some waves.
 - `tools/audio/build_audio.py`: builds `resources/audio` from the downloaded sound packs.
   - Keeps one loop of each music track and cuts silence.
   - Converts everything to small MP3 files: about 3.8 MB in total, against about 115 MB of original WAV files.
@@ -730,6 +783,7 @@ Thanks to the artists whose free assets are used in this game. All packs were do
 | Flying Demon | [luizmelo](https://luizmelo.itch.io) | Flying Demon (fly, attack, death) | CC0 |
 | AW - Lich King 1.0 | [artistworld](https://artistworld.itch.io) | Lich King boss (Frost palette): body animations, Soul Bolt, impact, summoning circle | artistworld license (games and edits allowed, credit appreciated; no resale or redistribution as assets) |
 | Shield Elliptic Magic (Blue) | (pack sent by the owner) | Lich King spell shield: loop and collapse | to be confirmed |
+| Shield Round Magic (Blue) | (pack sent by the owner) | Halo Spire shield: loop and collapse | to be confirmed |
 | PVFX Foundry 1.0.0 | Pixel VFX Studio (made with the [pixelfx](https://github.com/patch-gg/pixelfx) toolkit, MIT) | Active skill effects (`sprites/skills`), Flying Demon fireball and fire impact | CC0 |
 | Hero cards | AI generated | Hero pictures | AI generated |
 | Castle buildings, maps, UI | Project author | Everything else | Project-owned |

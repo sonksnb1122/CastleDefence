@@ -7,13 +7,13 @@
   "version": 2,
   "enemyCountBase": 24,
   "enemyCountPerWave": 2,
-  "spawnInterval": 0.55,
-  "spawnIntervalDecayPerWave": 0.002,
-  "minSpawnInterval": 0.45,
+  "spawnInterval": 0.18,
+  "spawnIntervalDecayPerWave": 0.0007,
+  "minSpawnInterval": 0.15,
   "growth": {
     "everyWaves": 3,
     "hp": 1.08,
-    "damage": 1.08,
+    "damage": 1.1,
     "moveSpeed": 1.03,
     "goldReward": 1.05
   },
@@ -84,14 +84,15 @@
     "statMul": {
       "hp": 4.0,
       "damage": 3,
-      "goldReward": 8
+      "goldReward": 8,
+      "moveSpeed": 0.5
     },
     "scale": 1.7,
     "keepNormalEnemies": true,
     "byWave": [
       {
         "_doc": "From 'fromWave' the boss waves use this boss instead (its own multipliers). Scale 'scale' at its first wave, + 'scaleGrowth' at every later boss wave, up to 'maxScale'.",
-        "fromWave": 70,
+        "fromWave": 50,
         "enemyId": "lich",
         "statMul": {
           "hp": 4.0,
@@ -113,7 +114,7 @@
         {
           "enemyId": "runner",
           "count": 42,
-          "interval": 0.35,
+          "interval": 0.12,
           "delay": 0,
           "statMul": {
             "hp": 0.18,
@@ -123,8 +124,8 @@
         {
           "enemyId": "berserker",
           "count": 18,
-          "interval": 0.8,
-          "delay": 4,
+          "interval": 0.27,
+          "delay": 1.5,
           "statMul": {
             "hp": 0.18,
             "goldReward": 0.333
@@ -134,8 +135,8 @@
     }
   ],
   "defenseGrowth": {
-    "startWave": 10,
-    "everyWaves": 6,
+    "startWave": 12,
+    "everyWaves": 3,
     "add": 5,
     "max": 70,
     "bossAdd": 10,
@@ -167,7 +168,7 @@
     {
       "wave": 100,
       "name": "Abyss Siege",
-      "hpMul": 1.15,
+      "hpMul": 1.0,
       "countMul": 1.3,
       "bossCount": 2
     }
@@ -177,39 +178,83 @@
     "segments": [
       {
         "fromWave": 2,
-        "perWave": 1.087
+        "perWave": 1.0574
+      },
+      {
+        "fromWave": 6,
+        "perWave": 1.3389
+      },
+      {
+        "fromWave": 9,
+        "perWave": 1.4142
       },
       {
         "fromWave": 11,
-        "perWave": 1.075
+        "perWave": 1.3559
+      },
+      {
+        "fromWave": 16,
+        "perWave": 1.2946
       },
       {
         "fromWave": 21,
-        "perWave": 1.11
+        "perWave": 1.2011
+      },
+      {
+        "fromWave": 26,
+        "perWave": 1.1708
       },
       {
         "fromWave": 31,
-        "perWave": 1.04
+        "perWave": 1.0778
+      },
+      {
+        "fromWave": 36,
+        "perWave": 1.0456
       },
       {
         "fromWave": 41,
-        "perWave": 1.093
+        "perWave": 1.0456
       },
       {
-        "fromWave": 51,
-        "perWave": 1.3245
+        "fromWave": 46,
+        "perWave": 1.0466
+      },
+      {
+        "fromWave": 50,
+        "perWave": 1.0852
+      },
+      {
+        "fromWave": 56,
+        "perWave": 1.2423
+      },
+      {
+        "fromWave": 61,
+        "perWave": 1.2125
+      },
+      {
+        "fromWave": 66,
+        "perWave": 1.0768
       },
       {
         "fromWave": 71,
+        "perWave": 1.0214
+      },
+      {
+        "fromWave": 81,
+        "perWave": 1.0042
+      },
+      {
+        "fromWave": 101,
+        "perWave": 1.0051
+      },
+      {
+        "fromWave": 121,
+        "perWave": 1.0066
+      },
+      {
+        "fromWave": 151,
         "perWave": 1.0
-      },
-      {
-        "fromWave": 96,
-        "perWave": 1.045
-      },
-      {
-        "fromWave": 111,
-        "perWave": 1.02
       }
     ],
     "steps": []
@@ -219,8 +264,9 @@
     "perWave": 2
   },
   "statusResistance": {
-    "startWave": 50,
-    "perWave": 1.6,
+    "_doc": "Extra resistance (%) of the enemies to the listed status types: grows evenly from 'startWave' to 'max' at 'maxWave'; bosses get 'bossBonus' more (95 at most).",
+    "startWave": 60,
+    "maxWave": 90,
     "max": 70,
     "bossBonus": 20,
     "types": [
@@ -230,5 +276,82 @@
       "mark",
       "armorBreak"
     ]
+  },
+  "finalDamageReduction": {
+    "_doc": "Final damage taken reduction (%) of the enemies: linear between the 'points' [wave, %] (0 before the first one, the last value after the last one); bosses get 'bossBonus' more (99 at most). 30% at most before wave 55, 70% at most after. It cuts the final damage of every tower hit, effect and damage over time; hero skills deal true damage and ignore it.",
+    "points": [
+      [
+        10,
+        1
+      ],
+      [
+        50,
+        20
+      ],
+      [
+        55,
+        30
+      ],
+      [
+        60,
+        50
+      ],
+      [
+        65,
+        62
+      ],
+      [
+        70,
+        70
+      ]
+    ],
+    "bossBonus": 0
+  },
+  "damageBoost": {
+    "_doc": "Extra enemy damage (x) on top of growth.damage, not for the ranged enemies (Flying Demon, Lich): linear between the 'points' [wave, x], 1 before the first one, the last value after the last one.",
+    "points": [
+      [
+        30,
+        1
+      ],
+      [
+        55,
+        1.5
+      ],
+      [
+        100,
+        2.5
+      ],
+      [
+        130,
+        3.5
+      ]
+    ]
+  },
+  "mutants": {
+    "_doc": "Mutant enemies: from 'fromWave', 'chancePct' % of the walking enemies (not bosses, not flying / ranged) mutate into one of the 'types' (by 'weight'): bigger ('scale'), tinted ('tint'), with their own HP / damage / speed / gold multipliers. Their wall hits are capped by wallHitCap.mutantPct.",
+    "fromWave": 5,
+    "chancePct": 4,
+    "types": [
+      {
+        "id": "swift",
+        "name": "Swift Mutant",
+        "weight": 1,
+        "scale": 1.35,
+        "tint": "#ff9070",
+        "speedMul": 2.6,
+        "damageMul": 2,
+        "hpMul": 6,
+        "goldMul": 4
+      }
+    ]
+  },
+  "wallHitCap": {
+    "_doc": "One wall hit (after the wall defense) never takes more than this % of the wall max HP: 'pct' normal enemies, 'rangedPct' Flying Demon fireballs, 'mutantPct' mutants, 'bossPct' a boss reaching the wall, 'bossRangedPct' boss projectiles (Lich Soul Bolt). A handful of enemies cannot bring the wall down on their own.",
+    "pct": 2,
+    "mutantPct": 4,
+    "bossPct": 25,
+    "rangedPct": 1.5,
+    "bossRangedPct": 5
   }
 }

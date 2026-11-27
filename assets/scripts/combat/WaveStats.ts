@@ -26,6 +26,8 @@ export interface EffectStat {
     damage: number;
     /** True when the effect deals damage (the Damage column is filled). */
     dealsDamage: boolean;
+    /** Damage that is already part of the tower's normal hits (mark bonus): not added again to the shares. */
+    partOfHit?: boolean;
 }
 
 export class WaveStats {
@@ -74,10 +76,12 @@ export class WaveStats {
 
     resist(key: string, name: string, towerId: string) { this.effect(key, name, towerId).resisted++; }
 
-    effectDamage(key: string, name: string, towerId: string, amount: number, counted = true) {
+    /** `counted`: false when the effect has no trigger count; `partOfHit`: the damage is part of the normal hits. */
+    effectDamage(key: string, name: string, towerId: string, amount: number, counted = true, partOfHit = false) {
         if (amount <= 0) return;
         const s = this.effect(key, name, towerId, true);
         s.damage += amount;
+        if (partOfHit) s.partOfHit = true;
         if (!counted && s.triggers === 0) s.triggers = -1;
     }
 
@@ -88,8 +92,19 @@ export class WaveStats {
         return list.sort((a, b) => rank(a.id) - rank(b.id));
     }
 
+    /**
+     * Effect rows, plus one "Normal hits" row per tower type: the tower damage that no effect row counts
+     * (so the shares of the rows add up to 100% of the damage dealt; mark bonus rows are part of the normal hits).
+     */
     effectList(order: string[]): EffectStat[] {
         const list = Object.keys(this.effects).map(k => this.effects[k]).filter(e => e.triggers !== 0 || e.damage > 0 || e.resisted > 0);
+        for (const id in this.towers) {
+            const t = this.towers[id];
+            let own = 0;
+            for (const e of list) if (e.towerId === id && !e.partOfHit) own += e.damage;
+            const rest = t.damage - own;
+            if (rest >= 1) list.push({ key: 'hit_' + id, name: 'Normal hits', towerId: id, triggers: -1, resisted: 0, damage: rest, dealsDamage: true });
+        }
         const rank = (id: string) => { const i = order.indexOf(id); return i < 0 ? 99 : i; };
         return list.sort((a, b) => rank(a.towerId) - rank(b.towerId) || b.damage - a.damage || b.triggers - a.triggers);
     }

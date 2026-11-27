@@ -2,16 +2,29 @@
  "image": "sprites/atlas/halo",
  "regions": {
   "sprites/towers/fx_disc": [
-   258,
+   1234,
    0,
    64,
    64
   ],
   "sprites/towers/halo_ring": [
-   0,
+   976,
    0,
    256,
    256
+  ],
+  "sprites/towers/shield_collapse": [
+   542,
+   0,
+   432,
+   512
+  ],
+  "sprites/towers/shield_loop": [
+   0,
+   0,
+   540,
+   512
   ]
- }
+ },
+ "linear": true
 }

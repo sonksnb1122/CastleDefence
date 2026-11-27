@@ -60,16 +60,16 @@
       "id": "r_dmg_flat",
       "name": "Hardened Tips",
       "label": "DMG+",
-      "description": "+20 tower base damage per level",
+      "description": "+10 tower base damage per level",
       "branch": "offense",
       "tier": 1,
       "buffKey": "damageFlat",
-      "valuePerLevel": 20,
+      "valuePerLevel": 10,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 30,
-        "material": 60,
-        "food": 60
+        "gold": 5,
+        "material": 5,
+        "food": 5
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/off_dmg_flat"
@@ -78,17 +78,17 @@
       "id": "r_damage",
       "name": "Sharpened Ammunition",
       "label": "DMG%",
-      "description": "+5% tower damage per level",
+      "description": "+3% tower damage per level",
       "branch": "offense",
       "tier": 2,
       "parent": "r_dmg_flat",
       "buffKey": "damage",
-      "valuePerLevel": 5,
+      "valuePerLevel": 3,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 53,
-        "material": 110,
-        "food": 110
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/off_damage"
@@ -105,9 +105,9 @@
       "valuePerLevel": 5,
       "maxLevel": 0,
       "baseCost": {
-        "gold": 3600,
-        "material": 1313,
-        "food": 1313
+        "gold": 900,
+        "material": 330,
+        "food": 330
       },
       "costGrowth": 1.08,
       "icon": "sprites/research/off_damage_inf"
@@ -116,16 +116,16 @@
       "id": "r_aspd_flat",
       "name": "Quick Hands",
       "label": "SPD+",
-      "description": "+0.1 tower attacks per second per level",
+      "description": "+0.05 tower attacks per second per level",
       "branch": "offense",
       "tier": 1,
       "buffKey": "attackSpeedFlat",
-      "valuePerLevel": 0.1,
+      "valuePerLevel": 0.05,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 30,
-        "material": 60,
-        "food": 60
+        "gold": 5,
+        "material": 5,
+        "food": 5
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/off_aspd_flat"
@@ -134,17 +134,17 @@
       "id": "r_aspd",
       "name": "Rapid Reload",
       "label": "SPD%",
-      "description": "+5% tower attack speed per level",
+      "description": "+3% tower attack speed per level",
       "branch": "offense",
       "tier": 2,
       "parent": "r_aspd_flat",
       "buffKey": "attackSpeed",
-      "valuePerLevel": 5,
+      "valuePerLevel": 3,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 53,
-        "material": 110,
-        "food": 110
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/off_aspd"
@@ -161,9 +161,9 @@
       "valuePerLevel": 5,
       "maxLevel": 20,
       "baseCost": {
-        "gold": 39,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.12,
       "icon": "sprites/research/off_projspeed"
@@ -172,17 +172,17 @@
       "id": "r_crit",
       "name": "Precision",
       "label": "CRIT",
-      "description": "+3% crit rate per level",
+      "description": "+2% crit rate per level",
       "branch": "offense",
       "tier": 2,
       "parent": "r_aspd_flat",
       "buffKey": "critRate",
-      "valuePerLevel": 3,
+      "valuePerLevel": 2,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 53,
-        "material": 110,
-        "food": 110
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/off_crit"
@@ -191,17 +191,17 @@
       "id": "r_critdmg",
       "name": "Lethality",
       "label": "CDMG",
-      "description": "+5% crit damage per level",
+      "description": "+4% crit damage per level",
       "branch": "offense",
       "tier": 3,
       "parent": "r_crit",
       "buffKey": "critDamage",
-      "valuePerLevel": 5,
+      "valuePerLevel": 4,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 53,
-        "material": 110,
-        "food": 110
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/off_critdmg"
@@ -217,9 +217,9 @@
       "valuePerLevel": 4,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 30,
-        "material": 60,
-        "food": 60
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/off_range_flat"
@@ -236,9 +236,9 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 53,
-        "material": 110,
-        "food": 110
+        "gold": 10,
+        "material": 20,
+        "food": 20
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/off_range"
@@ -255,9 +255,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 37500,
-        "material": 15000,
-        "food": 15000
+        "gold": 6750,
+        "material": 2750,
+        "food": 2750
       },
       "costGrowth": 1,
       "icon": "sprites/research/off_smart"
@@ -274,58 +274,124 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/off_expl"
     },
     {
       "id": "r_pdef",
-      "name": "Armor Piercing",
+      "name": "Armor Piercing I",
       "label": "PHY-",
       "description": "-10 enemy physic def per level",
       "branch": "offense",
       "tier": 1,
       "buffKey": "enemyPhysicDefReduce",
       "valuePerLevel": 10,
-      "maxLevel": 10,
+      "maxLevel": 2,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
-      "labCaps": [
-        2,
-        5,
-        10
-      ],
       "icon": "sprites/research/off_pdef"
     },
     {
+      "id": "r_pdef_2",
+      "name": "Armor Piercing II",
+      "label": "PHY-2",
+      "description": "-10 enemy physic def per level",
+      "branch": "offense",
+      "tier": 2,
+      "buffKey": "enemyPhysicDefReduce",
+      "valuePerLevel": 10,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 25,
+        "material": 55,
+        "food": 55
+      },
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_pdef",
+      "parent": "r_pdef"
+    },
+    {
+      "id": "r_pdef_3",
+      "name": "Armor Piercing III",
+      "label": "PHY-3",
+      "description": "-10 enemy physic def per level",
+      "branch": "offense",
+      "tier": 3,
+      "buffKey": "enemyPhysicDefReduce",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 75,
+        "material": 150,
+        "food": 150
+      },
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_pdef",
+      "parent": "r_pdef_2"
+    },
+    {
       "id": "r_mdef",
-      "name": "Spell Piercing",
+      "name": "Spell Piercing I",
       "label": "MAG-",
       "description": "-10 enemy magic def per level",
       "branch": "offense",
       "tier": 1,
       "buffKey": "enemyMagicDefReduce",
       "valuePerLevel": 10,
-      "maxLevel": 10,
+      "maxLevel": 2,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
-      "labCaps": [
-        2,
-        5,
-        10
-      ],
       "icon": "sprites/research/off_mdef"
+    },
+    {
+      "id": "r_mdef_2",
+      "name": "Spell Piercing II",
+      "label": "MAG-2",
+      "description": "-10 enemy magic def per level",
+      "branch": "offense",
+      "tier": 2,
+      "buffKey": "enemyMagicDefReduce",
+      "valuePerLevel": 10,
+      "maxLevel": 3,
+      "baseCost": {
+        "gold": 25,
+        "material": 55,
+        "food": 55
+      },
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_mdef",
+      "parent": "r_mdef"
+    },
+    {
+      "id": "r_mdef_3",
+      "name": "Spell Piercing III",
+      "label": "MAG-3",
+      "description": "-10 enemy magic def per level",
+      "branch": "offense",
+      "tier": 3,
+      "buffKey": "enemyMagicDefReduce",
+      "valuePerLevel": 10,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 75,
+        "material": 150,
+        "food": 150
+      },
+      "costGrowth": 1.42,
+      "icon": "sprites/research/off_mdef",
+      "parent": "r_mdef_2"
     },
     {
       "id": "r_food_flat",
@@ -338,9 +404,9 @@
       "valuePerLevel": 25,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 30,
-        "material": 60,
-        "food": 60
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/eco_food_1"
@@ -357,9 +423,9 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 39,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_food_2"
@@ -376,9 +442,9 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 675,
-        "material": 1350,
-        "food": 1350
+        "gold": 120,
+        "material": 240,
+        "food": 240
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_food_3"
@@ -394,9 +460,9 @@
       "valuePerLevel": 25,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 30,
-        "material": 60,
-        "food": 60
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/eco_material_1"
@@ -413,9 +479,9 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 39,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_material_2"
@@ -432,9 +498,9 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 675,
-        "material": 1350,
-        "food": 1350
+        "gold": 120,
+        "material": 240,
+        "food": 240
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_material_3"
@@ -450,9 +516,9 @@
       "valuePerLevel": 150,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 30,
-        "material": 60,
-        "food": 60
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/eco_gold_1"
@@ -469,9 +535,9 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 39,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_gold_2"
@@ -488,9 +554,9 @@
       "valuePerLevel": 10,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 675,
-        "material": 1350,
-        "food": 1350
+        "gold": 120,
+        "material": 240,
+        "food": 240
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_gold_3"
@@ -507,9 +573,9 @@
       "valuePerLevel": 4,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 1125,
-        "material": 1875,
-        "food": 1875
+        "gold": 200,
+        "material": 340,
+        "food": 340
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_research_cost"
@@ -525,9 +591,9 @@
       "valuePerLevel": 5,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 30,
-        "material": 60,
-        "food": 60
+        "gold": 5,
+        "material": 10,
+        "food": 10
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/eco_killgold"
@@ -544,9 +610,9 @@
       "valuePerLevel": 5,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 39,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_killgold_2"
@@ -563,9 +629,9 @@
       "valuePerLevel": 5,
       "maxLevel": 4,
       "baseCost": {
-        "gold": 675,
-        "material": 1350,
-        "food": 1350
+        "gold": 120,
+        "material": 240,
+        "food": 240
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/eco_killgold_3"
@@ -581,9 +647,9 @@
       "valuePerLevel": 100,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 38,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.25,
       "icon": "sprites/research/wall_hp_flat"
@@ -600,9 +666,9 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/wall_hp"
@@ -619,9 +685,9 @@
       "valuePerLevel": 5,
       "maxLevel": 0,
       "baseCost": {
-        "gold": 2700,
-        "material": 1313,
-        "food": 1313
+        "gold": 680,
+        "material": 330,
+        "food": 330
       },
       "costGrowth": 1.08,
       "icon": "sprites/research/wall_hp_inf"
@@ -638,9 +704,9 @@
       "valuePerLevel": 7,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
       "halfCap": true,
@@ -658,9 +724,9 @@
       "valuePerLevel": 2,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 1875,
-        "material": 3750,
-        "food": 3000
+        "gold": 340,
+        "material": 680,
+        "food": 540
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/wall_regen"
@@ -677,9 +743,9 @@
       "valuePerLevel": 8,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 1500,
-        "material": 3000,
-        "food": 2250
+        "gold": 270,
+        "material": 540,
+        "food": 400
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/wall_repair"
@@ -688,7 +754,7 @@
       "id": "r_halo",
       "name": "Halo Spire",
       "label": "HALO",
-      "description": "Unlocks the Halo Spire, a support tower whose halo destroys enemy projectiles (not the boss ones). Also needs Masonry Guild at max level.",
+      "description": "Unlocks the Halo Spire, a support tower whose shield stops the enemy projectiles. Also needs Masonry Guild at max level.",
       "branch": "wall",
       "tier": 3,
       "parent": "r_wallregen",
@@ -699,9 +765,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 4500,
-        "material": 6750,
-        "food": 5250
+        "gold": 810,
+        "material": 1250,
+        "food": 940
       },
       "costGrowth": 1
     },
@@ -709,20 +775,20 @@
       "id": "r_halo_block",
       "name": "Warding Halo",
       "label": "WARD",
-      "description": "Each halo of a Halo Spire blocks more enemy projectiles: 1 / 2 / 3 (Halo Spire level 1 / 2 / 3) become 2 / 4 / 6 at level 1 and 3 / 6 / 9 at level 2. Boss projectiles are never blocked.",
+      "description": "Halo Spire shields: +10% of the wall max HP as shield HP and +10% of the wall defense as shield defense per level. At max level the shields have 60% / 80% / 100% of the wall HP and defense (Halo Spire level 1 / 2 / 3).",
       "branch": "wall",
       "tier": 3,
       "parent": "r_halo",
       "afterAwakening": true,
-      "buffKey": "haloBlock",
-      "valuePerLevel": 1,
-      "maxLevel": 2,
+      "buffKey": "haloShield",
+      "valuePerLevel": 10,
+      "maxLevel": 4,
       "baseCost": {
-        "gold": 3000,
-        "material": 4500,
-        "food": 3750
+        "gold": 1500,
+        "material": 2250,
+        "food": 2000
       },
-      "costGrowth": 1.6
+      "costGrowth": 1.45
     },
     {
       "id": "r_halo_aura",
@@ -737,9 +803,9 @@
       "valuePerLevel": 1,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 2250,
-        "material": 3375,
-        "food": 2625
+        "gold": 1000,
+        "material": 1750,
+        "food": 1250
       },
       "costGrowth": 1.45
     },
@@ -747,7 +813,7 @@
       "id": "r_halo_mend",
       "name": "Mending Halo",
       "label": "MEND",
-      "description": "Every 30 / 20 / 10 activations (Halo Spire level 1 / 2 / 3) a Halo Spire restores 0.5% / 1% / 2% of the missing wall HP. Several Halo Spires mend one after the other.",
+      "description": "Every 30 / 20 / 10 activations (Halo Spire level 1 / 2 / 3) a Halo Spire restores 0.5% / 1% / 2% of the missing wall HP. Time between two mends = activations needed / activations per second (the spire's attack speed): about 46 / 25 / 10 s at the base speed 0.65 / 0.8 / 1 per s, shorter with attack speed research. Several Halo Spires mend one after the other. Out of combat, after each wave, every Halo Spire also restores 5% / 10% / 15% of the wall max HP.",
       "branch": "wall",
       "tier": 3,
       "parent": "r_halo_block",
@@ -756,9 +822,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 3750,
-        "material": 5250,
-        "food": 4500
+        "gold": 2000,
+        "material": 2500,
+        "food": 2250
       },
       "costGrowth": 1
     },
@@ -773,9 +839,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 169,
-        "material": 87,
-        "food": 87
+        "gold": 30,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_piercing_bolt_1"
@@ -792,9 +858,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 169,
-        "material": 87,
-        "food": 87
+        "gold": 30,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_piercing_bolt_2"
@@ -811,9 +877,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 975,
-        "material": 498,
-        "food": 498
+        "gold": 180,
+        "material": 90,
+        "food": 90
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_piercing_bolt_3"
@@ -832,9 +898,9 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 2923,
-        "material": 1494,
-        "food": 1494
+        "gold": 1500,
+        "material": 750,
+        "food": 750
       },
       "costGrowth": 2
     },
@@ -849,9 +915,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 169,
-        "material": 87,
-        "food": 87
+        "gold": 30,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_bleeding_bolt_1"
@@ -868,9 +934,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 169,
-        "material": 87,
-        "food": 87
+        "gold": 30,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_bleeding_bolt_2"
@@ -887,9 +953,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 975,
-        "material": 498,
-        "food": 498
+        "gold": 180,
+        "material": 90,
+        "food": 90
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_bleeding_bolt_3"
@@ -908,9 +974,9 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 2923,
-        "material": 1494,
-        "food": 1494
+        "gold": 1500,
+        "material": 750,
+        "food": 750
       },
       "costGrowth": 2
     },
@@ -925,9 +991,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 169,
-        "material": 87,
-        "food": 87
+        "gold": 30,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_hunters_mark_1"
@@ -944,9 +1010,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 169,
-        "material": 87,
-        "food": 87
+        "gold": 30,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_hunters_mark_2"
@@ -963,9 +1029,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 975,
-        "material": 498,
-        "food": 498
+        "gold": 180,
+        "material": 90,
+        "food": 90
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_hunters_mark_3"
@@ -974,7 +1040,7 @@
       "id": "r_fxm_hunters_mark",
       "name": "Hunter's Mark Mastery",
       "label": "MARK M",
-      "description": "Crossbow: Hunter's Mark gets stronger. Lv 1: 5 stacks, 5 s. Lv 2: +50% per stack. Lv 3: at 5 stacks every Crossbow hit also deals 1% current HP.",
+      "description": "Crossbow: Hunter's Mark gets stronger. Lv 1: 2 stacks, 3 s, +20% damage per stack. Lv 2: 4 stacks, 4 s, +35%. Lv 3: 6 stacks, 5 s, +50%.",
       "branch": "effects",
       "tier": 3,
       "parent": "r_awaken",
@@ -984,11 +1050,31 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 2923,
-        "material": 1494,
-        "food": 1494
+        "gold": 1500,
+        "material": 750,
+        "food": 750
       },
       "costGrowth": 2
+    },
+    {
+      "id": "r_fxp_hunters_mark",
+      "name": "Hunter's Instinct",
+      "label": "MARK+",
+      "description": "Crossbow: at full Hunter's Mark stacks every Crossbow hit also deals a share of the current HP (1/3 on bosses, at most 10 hits). Lv 1: 0.3%, Lv 2: 0.6%, Lv 3: 0.9%, Lv 4: 1.2%, Lv 5: 1.5%.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fxm_hunters_mark",
+      "afterAwakening": true,
+      "column": "r_fx_hunters_mark_2",
+      "buffKey": "effectPlus:hunters_mark",
+      "valuePerLevel": 1,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 1500,
+        "material": 750,
+        "food": 750
+      },
+      "costGrowth": 1.5
     },
     {
       "id": "r_fxu_frost_explosion",
@@ -1001,9 +1087,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 750,
-        "material": 375,
-        "food": 375
+        "gold": 140,
+        "material": 70,
+        "food": 70
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_frost_explosion_1"
@@ -1020,9 +1106,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 750,
-        "material": 375,
-        "food": 375
+        "gold": 140,
+        "material": 70,
+        "food": 70
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_frost_explosion_2"
@@ -1039,9 +1125,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 4331,
-        "material": 2166,
-        "food": 2166
+        "gold": 780,
+        "material": 390,
+        "food": 390
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_frost_explosion_3"
@@ -1060,9 +1146,9 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 12992,
-        "material": 6496,
-        "food": 6496
+        "gold": 6500,
+        "material": 3250,
+        "food": 3250
       },
       "costGrowth": 2
     },
@@ -1077,9 +1163,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 420,
-        "material": 210,
-        "food": 210
+        "gold": 75,
+        "material": 40,
+        "food": 40
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_chain_lightning_1"
@@ -1096,9 +1182,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 420,
-        "material": 210,
-        "food": 210
+        "gold": 75,
+        "material": 40,
+        "food": 40
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_chain_lightning_2"
@@ -1115,9 +1201,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 2425,
-        "material": 1213,
-        "food": 1213
+        "gold": 440,
+        "material": 220,
+        "food": 220
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_chain_lightning_3"
@@ -1136,9 +1222,9 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 7275,
-        "material": 3639,
-        "food": 3639
+        "gold": 3750,
+        "material": 1750,
+        "food": 1750
       },
       "costGrowth": 2
     },
@@ -1153,9 +1239,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 420,
-        "material": 210,
-        "food": 210
+        "gold": 75,
+        "material": 40,
+        "food": 40
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_arcane_vulnerability_1"
@@ -1172,9 +1258,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 420,
-        "material": 210,
-        "food": 210
+        "gold": 75,
+        "material": 40,
+        "food": 40
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_arcane_vulnerability_2"
@@ -1191,9 +1277,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 2425,
-        "material": 1213,
-        "food": 1213
+        "gold": 440,
+        "material": 220,
+        "food": 220
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_arcane_vulnerability_3"
@@ -1202,7 +1288,7 @@
       "id": "r_fxm_arcane_vulnerability",
       "name": "Arcane Vulnerability Mastery",
       "label": "ARCANE M",
-      "description": "Crystal: Arcane Vulnerability gets stronger. Lv 1: 4 stacks, 4 s. Lv 2: 5 stacks. Lv 3: +30% per stack.",
+      "description": "Crystal: Arcane Vulnerability gets stronger (on the enemies hit, not the Chain Lightning targets). Lv 1: 2 stacks, 3 s, +10% damage taken per stack. Lv 2: 3 stacks, 4 s, +20%. Lv 3: 4 stacks, 4 s, +30%.",
       "branch": "effects",
       "tier": 3,
       "parent": "r_awaken",
@@ -1212,11 +1298,31 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 7275,
-        "material": 3639,
-        "food": 3639
+        "gold": 3750,
+        "material": 1750,
+        "food": 1750
       },
       "costGrowth": 2
+    },
+    {
+      "id": "r_fxp_arcane_vulnerability",
+      "name": "Arcane Conduit",
+      "label": "ARCANE+",
+      "description": "Crystal: Arcane Vulnerability also lands on the first Chain Lightning targets, and the lightning jumps deal more. Lv 1: 1 target, +10% jump damage. Lv 2: 2, +15%. Lv 3: 3, +25%. Lv 4: 4, +30%. Lv 5: 5, +40%.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fxm_arcane_vulnerability",
+      "afterAwakening": true,
+      "column": "r_fx_arcane_vulnerability_2",
+      "buffKey": "effectPlus:arcane_vulnerability",
+      "valuePerLevel": 1,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 3750,
+        "material": 1750,
+        "food": 1750
+      },
+      "costGrowth": 1.5
     },
     {
       "id": "r_fxu_shockwave",
@@ -1229,9 +1335,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 1088,
-        "material": 507,
-        "food": 507
+        "gold": 200,
+        "material": 90,
+        "food": 90
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_shockwave_1"
@@ -1248,9 +1354,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 1088,
-        "material": 507,
-        "food": 507
+        "gold": 200,
+        "material": 90,
+        "food": 90
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_shockwave_2"
@@ -1267,9 +1373,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 6279,
-        "material": 2923,
-        "food": 2923
+        "gold": 1250,
+        "material": 530,
+        "food": 530
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_shockwave_3"
@@ -1288,9 +1394,9 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 18837,
-        "material": 8769,
-        "food": 8769
+        "gold": 9500,
+        "material": 4500,
+        "food": 4500
       },
       "costGrowth": 2
     },
@@ -1305,9 +1411,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 420,
-        "material": 210,
-        "food": 210
+        "gold": 75,
+        "material": 40,
+        "food": 40
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_heavy_impact_1"
@@ -1324,9 +1430,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 420,
-        "material": 210,
-        "food": 210
+        "gold": 75,
+        "material": 40,
+        "food": 40
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_heavy_impact_2"
@@ -1343,9 +1449,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 2425,
-        "material": 1213,
-        "food": 1213
+        "gold": 440,
+        "material": 220,
+        "food": 220
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_heavy_impact_3"
@@ -1354,7 +1460,7 @@
       "id": "r_fxm_heavy_impact",
       "name": "Heavy Impact Mastery",
       "label": "HEAVY M",
-      "description": "Catapult: Heavy Impact gets stronger. Lv 1: 2% max HP. Lv 2: 4%. Lv 3: 6% (when it beats the flat damage).",
+      "description": "Catapult: Heavy Impact gets stronger: +flat damage or a share of the max HP, whichever is more (at most 3 normal hits, 30% on bosses). Lv 1: +100 or 1% max HP. Lv 2: +200 or 2%. Lv 3: +300 or 3%.",
       "branch": "effects",
       "tier": 3,
       "parent": "r_awaken",
@@ -1364,11 +1470,31 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 7275,
-        "material": 3639,
-        "food": 3639
+        "gold": 3750,
+        "material": 1750,
+        "food": 1750
       },
       "costGrowth": 2
+    },
+    {
+      "id": "r_fxp_heavy_impact",
+      "name": "Crushing Weight",
+      "label": "HEAVY+",
+      "description": "Catapult: the max HP share of Heavy Impact can reach more normal hits and hits bosses harder. Lv 1: 4 hits, 40% on bosses. Lv 2: 5, 55%. Lv 3: 6, 70%. Lv 4: 7, 85%. Lv 5: 8, 100%.",
+      "branch": "effects",
+      "tier": 3,
+      "parent": "r_fxm_heavy_impact",
+      "afterAwakening": true,
+      "column": "r_fx_heavy_impact_2",
+      "buffKey": "effectPlus:heavy_impact",
+      "valuePerLevel": 1,
+      "maxLevel": 5,
+      "baseCost": {
+        "gold": 3750,
+        "material": 1750,
+        "food": 1750
+      },
+      "costGrowth": 1.5
     },
     {
       "id": "r_fxu_armor_break",
@@ -1381,9 +1507,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 750,
-        "material": 375,
-        "food": 375
+        "gold": 140,
+        "material": 70,
+        "food": 70
       },
       "costGrowth": 1,
       "icon": "sprites/research/fx_armor_break_1"
@@ -1400,9 +1526,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 750,
-        "material": 375,
-        "food": 375
+        "gold": 140,
+        "material": 70,
+        "food": 70
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_armor_break_2"
@@ -1419,9 +1545,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 4331,
-        "material": 2166,
-        "food": 2166
+        "gold": 780,
+        "material": 390,
+        "food": 390
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_armor_break_3"
@@ -1440,9 +1566,9 @@
       "valuePerLevel": 1,
       "maxLevel": 3,
       "baseCost": {
-        "gold": 12992,
-        "material": 6496,
-        "food": 6496
+        "gold": 6500,
+        "material": 3250,
+        "food": 3250
       },
       "costGrowth": 2
     },
@@ -1457,9 +1583,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
       "icon": "sprites/research/fx_effect"
@@ -1477,9 +1603,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 2500,
-        "material": 1500,
-        "food": 1500
+        "gold": 450,
+        "material": 270,
+        "food": 270
       },
       "costGrowth": 1.42
     },
@@ -1496,9 +1622,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 2500,
-        "material": 1500,
-        "food": 1500
+        "gold": 450,
+        "material": 270,
+        "food": 270
       },
       "costGrowth": 1.42
     },
@@ -1515,9 +1641,9 @@
       "valuePerLevel": 5,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 2500,
-        "material": 1500,
-        "food": 1500
+        "gold": 450,
+        "material": 270,
+        "food": 270
       },
       "costGrowth": 1.42
     },
@@ -1533,9 +1659,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 45000,
-        "material": 45000,
-        "food": 45000
+        "gold": 18000,
+        "material": 18000,
+        "food": 18000
       },
       "costGrowth": 1
     },
@@ -1550,9 +1676,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 2250,
-        "material": 3000,
-        "food": 3000
+        "gold": 400,
+        "material": 540,
+        "food": 540
       },
       "costGrowth": 1.42,
       "icon": "sprites/ui/icon_learn_skill"
@@ -1569,9 +1695,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 11250,
-        "material": 9000,
-        "food": 9000,
+        "gold": 2000,
+        "material": 1500,
+        "food": 1500,
         "core": 3
       },
       "costGrowth": 1,
@@ -1589,9 +1715,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 15000,
-        "material": 6000,
-        "food": 6000,
+        "gold": 2750,
+        "material": 1000,
+        "food": 1000,
         "core": 4
       },
       "costGrowth": 1.5,
@@ -1615,9 +1741,9 @@
       "valuePerLevel": 1,
       "maxLevel": 1,
       "baseCost": {
-        "gold": 18750,
-        "material": 7500,
-        "food": 7500,
+        "gold": 3500,
+        "material": 1250,
+        "food": 1250,
         "core": 5
       },
       "costGrowth": 1.5,
@@ -1641,9 +1767,9 @@
       "valuePerLevel": 10,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 4500,
-        "material": 1875,
-        "food": 1875,
+        "gold": 810,
+        "material": 340,
+        "food": 340,
         "core": 1
       },
       "costGrowth": 1.35,
@@ -1666,9 +1792,9 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
       "halfCap": true,
@@ -1685,9 +1811,9 @@
       "valuePerLevel": 5,
       "maxLevel": 10,
       "baseCost": {
-        "gold": 71,
-        "material": 147,
-        "food": 147
+        "gold": 15,
+        "material": 25,
+        "food": 25
       },
       "costGrowth": 1.42,
       "halfCap": true,
@@ -1704,9 +1830,9 @@
       "valuePerLevel": 10,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 39,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "halfCap": true,
@@ -1723,9 +1849,9 @@
       "valuePerLevel": 10,
       "maxLevel": 5,
       "baseCost": {
-        "gold": 39,
-        "material": 83,
-        "food": 83
+        "gold": 5,
+        "material": 15,
+        "food": 15
       },
       "costGrowth": 1.42,
       "halfCap": true,

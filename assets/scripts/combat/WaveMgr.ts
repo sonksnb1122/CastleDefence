@@ -14,6 +14,8 @@ export interface SpawnEntry {
     defAdd: number;
     /** Highest physic / magic def this enemy can have (normal 70, boss 90 by default). */
     defMax?: number;
+    /** Mutant type (waves.json "mutants"), or undefined. */
+    mutant?: string;
 }
 
 /** Defense of the enemies of a wave (highest values among the enemies that can appear). */
@@ -57,13 +59,33 @@ export class WaveMgr {
 
     /**
      * Extra status resistance (%) of the enemies of a wave (waves.json "statusResistance"):
-     * grows by perWave from startWave up to max; bosses get bossBonus more. Only for the listed status types.
+     * grows evenly from startWave up to max at maxWave (or by perWave); bosses get bossBonus more.
+     * Only for the listed status types.
      */
     static statusResist(wave: number, boss: boolean): { types: string[]; value: number } {
         const r = ConfigMgr.waves.statusResistance;
         if (!r || wave < r.startWave) return { types: [], value: 0 };
-        const v = Math.min(r.max || 100, (wave - r.startWave + 1) * (r.perWave || 0)) + (boss ? r.bossBonus || 0 : 0);
+        const per = r.maxWave ? (r.max || 0) / Math.max(1, r.maxWave - r.startWave + 1) : (r.perWave || 0);
+        const v = Math.min(r.max || 100, Math.round((wave - r.startWave + 1) * per)) + (boss ? r.bossBonus || 0 : 0);
         return { types: r.types || [], value: Math.min(95, v) };
+    }
+
+    /**
+     * Final damage taken reduction (%) of the enemies of a wave (waves.json "finalDamageReduction"): linear
+     * between its "points" [wave, %] (0 before the first one, the last value after the last one), bosses +bossBonus.
+     * Hero skills ignore it.
+     */
+    static finalReduce(wave: number, boss: boolean): number {
+        const r = ConfigMgr.waves.finalDamageReduction;
+        const pts: number[][] = (r && r.points) || [];
+        if (!pts.length || wave < pts[0][0]) return 0;
+        let v = pts[pts.length - 1][1];
+        for (let i = 0; i + 1 < pts.length; i++) {
+            const [w0, v0] = pts[i], [w1, v1] = pts[i + 1];
+            if (wave >= w0 && wave <= w1) { v = v0 + (v1 - v0) * (wave - w0) / Math.max(1, w1 - w0); break; }
+        }
+        v += boss ? r.bossBonus || 0 : 0;
+        return Math.max(0, Math.min(99, Math.round(v * 10) / 10));
     }
 
     static defCaps(): { normal: number; boss: number } {
@@ -112,6 +134,50 @@ export class WaveMgr {
         return mul;
     }
 
+    /**
+     * Extra enemy damage multiplier of a wave (waves.json "damageBoost": linear between its "points" [wave, x],
+     * 1 before the first one, the last value after the last one): late waves hit the wall harder.
+     */
+    static damageBoost(wave: number): number {
+        const pts: number[][] = (ConfigMgr.waves.damageBoost && ConfigMgr.waves.damageBoost.points) || [];
+        if (!pts.length || wave < pts[0][0]) return 1;
+        for (let i = 0; i + 1 < pts.length; i++) {
+            const [w0, v0] = pts[i], [w1, v1] = pts[i + 1];
+            if (wave >= w0 && wave <= w1) return v0 + (v1 - v0) * (wave - w0) / Math.max(1, w1 - w0);
+        }
+        return pts[pts.length - 1][1];
+    }
+
+    /** Ranged enemies (Flying Demon, Lich) do not get the damage boost: they keep shooting while they live. */
+    static isRanged(id: string): boolean { const d = ConfigMgr.enemyDef(id); return !!(d && d.ranged); }
+
+    /** A mutant type of waves.json "mutants" by id. */
+    static mutantDef(id: string): any {
+        const m = ConfigMgr.waves.mutants;
+        return (m && (m.types || []).find((t: any) => t.id === id)) || null;
+    }
+
+    /**
+     * Turns a normal enemy into a mutant (waves.json "mutants": "chancePct" of the walking enemies from
+     * "fromWave"): bigger, tinted, faster and stronger (multipliers of its type).
+     */
+    static mutate(e: SpawnEntry, wave: number) {
+        const m = ConfigMgr.waves.mutants;
+        if (!m || wave < (m.fromWave || 1) || e.boss || Math.random() * 100 >= (m.chancePct || 0)) return;
+        const def = ConfigMgr.enemyDef(e.enemyId);
+        if (!def || def.ranged || def.flying) return;
+        const types = (m.types || []).filter((t: any) => (t.weight || 0) > 0);
+        if (!types.length) return;
+        let r = Math.random() * types.reduce((a: number, t: any) => a + t.weight, 0), t = types[0];
+        for (const x of types) { r -= x.weight; if (r < 0) { t = x; break; } }
+        e.mutant = t.id;
+        e.hpMul *= t.hpMul || 1;
+        e.damageMul *= t.damageMul || 1;
+        e.speedMul *= t.speedMul || 1;
+        e.goldMul *= t.goldMul || 1;
+        e.scale *= t.scale || 1;
+    }
+
     static enemyCount(wave: number): number {
         const cfg = ConfigMgr.waves;
         return cfg.enemyCountBase + cfg.enemyCountPerWave * (wave - 1);
@@ -141,7 +207,7 @@ export class WaveMgr {
         const cfg = ConfigMgr.waves;
         const step = WaveMgr.growthStep(wave);
         const g = cfg.growth;
-        const hpG = WaveMgr.hpGrowth(wave), dmgG = Math.pow(g.damage, step), spdG = Math.pow(g.moveSpeed, step);
+        const hpG = WaveMgr.hpGrowth(wave), dmgG = Math.pow(g.damage, step), boost = WaveMgr.damageBoost(wave), spdG = Math.pow(g.moveSpeed, step);
         // Gold per kill grows with the enemies, so stronger waves pay for the endless research.
         const goldG = Math.pow(g.goldReward || 1, step);
         const dg = cfg.defenseGrowth || {};
@@ -157,7 +223,7 @@ export class WaveMgr {
         const entry = (time: number, enemyId: string, mul: any, scale: number, boss: boolean): SpawnEntry => ({
             time, enemyId,
             hpMul: hpG * msHp * ((mul && mul.hp) || 1),
-            damageMul: dmgG * msDmg * ((mul && mul.damage) || 1),
+            damageMul: dmgG * msDmg * (WaveMgr.isRanged(enemyId) ? 1 : boost) * ((mul && mul.damage) || 1),
             speedMul: spdG * ((mul && mul.moveSpeed) || 1),
             goldMul: goldG * ((mul && mul.goldReward) || 1),
             scale: scale || 1,
@@ -189,7 +255,11 @@ export class WaveMgr {
                 normalCount = Math.round(WaveMgr.enemyCount(wave) * ((ms && ms.countMul) || 1));
                 const weights = WaveMgr.weightsFor(wave);
                 const shared = share < 1 ? { hp: share, goldReward: share } : null;
-                for (let i = 0; i < normalCount; i++) entries.push(entry(i * interval, WaveMgr.pick(weights), shared, 1, false));
+                for (let i = 0; i < normalCount; i++) {
+                    const en = entry(i * interval, WaveMgr.pick(weights), shared, 1, false);
+                    WaveMgr.mutate(en, wave);
+                    entries.push(en);
+                }
             }
             if (boss) {
                 if (!ms || !ms.name) name = `Wave ${wave} - Boss`;

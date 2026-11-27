@@ -8,7 +8,7 @@ export const RESOURCE_KEYS = ['food', 'material', 'gold', 'core'];
 /** Resources that the Market trades (Energy Core is not traded). */
 export const TRADE_KEYS = ['food', 'material', 'gold'];
 /** 5: research tree (old saves get their technologies moved into the tree, see SaveCodec). */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export interface BuffEntry { key: string; value: number; towerId?: string; }
 

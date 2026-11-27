@@ -4,15 +4,15 @@
     {
       "key": "attackSpeed",
       "name": "Tower attack speed",
-      "min": 5,
-      "max": 10,
+      "min": 3,
+      "max": 6,
       "unit": "%"
     },
     {
       "key": "damage",
       "name": "Tower damage",
-      "min": 5,
-      "max": 10,
+      "min": 3,
+      "max": 6,
       "unit": "%"
     },
     {
@@ -391,13 +391,28 @@
       "unit": ""
     },
     {
-      "key": "haloBlock",
-      "name": "Warding Halo level",
+      "key": "haloShield",
+      "name": "Warding Halo (shield HP and defense, % of the wall)",
       "unit": ""
     },
     {
       "key": "towerAwakening",
       "name": "Tower Awakening",
+      "unit": ""
+    },
+    {
+      "key": "effectPlus:hunters_mark",
+      "name": "Hunter's Instinct level",
+      "unit": ""
+    },
+    {
+      "key": "effectPlus:arcane_vulnerability",
+      "name": "Arcane Conduit level",
+      "unit": ""
+    },
+    {
+      "key": "effectPlus:heavy_impact",
+      "name": "Crushing Weight level",
       "unit": ""
     }
   ]

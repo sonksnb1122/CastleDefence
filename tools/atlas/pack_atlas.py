@@ -41,7 +41,8 @@ def halo(res):
     d = os.path.join(res, '..', '..', 'art', 'halo')
     items = [('sprites/towers/' + f[:-4], Image.open(os.path.join(d, f)).convert('RGBA'))
              for f in sorted(os.listdir(d)) if f.endswith('.png')]
-    pack(res, 'halo', items)
+    # Smooth art (shield, rings), drawn bigger than its pixels: linear filtering, full color.
+    pack(res, 'halo', items, linear=True)
 
 def boss(res):
     # Sources: <project>/art/boss/<boss>/*.png, served under the path "sprites/bosses/<name>".

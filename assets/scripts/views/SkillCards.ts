@@ -62,7 +62,14 @@ export function skillTypeLine(skillId: string): string {
 }
 
 export function skillName(skillId: string): string { const d = ConfigMgr.anySkillDef(skillId); return d ? d.name : skillId; }
-export function skillDescription(skillId: string): string { const d = ConfigMgr.anySkillDef(skillId); return d ? d.description || '' : ''; }
+/** Note of the damage skills: their damage ignores enemy defense and the late-wave damage reduction. */
+export const TRUE_DAMAGE_NOTE = 'True damage: ignores every defense and damage reduction.';
+export function skillDescription(skillId: string): string {
+    const d = ConfigMgr.anySkillDef(skillId);
+    if (!d) return '';
+    const dmg = !!(d.effect && d.effect.damagePct);
+    return (d.description || '') + (dmg ? ' ' + TRUE_DAMAGE_NOTE : '');
+}
 
 export interface BookCardOpts {
     /** Books owned (shown after the name). */

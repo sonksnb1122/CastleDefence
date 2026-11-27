@@ -93,10 +93,21 @@ export class DefTab {
         v.smallLabel!.string = `Armor W${wave}   Phy ${have[0]}/${need[0]}   Mag ${have[1]}/${need[1]}`;
         v.smallLabel!.color = hex(worst);
         const next = WaveMgr.nextDefenseWave(wave);
-        const capped = (id: string) => { const t = ConfigMgr.techDef(id); return !!t && rm.techCap(id) < t.maxLevel && rm.techLevel(id) >= rm.techCap(id); };
+        // Piercing I / II / III open with the Research Lab tiers: nothing left to research = the Lab is the limit.
+        const chain = (base: string) => [base, base + '_2', base + '_3'].filter(id => !!ConfigMgr.techDef(id));
+        const capped = (base: string) => chain(base).every(id => !!rm.techBlock(id)) && chain(base).some(id => rm.techLevel(id) < ConfigMgr.techDef(id).maxLevel);
         if (short && capped('r_pdef') && capped('r_mdef')) v.footer!.string = 'Research Lab limit reached: upgrade the Lab';
         else if (short) v.footer!.string = 'Research Armor / Spell Piercing!';
-        else v.footer!.string = next ? `Enemy DEF rises at wave ${next}` : 'Enemy DEF is at its maximum';
+        else {
+            // Late waves: status resistance (from wave 60) and final damage reduction (from wave 75).
+            // Damage taken reduction (from wave 10) and status resistance (from wave 60) of the wave.
+            const res = WaveMgr.statusResist(wave, false).value, fin = WaveMgr.finalReduce(wave, false);
+            const parts: string[] = [];
+            if (fin > 0) parts.push(`Dmg taken -${fin}%`);
+            if (res > 0) parts.push(`Status resist ${res}%`);
+            else parts.push(next ? `DEF up at wave ${next}` : 'DEF at max');
+            v.footer!.string = parts.join('   ');
+        }
     }
 
     destroy() {

@@ -417,6 +417,21 @@ export class ResearchOverlay implements IOverlay {
 
     // ------------------------------------------------------------------ selection
     /**
+     * Mending Halo timing for the 3 Halo Spire levels: every "mendEvery" activations, i.e. mendEvery / activations
+     * per second (the spire's attack speed with the research and hero buffs: flat + %).
+     */
+    private mendTiming(): string {
+        const def = ConfigMgr.towerDef('halo');
+        if (!def) return '';
+        const rm = this.rm;
+        const parts = def.levels.map((lv: any) => {
+            const speed = (lv.attackSpeed + rm.buff('attackSpeedFlat', 'halo')) * (1 + rm.buff('attackSpeed', 'halo') / 100);
+            return `Lv ${lv.level}: every ${lv.mendEvery} activations / ${Math.round(speed * 100) / 100} per s = every ${Math.round(lv.mendEvery / speed * 10) / 10} s, +${lv.mendPct}%`;
+        });
+        return 'Now (activation speed with your research and heroes): ' + parts.join('; ') + '.';
+    }
+
+    /**
      * Tap on a node: it is highlighted and a window tells what it does. A technology that can be researched
      * opens a confirm window with its cost (like an upgrade); a locked or finished one an info window.
      */
@@ -461,6 +476,7 @@ export class ResearchOverlay implements IOverlay {
                 ? `Requires: every technology above the awakening line at max level - ${left.length} left (${left.slice(0, 4).map((q: any) => q.name).join(', ')}${left.length > 4 ? ', ...' : ''}).`
                 : 'Requires: every technology above the awakening line at max level - done.');
         }
+        if (t.buffKey === 'haloMend') lines.push(this.mendTiming());
         for (const l of techEffectLines(t)) lines.push(l);
         const block = rm.techBlock(id);
         lines.push('');

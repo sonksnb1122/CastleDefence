@@ -23,11 +23,11 @@
         }
       },
       "hp": 240,
-      "damage": 25,
+      "damage": 38,
       "damageType": "physic",
       "physicDef": 20,
       "magicDef": 5,
-      "moveSpeed": 12.5,
+      "moveSpeed": 25,
       "goldReward": 12,
       "spawnWeight": 3,
       "scale": 1,
@@ -66,11 +66,11 @@
         }
       },
       "hp": 97.5,
-      "damage": 55,
+      "damage": 82,
       "damageType": "physic",
       "physicDef": 5,
       "magicDef": 8,
-      "moveSpeed": 20,
+      "moveSpeed": 40,
       "goldReward": 10,
       "spawnWeight": 5,
       "scale": 1,
@@ -115,11 +115,11 @@
         }
       },
       "hp": 60,
-      "damage": 15,
+      "damage": 22,
       "damageType": "magic",
       "physicDef": 3,
       "magicDef": 3,
-      "moveSpeed": 42.5,
+      "moveSpeed": 85,
       "goldReward": 8,
       "spawnWeight": 5,
       "scale": 1,
@@ -164,11 +164,11 @@
         }
       },
       "hp": 210,
-      "damage": 50,
+      "damage": 75,
       "damageType": "magic",
       "physicDef": 15,
       "magicDef": 15,
-      "moveSpeed": 10,
+      "moveSpeed": 20,
       "goldReward": 25,
       "spawnWeight": 2,
       "scale": 1,
@@ -221,12 +221,12 @@
           "hitFrame": 8
         }
       },
-      "hp": 110,
-      "damage": 18,
+      "hp": 70,
+      "damage": 8,
       "damageType": "magic",
       "physicDef": 6,
       "magicDef": 22,
-      "moveSpeed": 34,
+      "moveSpeed": 68,
       "goldReward": 14,
       "spawnWeight": 3,
       "scale": 1,
@@ -235,9 +235,9 @@
       "flying": true,
       "ranged": {
         "_doc": "Stops when it is 'range' px (+/- 'rangeSpread') in front of the wall and attacks every 'attackInterval' s: attack animation, then a projectile flies to the wall and deals the enemy's damage on impact.",
-        "range": 230,
-        "rangeSpread": 40,
-        "attackInterval": 2.6,
+        "range": 640,
+        "rangeSpread": 80,
+        "attackInterval": 1.3,
         "firstAttackDelay": 0.4,
         "projectile": {
           "path": "sprites/enemies/demon_fireball",
@@ -269,7 +269,7 @@
     {
       "id": "lich",
       "name": "Lich King (Frost)",
-      "description": "Boss from wave 70 (small at first, bigger at every boss wave). Floats (Catapult stones still hit it). Very slow but teleports forward; throws a Soul Bolt at the wall every 20 s from anywhere on the field. Below 30% HP it raises a spell shield and summons hasted minions (once each).",
+      "description": "Boss from wave 50 (small at first, bigger at every boss wave). Floats (Catapult stones still hit it). Very slow but teleports forward every 30 s; throws a Soul Bolt at the wall every 5 s from anywhere on the field. Below 30% HP it raises a spell shield and summons hasted minions (once each).",
       "spritePath": "sprites/bosses/lich_move",
       "animationPaths": {
         "move": {
@@ -351,8 +351,8 @@
           ]
         }
       },
-      "hp": 300,
-      "damage": 40,
+      "hp": 450,
+      "damage": 60,
       "damageType": "magic",
       "physicDef": 25,
       "magicDef": 25,
@@ -367,7 +367,7 @@
         "slow": 40
       },
       "ranged": {
-        "attackInterval": 20,
+        "attackInterval": 5,
         "firstAttackDelay": 3,
         "projectile": {
           "path": "sprites/bosses/lich_soulbolt",
@@ -466,7 +466,7 @@
         },
         {
           "type": "teleport",
-          "cooldown": 9,
+          "cooldown": 30,
           "firstDelay": 5,
           "distance": 150
         }

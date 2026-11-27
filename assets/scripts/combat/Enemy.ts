@@ -6,6 +6,7 @@ import { hex, mk, sprite, text } from '../views/common/UIKit';
 import { HpBar } from './HpBar';
 import { Display } from '../core/Display';
 import { SpriteAnim } from './SpriteAnim';
+import { WaveMgr } from './WaveMgr';
 
 /** Size (px) of the status icons above an enemy (sprites/status, drawn 1:1). */
 const STATUS_ICON = 16;
@@ -33,7 +34,11 @@ export interface IEnemyHost {
 
 export interface EnemyStats { hp: number; damage: number; moveSpeed: number; goldReward: number; scale: number; boss: boolean; physicDef: number; magicDef: number;
     /** Extra resistance (%) to the listed status types (late waves, see WaveMgr.statusResist). */
-    statusResist?: { types: string[]; value: number }; }
+    statusResist?: { types: string[]; value: number };
+    /** Final damage taken reduction (%) (see WaveMgr.finalReduce); hero skills ignore it. */
+    finalReduce?: number;
+    /** Mutant type (waves.json "mutants"): bigger, tinted, with its own multipliers. */
+    mutant?: string; }
 
 /**
  * A monster walking from right to left toward the castle wall.
@@ -66,6 +71,11 @@ export class Enemy {
     pendingDamage = 0;
     /** Extra status resistance of this wave (see EnemyStats). */
     private waveResist: { types: string[]; value: number } = { types: [], value: 0 };
+    /** Final damage taken reduction (%): every damage but the hero skills (true damage) is cut by it. */
+    finalReduce = 0;
+    /** Mutant type id ('' for a normal enemy) and the sprite color when no status tints it. */
+    mutant = '';
+    private baseColor: Color = Color.WHITE;
     /** Seconds left during which a status type cannot be applied again (status "immunityAfter"). */
     private immune: { [type: string]: number } = {};
     /** Wave boss (bigger, tougher). */
@@ -76,6 +86,8 @@ export class Enemy {
     frostHits = 0;
     /** Passive "Aftershock": seconds left of the extra damage taken after a Shockwave stun. */
     aftershock = 0;
+    /** Seconds left of the Exposed passive (+crit damage after an Armor Break). */
+    exposed = 0;
     /** Flies (enemy.json "flying"): towers with "hitsFlying": false (Catapult) cannot hit it. */
     flying = false;
     /** Ranged enemy (enemy.json "ranged"): distance in front of the wall where it stops to attack. */
@@ -147,9 +159,13 @@ export class Enemy {
         this.statuses.length = 0;
         this.pendingDamage = 0;
         this.waveResist = stats.statusResist || { types: [], value: 0 };
+        this.finalReduce = stats.finalReduce || 0;
+        this.mutant = stats.mutant || '';
+        const mt = this.mutant ? WaveMgr.mutantDef(this.mutant) : null;
+        this.baseColor = mt && mt.tint ? hex(mt.tint) : Color.WHITE;
         this.immune = {};
         this.flash = 0; this.sprintTimer = 0; this.sprintLeft = 0;
-        this.frostHits = 0; this.aftershock = 0; this.deathStatuses = [];
+        this.frostHits = 0; this.aftershock = 0; this.exposed = 0; this.deathStatuses = [];
         this.flying = !!def.flying;
         const rg = def.ranged;
         this.stopDist = rg && !rg.anyRange ? Math.max(0, (rg.range || 200) + (Math.random() * 2 - 1) * (rg.rangeSpread || 0)) : 0;
@@ -167,7 +183,7 @@ export class Enemy {
         this.node.name = 'Enemy_' + def.id;
         this.node.setPosition(x, y, 0);
         this.spriteComp.node.setScale(scale, scale, 1);
-        this.spriteComp.color = Color.WHITE;
+        this.spriteComp.color = this.baseColor;
         const ok = this.playAnim(def.animationPaths.move, true);
         this.spriteComp.node.active = ok;
         if (!ok) this.showPlaceholder(def);
@@ -404,7 +420,7 @@ export class Enemy {
         }
         // Tint the sprite with the most recent effect color so effects stay readable in a crowd.
         const any = icons.length + labels.length > 0;
-        if (this.flash <= 0) this.spriteComp.color = any ? this.tint(color) : Color.WHITE;
+        if (this.flash <= 0) this.spriteComp.color = any ? this.tint(color) : this.baseColor;
     }
 
     /** Status icons in a centered row (pictures come from the combat atlas). */
@@ -628,7 +644,7 @@ export class Enemy {
         if (this.statusLabel) this.statusLabel.string = '';
         if (this.statusIcons) this.statusIcons.active = false;
         this.hpBar.node.active = false;
-        this.spriteComp.color = Color.WHITE;
+        this.spriteComp.color = this.baseColor;
         this.action = null;
         if (this.shieldHp > 0) this.breakShield();
         if (!this.playAnim(this.def.animationPaths.dead, false)) this.removed = true;
@@ -654,6 +670,7 @@ export class Enemy {
         // Status effects: damage over time and expiry.
         for (const k in this.immune) if (this.immune[k] > 0) this.immune[k] -= dt;
         if (this.aftershock > 0) this.aftershock -= dt;
+        if (this.exposed > 0) this.exposed -= dt;
         let changed = false;
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             const s = this.statuses[i];

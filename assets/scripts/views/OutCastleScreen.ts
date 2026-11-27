@@ -199,7 +199,7 @@ export class OutCastleScreen implements CombatEvents {
         const cost = this.rm.towerUpgradeCost(t)!;
         const next = ConfigMgr.towerLevel(t.id, t.level + 1);
         const body = def.kind === 'halo'
-            ? `Upgrade to level ${t.level + 1}?\n${next.attackSpeed} halos/s, blocks ${next.blockCount * (1 + this.rm.buff('haloBlock'))} per halo, buffs ${next.buffTargets} towers, mends every ${next.mendEvery}`
+            ? `Upgrade to level ${t.level + 1}?\nShield ${next.shieldHpPct + this.rm.buff('haloShield')}% of the wall HP and defense, buffs ${next.buffTargets} towers, mends every ${next.mendEvery}`
             : `Upgrade to level ${t.level + 1}?\nDamage ${next.damage}, ${next.attackSpeed}/s, range ${next.attackRange}`;
         confirm(this.root, `Upgrade ${def.name}`, body, () => {
             const err = this.rm.upgradeTower(uid);
@@ -248,6 +248,18 @@ export class OutCastleScreen implements CombatEvents {
     }
 
     /** Info window of a Halo Spire: what its halo does now and what the research adds. */
+    /** Shield of a Halo Spire for its Info window: HP and defense from the wall, Warding Halo, state now. */
+    private shieldLine(unit: TowerUnit): string {
+        const rm = this.rm, pct = this.combat.shieldPct(unit);
+        const hp = Math.floor(rm.wallMaxHp() * pct.hp / 100);
+        const def = (t: 'physic' | 'magic') => Math.round(Math.min(90, rm.wallDef(t) * pct.def / 100));
+        const sh = this.combat.shieldOf(unit);
+        const ward = rm.buff('haloShield');
+        return `Stops the enemy projectiles (boss ones too): ${hp} HP (${pct.hp}% of the wall max HP), defense ${def('physic')} / ${def('magic')} (${pct.def}% of the wall defense).`
+            + (sh ? ` Now ${Math.ceil(sh.hp)} / ${sh.max} HP.` : ' One shield per wave: raised at the first activation of the wave; once broken it stays down until the next wave.')
+            + (ward > 0 ? ` Warding Halo Lv ${ward / 10}: +${ward}%.` : ' Warding Halo (research): +10% per level (4 levels).');
+    }
+
     private haloInfoWindow(unit: TowerUnit) {
         this.combat.assignHalos();
         const rm = this.rm, lv = unit.lv, s = unit.stats();
@@ -258,21 +270,20 @@ export class OutCastleScreen implements CombatEvents {
             unit.def.description, '',
             `Level: ${unit.save.level} / ${unit.def.levels.length}`,
             `Activations: ${r1(s.attackSpeed)} / s (only while enemies are on the field)`,
-            `Halo radius: ${Math.round(s.range)} px (fixed)`,
-            '', 'HALO',
-            `Block: up to ${this.combat.haloBlocks(unit)} enemy projectiles touched by each halo vanish at once (not the boss ones).`
-                + (rm.buff('haloBlock') > 0 ? ` Warding Halo Lv ${rm.buff('haloBlock')}.` : ` Warding Halo (research) raises it to ${lv.blockCount * 2} / ${lv.blockCount * 3}.`),
+            `Shield radius: ${Math.round(s.range)} px (fixed)`,
+            '', 'SHIELD',
+            this.shieldLine(unit),
             aura > 0
                 ? `Empowering Halo Lv ${aura}: the ${lv.buffTargets} closest towers get +${r1((a.damagePctPerLevel || 0) * aura)}% base damage and +${r1((a.attackSpeedPctPerLevel || 0) * aura)}% base attack speed (before the % buffs; the strongest halo counts). Buffing ${buffed} tower${buffed === 1 ? '' : 's'} now.`
                 : `Empowering Halo (research, Fortification): would buff the ${lv.buffTargets} closest towers.`,
             rm.buff('haloMend') > 0
-                ? `Mending Halo: every ${lv.mendEvery} activations, +${lv.mendPct}% of the missing wall HP (${unit.haloCount % lv.mendEvery}/${lv.mendEvery}).`
-                : `Mending Halo (research, Fortification): every ${lv.mendEvery} activations, +${lv.mendPct}% of the missing wall HP.`,
+                ? `Mending Halo: every ${lv.mendEvery} activations = every ${r1(lv.mendEvery / s.attackSpeed)} s (${lv.mendEvery} / ${r1(s.attackSpeed)} activations per s), +${lv.mendPct}% of the missing wall HP (${unit.haloCount % lv.mendEvery}/${lv.mendEvery}); after each wave +${lv.mendAfterWavePct || 0}% of the max HP.`
+                : `Mending Halo (research, Fortification): every ${lv.mendEvery} activations = every ${r1(lv.mendEvery / s.attackSpeed)} s at ${r1(s.attackSpeed)} activations per s, +${lv.mendPct}% of the missing wall HP; after each wave +${lv.mendAfterWavePct || 0}% of the max HP.`,
         ];
         const cost = rm.towerUpgradeCost(unit.save);
         if (cost) {
             const n = ConfigMgr.towerLevel(unit.save.id, unit.save.level + 1);
-            lines.push('', `Next level: ${n.attackSpeed}/s, blocks ${n.blockCount * (1 + rm.buff('haloBlock'))} per halo, buffs ${n.buffTargets} towers, mends every ${n.mendEvery} (+${n.mendPct}%)`);
+            lines.push('', `Next level: ${n.attackSpeed}/s, shield ${n.shieldHpPct + rm.buff('haloShield')}% of the wall HP and defense, buffs ${n.buffTargets} towers, mends every ${n.mendEvery} (+${n.mendPct}%)`);
         }
         lines.push(cost ? { label: 'Upgrade cost:', cost } : 'Max level reached');
         infoWindow(this.root, unit.def.name, lines);
@@ -738,6 +749,8 @@ export class OutCastleScreen implements CombatEvents {
             this.combat.update(step);
             if (this.finished) break;
         }
+        // Shield animations follow the real time, not the game speed (no fast flicker at x2..x10).
+        this.combat.updateShieldVisuals(frame);
         if (this.combat.active) this.waveInfo.string = `Enemies left: ${this.combat.enemiesLeft}`;
         for (const c of this.heroCards) c.art.update(dt);
     }

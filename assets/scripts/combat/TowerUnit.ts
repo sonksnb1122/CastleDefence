@@ -179,6 +179,7 @@ export class TowerUnit {
         return EffectScaling.resolve(def, {
             level: Math.min(EffectScaling.maxLevel, b('lvl:effect:' + id)),
             mastery: b('effectMastery:' + id),
+            plus: b('effectPlus:' + id),
             towerLevel: this.save.level,
             has: (p: string) => b('passive:' + p) > 0,
         });
@@ -280,30 +281,28 @@ export class TowerUnit {
     }
 
     /**
-     * Halo Spire: no target and no turning. While enemies are on the field it activates every attack interval:
-     * the crystal flashes and the halo leaves at the weapon's "fireFrame".
+     * Halo Spire: no target and no turning. While enemies are on the field it activates every attack interval
+     * (shield raised when missing, wall mending count). The crystal stays idle; it flashes (attack animation)
+     * only when its shield is hit (flashHalo, called by the combat).
      */
     private updateHalo(dt: number, host: ITowerHost | null) {
         const w = this.lv.sprite.weapon;
-        if (!this.firing) {
-            this.anim.update(dt);
-            if (host && this.cooldown <= 0 && host.haloActive()) {
-                const interval = this.stats().interval;
-                this.firing = true;
-                this.spawned = false;
-                this.cooldown = interval + Math.max(this.cooldown, -dt);
-                const count = Math.max(1, this.attackFrames.length);
-                this.anim.play(this.attackFrames, Math.min(w.attackFrameTime, (interval * 0.9) / count), false);
-                if (this.attackFrames.length === 0) { this.spawned = true; host.emitHalo(this); }
-            }
-            return;
-        }
         const finished = this.anim.update(dt);
-        if (!this.spawned && (this.anim.index >= w.fireFrame || finished || this.anim.finished)) { this.spawned = true; if (host) host.emitHalo(this); }
-        if (finished || this.anim.finished) {
+        if (this.firing && (finished || this.anim.finished)) {
             this.firing = false;
             this.anim.play(this.idleFrames, w.idleFrameTime, true);
         }
+        if (host && this.cooldown <= 0 && host.haloActive()) {
+            this.cooldown = this.stats().interval + Math.max(this.cooldown, -dt);
+            host.emitHalo(this);
+        }
+    }
+
+    /** Halo Spire: its shield was hit, the crystal flashes once (not restarted while it is flashing). */
+    flashHalo() {
+        if (this.firing || this.attackFrames.length === 0) return;
+        this.firing = true;
+        this.anim.play(this.attackFrames, this.lv.sprite.weapon.attackFrameTime, false);
     }
 
     private fire(host: ITowerHost | null) {

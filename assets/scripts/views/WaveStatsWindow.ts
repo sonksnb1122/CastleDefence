@@ -97,9 +97,9 @@ export function waveStatsWindow(parent: Node, title: string, rewards: Array<{ la
         e.triggers > 0 ? fmtNumber(e.triggers) : '-',
         e.resisted > 0 ? fmtNumber(e.resisted) : '-',
         e.dealsDamage ? fmtNumber(e.damage) : '-',
-        e.dealsDamage ? pct(e.damage, total) : '-',
+        !e.dealsDamage ? '-' : e.partOfHit ? '(' + pct(e.damage, total) + ')' : pct(e.damage, total),
     ]));
-    text(host, 'Damage = HP removed (overkill not counted). Bonus damage of marks is part of the tower damage.', 13, left, y - ROW / 2, { ax: 0, color: COLORS.textDim });
+    text(host, 'Damage = HP removed (overkill not counted). The shares add up to 100%; (in brackets): mark bonus, part of the normal hits.', 13, left, y - ROW / 2, { ax: 0, color: COLORS.textDim });
     y -= ROW;
 
     list.setContentHeight(-y + 6);

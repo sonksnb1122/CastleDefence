@@ -16,14 +16,14 @@ export function towerOfEffect(effectId: string): any {
 }
 
 /** Effect id of a research technology of the Tower Effects branch ("effectUnlock:x", "effect:x", "effectMastery:x"), or ''. */
-export function effectOfTech(t: any): { id: string; kind: 'unlock' | 'chance' | 'mastery' } | null {
-    const m = /^(effectUnlock|effect|effectMastery):(.+)$/.exec(String(t && t.buffKey));
+export function effectOfTech(t: any): { id: string; kind: 'unlock' | 'chance' | 'mastery' | 'plus' } | null {
+    const m = /^(effectUnlock|effect|effectMastery|effectPlus):(.+)$/.exec(String(t && t.buffKey));
     if (!m) return null;
-    return { id: m[2], kind: m[1] === 'effectUnlock' ? 'unlock' : m[1] === 'effect' ? 'chance' : 'mastery' };
+    return { id: m[2], kind: m[1] === 'effectUnlock' ? 'unlock' : m[1] === 'effect' ? 'chance' : m[1] === 'effectPlus' ? 'plus' : 'mastery' };
 }
 
-function resolve(id: string, level: number, mastery: number, towerLevel = 1): any {
-    return EffectScaling.resolve(ConfigMgr.towerEffectDef(id), { level, mastery, towerLevel, has });
+function resolve(id: string, level: number, mastery: number, towerLevel = 1, plus = rm().buff('effectPlus:' + id)): any {
+    return EffectScaling.resolve(ConfigMgr.towerEffectDef(id), { level, mastery, plus, towerLevel, has });
 }
 
 /** Chance of an effect on a tower level: chance research (cap 50%) + effect-chance bonuses (Arcane Mastery, Attunement, heroes), 100% at most. */
@@ -86,6 +86,11 @@ export function techEffectLines(t: any): string[] {
         out.push(`Effect level ${level}/${EffectScaling.maxLevel} (levels of both chance technologies), Mastery ${mastery}/3.`);
         show('Now', level, mastery, pct);
         if (!maxed) show('After this level', level + 1, mastery, pct + t.valuePerLevel);
+    } else if (fx.kind === 'plus') {
+        const pl = rm().buff('effectPlus:' + fx.id);
+        out.push(`Effect level ${level}/${EffectScaling.maxLevel}, Mastery ${mastery}/3, ${t.name} ${pl}/${t.maxLevel}.`);
+        out.push(`Now (chance ${Math.round(pct)}%): ${EffectScaling.describe(resolve(fx.id, Math.max(level, 1), mastery, 1, pl))}`);
+        if (!maxed) out.push(`At ${t.name} ${pl + 1} (chance ${Math.round(pct)}%): ${EffectScaling.describe(resolve(fx.id, Math.max(level, 1), Math.max(mastery, 3), 1, pl + 1))}`);
     } else {
         out.push(`Effect level ${level}/${EffectScaling.maxLevel}, Mastery ${mastery}/3.`);
         show('Now', level, mastery, pct);

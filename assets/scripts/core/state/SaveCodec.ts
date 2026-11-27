@@ -156,6 +156,7 @@ export class SaveCodec {
         let research = raw.research || {};
         if (raw.saveVersion < 5) research = SaveCodec.migrateResearch(research, d);
         if (raw.saveVersion < 6) research = SaveCodec.migrateMastery(research);
+        if (raw.saveVersion < 7) research = SaveCodec.migratePiercing(research);
         for (const t of ConfigMgr.research.techs) {
             const lv = research[t.id];
             if (typeof lv === 'number' && lv > 0) d.research[t.id] = t.maxLevel ? Math.min(t.maxLevel, Math.floor(lv)) : Math.floor(lv);
@@ -181,6 +182,22 @@ export class SaveCodec {
             // The second chance technology of the effect (the Masteries now hang under Tower Awakening).
             const p = ConfigMgr.techDef('r_fx_' + t.buffKey.slice('effectMastery:'.length) + '_2');
             if (p && (out[p.id] || 0) >= p.maxLevel) out[t.id] = t.maxLevel;
+        }
+        return out;
+    }
+
+    /**
+     * Saves made before Armor / Spell Piercing were split in 3 nodes (version < 7): the old level (10 at most)
+     * goes to I (2 levels), then II (3 more), then III (5 more).
+     */
+    static migratePiercing(research: any): { [id: string]: number } {
+        const out: { [id: string]: number } = Object.assign({}, research);
+        for (const id of ['r_pdef', 'r_mdef']) {
+            const lv = Math.floor(out[id] || 0);
+            if (lv <= 2) continue;
+            out[id] = 2;
+            out[id + '_2'] = Math.min(3, lv - 2);
+            if (lv > 5) out[id + '_3'] = Math.min(5, lv - 5);
         }
         return out;
     }

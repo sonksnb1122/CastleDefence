@@ -757,12 +757,12 @@
     {
       "id": "p_aftershock",
       "name": "Aftershock",
-      "description": "Passive: an enemy stunned by Shockwave takes +30% damage until 1 s after the stun.",
+      "description": "Passive: an enemy stunned by Shockwave takes +50% damage for 7 s; a new stun starts the 7 s again.",
       "requiresEffect": "shockwave",
       "buffs": [],
       "params": {
-        "damage": 30,
-        "time": 1
+        "damage": 50,
+        "time": 7
       }
     },
     {
@@ -780,11 +780,12 @@
     {
       "id": "p_crusher",
       "name": "Crusher",
-      "description": "Passive: Heavy Impact deals 10/6 as much to enemies with Armor Break or stunned (6% max HP becomes 10%).",
+      "description": "Passive: on an enemy that has Armor Break or is stunned at that moment, Heavy Impact's max HP share is doubled (3% becomes 6%) and its limit goes up to 15 hits (instead of 3, or up to 8 with Crushing Weight).",
       "requiresEffect": "heavy_impact",
       "buffs": [],
       "params": {
-        "mul": 1.667
+        "hpMul": 2,
+        "capHitMul": 15
       }
     },
     {
@@ -810,11 +811,12 @@
     {
       "id": "p_exposed",
       "name": "Exposed",
-      "description": "Passive: enemies with Armor Break take +25% critical damage.",
+      "description": "Passive: an enemy that gets Armor Break takes +50% critical damage for 7 s; every new Armor Break (or refresh) starts the 7 s again.",
       "requiresEffect": "armor_break",
       "buffs": [],
       "params": {
-        "critDamage": 25
+        "critDamage": 50,
+        "time": 7
       }
     },
     {

@@ -302,16 +302,16 @@
   "promotion": {
     "_comment": "Cost to promote a hero from N stars straight to 5 stars (research \"Ascension\" needed). The hero gets 1 random buff per star gained: 2 from 3 stars, 1 from 4 stars.",
     "3": {
-      "gold": 28000,
-      "material": 21000,
-      "food": 21000,
-      "core": 6
-    },
-    "4": {
-      "gold": 20000,
+      "gold": 12000,
       "material": 15000,
       "food": 15000,
-      "core": 4
+      "core": 5
+    },
+    "4": {
+      "gold": 8000,
+      "material": 10000,
+      "food": 10000,
+      "core": 3
     }
   },
   "starTab": {

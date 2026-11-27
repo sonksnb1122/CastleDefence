@@ -117,8 +117,8 @@ export class SaveLoadOverlay implements IOverlay {
             const r = PrefabUi.view('items/SaveSlot', host, SaveSlotView);
             r.node.setPosition(0, y, 0);
             y -= 34;
-            r.slotName!.string = `Test - Wave ${t.wave}`;
-            r.desc!.string = `Bot progress up to wave ${t.wave}  -  read only`;
+            r.slotName!.string = `Test - Wave ${t.wave}` + (t.seed !== 1 ? ` (seed ${t.seed})` : '');
+            r.desc!.string = `Bot seed ${t.seed} up to wave ${t.wave}` + (t.seed === 3 ? ' (falls at 90)' : '') + '  -  read only';
             new PrefabButton(r.actionButton, () => this.loadTest(i)).setText('Load');
             new PrefabButton(r.deleteButton).setVisible(false);
         });

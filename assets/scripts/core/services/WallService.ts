@@ -42,6 +42,23 @@ export class WallService {
         const pct = this.rm.buff('wallRegen');
         const d = this.rm.data;
         if (pct > 0 && d.wallHp > 0) d.wallHp = Math.min(this.maxHp(), d.wallHp + Math.floor(this.maxHp() * pct / 100));
+        this.haloMendAfterWave();
+    }
+
+    /**
+     * Research "Mending Halo", out of combat: after each wave every Halo Spire restores "mendAfterWavePct" % of
+     * the wall max HP (tower.json, 5 / 10 / 15% at Lv 1 / 2 / 3), never above the max.
+     */
+    haloMendAfterWave() {
+        const d = this.rm.data;
+        if (!(this.rm.buff('haloMend') > 0) || d.wallHp <= 0) return;
+        const max = this.maxHp();
+        for (const t of d.towers) {
+            if (t.id !== 'halo') continue;
+            const lv = ConfigMgr.towerLevel('halo', t.level);
+            const p = (lv && lv.mendAfterWavePct) || 0;
+            if (p > 0) d.wallHp = Math.min(max, d.wallHp + Math.floor(max * p / 100));
+        }
     }
 
     repair(): string | null {
